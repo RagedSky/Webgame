@@ -108,9 +108,47 @@ Tooltips, Hinweise, HUD und die Hilfe zeigen immer die aktuell belegten Tasten.
 Mit dem Gamepad lassen sich auch alle Menüs bedienen: Steuerkreuz bewegt den Fokus, A bestätigt, B geht zurück.
 Esc öffnet immer das Pausemenü. Auf Touch-Geräten gibt es einen virtuellen Joystick und Aktionstasten.
 
-**Navigationsanzeige:** Eine leuchtende Pfeilspur auf dem Boden zeigt den kürzesten Weg zum Ziel der verfolgten Quest.
-Liegt das Ziel in einer anderen Region, führt die Spur zum passenden Ausgang. Liegt es außerhalb des Bildes, zeigt ein Pfeil
-am Bildschirmrand Richtung und Entfernung.
+## Weltkarte (M)
+
+- **Zoomen und Verschieben:** Mausrad, Pinch-Geste oder die Knöpfe + / −; Karte ziehen oder Bewegungstasten / linker Stick.
+  Weiche Kamerafahrt, „⌖“ zentriert auf die Spielfigur, „▣“ zeigt die ganze Welt.
+- **Detailstufen:** weit = Regionen mit Namen, Inselgrenzen und Fortschritt (Quests, Waypoints, Bosse); mittel = Orte, Wege,
+  Dungeons, Lager und Waypoints; nah = Quests mit Name und Kurzbeschreibung, Gegnerstufen, Truhen, Rätselorte, Händler und
+  Schmiede sowie entdeckte Geheimnisse.
+- **Pixel-Art:** Jede Insel wird einmal prozedural als Offscreen-Canvas gezeichnet (Gebäude, Bäume, Berge, Lava, Wasser,
+  Brücken, Wege, Klippen); pro Bild werden nur sichtbare Inseln und Symbole gezeichnet. Beschriftungen mit Kontur weichen
+  einander aus.
+- **Nebel des Krieges:** wolkig, mit weichen Rändern; er lichtet sich Stück für Stück dort, wo man schon war.
+- **Filter** (Quests, Waypoints, Dungeons, Händler, Rätsel) und eine **ausklappbare Legende**; Filter werden gespeichert.
+- **Questmarker:** Hauptquest gold (Stern), Nebenquest blau, „?“ = Abgabe, pulsierend; ein gestrichelter Kreis markiert ein
+  ungefähres Zielgebiet. Tooltip mit Name, Ziel, Belohnung, empfohlener Stufe und Entfernung. Klick → verfolgen / Fokus.
+  Ein Klick auf eine Quest im Quest-Log springt auf der Karte zum Ziel.
+- **Gesperrte Orte** erklären im Tooltip, was fehlt (Quest, Stufe, Story-Fortschritt).
+
+### Waypoints (Schnellreise)
+
+- 19 Waypoints, auf der Karte immer sichtbar und nie verdeckt: aktiviert (leuchtend, anklickbar), unentdeckt (grau mit „?“,
+  nur in bereits besuchten Regionen) und „du bist hier“ (eigenes Symbol).
+- Klick öffnet ein Panel mit Name, Region, Entfernung und **„Hierhin reisen“** (mit Ladeübergang; nicht im Kampf oder in Dungeons).
+- In der Welt: Lichtsäule und Partikel; Hinweis „[Taste] Waypoint aktivieren“ (folgt der Tastenbelegung). Beim Entdecken
+  Effekt und Meldung „Waypoint entdeckt: …“.
+- Seitenleiste mit allen Waypoints nach Region; beim ersten Öffnen erklärt ein Tutorial die Karte, danach über „?“.
+
+## Navigation im HUD
+
+Alle Hilfen sind anfangs eingeschaltet und unter **Einstellungen › Anzeige** einzeln schaltbar (lokal und im Cloud-Profil
+gespeichert): Navigationspfeil (am Bildschirmrand mit Questname und Entfernung bzw. Marker über dem Ziel), Wegführungslinie
+(leuchtende Spur auf dem Boden entlang des kürzesten Wegs), Kompassleiste (mit Quest-, Waypoint- und Dungeon-Markern),
+Entfernungsanzeige, Quest-Tracker und Minikarte. Mit **N** schaltet man die Navigation schnell ein und aus. Liegt das Ziel
+in einer anderen Region, führt alles zum nächsten passenden Ausgang; im Dungeon zum Ausgang. In Dialogen und
+Zwischensequenzen wird die Anzeige ausgeblendet, im Kampf durchsichtiger. Es können bis zu vier Quests verfolgt werden,
+davon höchstens eine Hauptquest; die erste ist der Fokus der Navigation (Klick im Tracker setzt den Fokus).
+
+## Einstellungen
+
+Tabs **Allgemein** (Sprache, Weltstufe, Tipps & Tutorials) · **Steuerung** · **Grafik** · **Audio** · **Anzeige**
+(Navigationshilfen, Quest-Tracker, Minikarte) · **Konto**. Alle Einstellungen werden lokal gespeichert und – wenn man
+angemeldet ist – im Supabase-Profil (`profiles.settings`, `keybindings`, `language`) und beim Start geladen.
 
 ## Inhalt
 
@@ -122,4 +160,4 @@ am Bildschirmrand Richtung und Entfernung.
 - **Quests:** 43 Quests mit Hauptgeschichte (Prolog, sieben Akte, Finale), Nebenquests, Kopfgeldern, Sammel-, Eskort- und
   Tagesaufträgen; Dialoge mit Porträts und Entscheidungen.
 - **Rätsel:** 10 Rätseltypen mit mehrstufigen Hinweisen und Geheimräumen.
-- **Weltkarte (M):** Pixel-Art der Himmelsinseln mit Nebel des Krieges, Markern, Tooltips und Schnellreise.
+- **Weltkarte (M):** zoombare Pixel-Art-Karte der Himmelsinseln mit Detailstufen, Nebel des Krieges, Filtern, Questmarkern und Waypoint-Schnellreise.

@@ -270,6 +270,10 @@ body.touch #muteBtn{display:none}
 .qtItem .qo{color:var(--text)}
 .qtItem .qo.done{color:var(--green);text-decoration:line-through}
 .qtItem.main{border-left-color:var(--gold)}
+.qtItem{pointer-events:auto;cursor:pointer;transition:background .15s}
+.qtItem:hover{background:rgba(40,26,12,.78)}
+.qtItem.focus{background:rgba(42,28,8,.72);box-shadow:inset 0 0 0 1px rgba(255,208,96,.35)}
+.qtItem.focus .qn{color:#ffd060}
 #clockChip{gap:6px}
 #clockIcon{width:14px;height:14px;display:inline-block;border-radius:2px}
 #hintBox{position:absolute;left:50%;top:58%;transform:translateX(-50%);max-width:min(560px,88vw);padding:10px 14px;font-size:20px;background:rgba(18,11,6,.92);box-shadow:0 0 0 3px var(--edgeDk),inset 0 0 0 2px #7fd8ff55;color:#d8f0ff;text-align:center}
@@ -318,12 +322,57 @@ body.touch #muteBtn{display:none}
 .crBtns .btn{flex:1}
 
 /* ---------- Weltkarte ---------- */
-#ovMap .ovBox{width:min(1180px,98vw)}
-#worldCanvas{width:100%;image-rendering:pixelated;display:block;box-shadow:0 0 0 3px var(--edgeDk);background:#0c0a14;cursor:pointer;touch-action:none}
-#mapWrap{position:relative}
-#mapTip{position:absolute;pointer-events:none;width:280px;padding:10px 12px;font-size:18px;z-index:5}
-#mapTip .tn{font-family:var(--pf);font-size:10px;color:var(--gold);margin-bottom:5px;line-height:1.4}
-#localMapCanvas{image-rendering:pixelated;display:block;margin:0 auto;box-shadow:0 0 0 3px var(--edgeDk);background:#0c0a08}
+#ovMap .ovBox.mapBox{width:min(1320px,98vw);height:min(94vh,900px);padding:12px 14px;gap:8px;overflow:hidden}
+#mapWrap{position:relative;flex:1;min-height:220px;overflow:hidden;box-shadow:0 0 0 3px var(--edgeDk);background:#0c0a14;user-select:none;-webkit-user-select:none}
+#worldCanvas{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:grab;touch-action:none}
+#localMapCanvas{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);image-rendering:pixelated;display:block;box-shadow:0 0 0 3px var(--edgeDk);background:#0c0a08}
+#mapTip{position:absolute;pointer-events:none;width:290px;padding:10px 12px;font-size:18px;z-index:6;line-height:1.15}
+#mapTip .tn,#mapPanel .tn{font-family:var(--pf);font-size:10px;color:var(--gold);margin-bottom:5px;line-height:1.4}
+#mapTip .tdist,#mapPanel .tdist{color:#cfe0ff}
+.mapFilters{position:absolute;left:8px;top:8px;display:flex;gap:5px;flex-wrap:wrap;z-index:4;max-width:calc(100% - 70px)}
+.mapFilters .tab{display:flex;align-items:center;gap:6px;font-size:8px;padding:7px 9px;background:rgba(30,20,12,.88)}
+.mapFilters .tab:not(.on){opacity:.55;text-decoration:line-through}
+.mfI{display:inline-block;width:10px;height:10px;box-shadow:0 0 0 2px #000}
+.mf-q{background:#ffd040;transform:rotate(45deg)}.mf-w{background:#7affe0;transform:rotate(45deg);box-shadow:0 0 0 2px #000,0 0 6px #7affe0}
+.mf-d{background:#7a4ad0;border-radius:4px 4px 0 0}.mf-m{background:#ffd040;border-radius:50%}.mf-p{background:#c8a0ff;border-radius:50%;box-shadow:0 0 0 2px #000,inset 0 0 0 2px #e8d8ff}
+.mapZoom{position:absolute;right:8px;top:8px;display:flex;flex-direction:column;gap:6px;z-index:4}
+.mapZoom .ibtn{width:36px;height:36px;font-size:13px;background:rgba(58,39,24,.92)}
+.mapSide{position:absolute;left:8px;top:52px;bottom:40px;width:210px;display:flex;flex-direction:column;z-index:3;background:rgba(18,11,6,.86);box-shadow:0 0 0 3px var(--edgeDk),inset 0 0 0 2px #4a321e}
+.mapSide.closed{width:auto;bottom:auto;background:transparent;box-shadow:none}
+.mapSideHead,.mapLegendHead{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;font-family:var(--pf);font-size:8px;color:var(--gold);background:rgba(45,31,20,.95);border:none;padding:8px 10px;cursor:pointer;box-shadow:0 0 0 2px var(--edgeDk)}
+.mapSideHead b,.mapLegendHead b{color:var(--text);font-weight:normal}
+.mapSide.closed #mapSideList{display:none}
+#mapSideList{flex:1;overflow-y:auto;padding:4px 6px 8px;touch-action:pan-y}
+.msReg{font-family:var(--pf);font-size:7px;color:#cfe0ff;margin:9px 2px 4px;letter-spacing:1px}
+.msReg.locked{color:#8a8a96}
+.msWp{display:flex;align-items:center;gap:8px;width:100%;text-align:left;background:none;border:none;color:var(--text);font-family:var(--vt);font-size:18px;padding:3px 4px;cursor:pointer}
+.msWp:hover,.msWp.padFocus{background:rgba(122,255,224,.12)}
+.msWp i{flex:0 0 10px;height:10px;transform:rotate(45deg);background:#7affe0;box-shadow:0 0 0 2px #000,0 0 6px rgba(122,255,224,.8)}
+.msWp.unknown{color:#8a94a4}.msWp.unknown i{background:#5a6070;box-shadow:0 0 0 2px #000}
+.msWp.current{color:#ffe080}.msWp.current i{background:#ffd060;box-shadow:0 0 0 2px #000,0 0 6px #ffd060}
+.mapLegend{position:absolute;right:52px;top:8px;width:250px;z-index:4;background:rgba(18,11,6,.9);box-shadow:0 0 0 3px var(--edgeDk)}
+.mapLegend:not(.open){width:auto;background:transparent;box-shadow:none}
+#mapLegend{max-height:min(56vh,520px);overflow-y:auto;padding:6px 8px;display:flex;flex-direction:column;gap:2px}
+#mapLegend>div{display:flex;align-items:center;gap:6px;font-size:16px;color:var(--text)}
+#mapLegend canvas{width:24px;height:24px;flex:0 0 24px}
+.mapHint{position:absolute;left:50%;bottom:6px;transform:translateX(-50%);max-width:calc(100% - 24px);font-size:16px;color:#cfd8ee;background:rgba(10,8,16,.72);padding:3px 10px;text-align:center;pointer-events:none;z-index:3}
+#mapPanel{position:absolute;right:10px;bottom:38px;width:min(320px,calc(100% - 20px));padding:12px 14px;font-size:18px;z-index:5;line-height:1.15}
+.mpBtns{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.mpBtns .btn{margin:0}
+.mapTut{position:absolute;inset:0;z-index:8;display:flex;align-items:center;justify-content:center;background:rgba(5,6,14,.6);padding:12px}
+.mapTut .panel{max-width:560px;max-height:100%;overflow-y:auto;padding:16px 20px;font-size:18px;line-height:1.2;text-align:left}
+.mapTut p{margin:0 0 8px}
+.mapTut .btn{display:block;margin:8px auto 0}
+@media (max-height:520px){ .mapHint{display:none} }
+@media (max-width:760px),(max-height:520px){
+  #ovMap .ovBox.mapBox{height:96vh;padding:8px}
+  .mapSide{width:170px;top:auto;bottom:38px;max-height:45%}
+  .mapSide.closed{bottom:38px}
+  .mapLegend{width:190px}
+  .mapHint{font-size:14px}
+  .mapFilters .tab{padding:6px 7px}
+  #mapPanel{bottom:auto;top:52px}
+}
 .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:16px;color:var(--muted)}
 .legend i{display:inline-block;width:10px;height:10px;margin-right:5px;vertical-align:middle}
 
@@ -493,6 +542,56 @@ body.touch #hintBox{top:auto;bottom:200px}
 #navArrow .navTip{position:absolute;inset:0;background:radial-gradient(circle at 50% 50%,rgba(255,207,90,.25),transparent 70%)}
 #navArrow .navTip::after{content:"";position:absolute;left:50%;top:2px;margin-left:-11px;border-left:11px solid transparent;border-right:11px solid transparent;border-bottom:18px solid var(--gold);filter:drop-shadow(0 0 4px rgba(255,180,60,.9))}
 #navArrow .navDist{position:relative;top:16px;font-family:var(--pf);font-size:8px;color:#fff;text-shadow:0 1px 0 #000,0 0 4px #000}
+#navArrow .navName{position:absolute;white-space:nowrap;font-family:var(--pf);font-size:8px;color:#ffe08a;text-shadow:0 1px 0 #000;background:rgba(15,9,5,.62);padding:3px 6px;left:50%;transform:translateX(-50%);bottom:48px}
+#navArrow .navName:empty,#navArrow .navDist:empty{display:none}
+#navArrow .navName.below{bottom:auto;top:48px}
+#navArrow .navName.left{left:auto;right:48px;transform:translateY(-50%);bottom:auto;top:50%}
+#navArrow .navName.right{left:48px;transform:translateY(-50%);bottom:auto;top:50%}
+#navMark{position:fixed;z-index:24;pointer-events:none;transform:translate(-50%,-100%);display:flex;flex-direction:column;align-items:center;gap:3px}
+#navMark .nmIcon{font-size:22px;line-height:1;color:var(--gold);text-shadow:0 0 8px rgba(255,190,60,.9),0 2px 0 #000;animation:nmPulse 1.2s ease-in-out infinite}
+#navMark.exit .nmIcon{color:#7affe0;text-shadow:0 0 8px rgba(120,255,220,.9),0 2px 0 #000}
+#navMark .nmText{font-family:var(--pf);font-size:8px;color:#fff;background:rgba(15,9,5,.62);padding:3px 6px;white-space:nowrap;text-shadow:0 1px 0 #000}
+#navMark .nmText:empty{display:none}
+@keyframes nmPulse{50%{transform:scale(1.22)}}
+/* ---------- Kompassleiste ---------- */
+#compass{position:fixed;z-index:11;left:50%;top:8px;transform:translateX(-50%);width:min(420px,30vw);height:30px;pointer-events:none;
+  background:linear-gradient(90deg,transparent,rgba(15,9,5,.74) 14%,rgba(15,9,5,.74) 86%,transparent);border-top:2px solid rgba(255,207,90,.32);border-bottom:2px solid rgba(255,207,90,.32)}
+#compassStrip{position:absolute;inset:0;overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent);mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent)}
+#compassStrip .cL{position:absolute;top:9px;transform:translateX(-50%);font-family:var(--pf);font-size:10px;color:#f4ead6;text-shadow:0 1px 0 #000}
+#compassStrip .cL.minor{font-size:7px;top:11px;color:#b8a888}
+#compassStrip .cT{position:absolute;top:0;width:2px;height:6px;margin-left:-1px;background:rgba(255,230,180,.45)}
+#compassStrip .cM{position:absolute;top:2px;transform:translateX(-50%);font-family:var(--pf);font-size:7px;font-weight:normal;color:#fff;text-shadow:0 1px 0 #000;padding-top:15px;white-space:nowrap;min-width:12px;text-align:center}
+#compassStrip .cM::before{content:"";position:absolute;left:50%;top:2px;width:9px;height:9px;margin-left:-4.5px;transform:rotate(45deg);background:#fff;box-shadow:0 0 0 2px #000}
+#compassStrip .cM.quest{z-index:3}
+#compassStrip .cM.quest::before{background:var(--gold);box-shadow:0 0 0 2px #000,0 0 8px rgba(255,200,60,.95)}
+#compassStrip .cM.exit::before{background:#ffb060;box-shadow:0 0 0 2px #000,0 0 8px rgba(255,170,80,.9)}
+#compassStrip .cM.wp::before{background:#7affe0;box-shadow:0 0 0 2px #000,0 0 6px rgba(122,255,224,.9)}
+#compassStrip .cM.wpOff::before{background:#6a7484}
+#compassStrip .cM.edgeL::after,#compassStrip .cM.edgeR::after{position:absolute;top:1px;font-size:9px;color:var(--gold)}
+#compassStrip .cM.edgeL::after{content:"◂";left:-10px}
+#compassStrip .cM.edgeR::after{content:"▸";right:-10px}
+#compassStrip .cM.dg::before{background:#a070ff;transform:none;border-radius:4px 4px 0 0}
+.compassMid{position:absolute;left:50%;bottom:-8px;margin-left:-5px;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:6px solid var(--gold)}
+/* Platz für die Kompassleiste: breit = mittig oben; sonst links oben und die linke HUD-Spalte rückt darunter
+   (body.compassOn setzt Nav, solange die Leiste in den Einstellungen aktiv ist). */
+@media (min-width:1321px){ body.compassOn #hudTL{max-width:min(44vw,calc(50vw - 230px))} }
+@media (max-width:1320px){ #compass{left:16px;transform:none;width:min(380px,34vw)} body.compassOn #hudTL{top:48px} }
+@media (max-width:760px),(max-height:520px){ #compass{width:min(300px,36vw);top:6px;height:28px} body.compassOn #hudTL{top:42px} }
+@media (max-aspect-ratio:1/1){ #compass{top:60px;width:calc(100vw - 176px)} body.compassOn #hudTL{top:96px} }
+/* ---------- Schnellreise-Übergang ---------- */
+#travelOverlay{position:fixed;inset:0;z-index:90;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 40%,rgba(26,52,100,.97),rgba(5,7,15,.99));transition:opacity .45s;animation:travelIn .35s ease-out}
+#travelOverlay.out{opacity:0;pointer-events:none}
+@keyframes travelIn{from{opacity:0}to{opacity:1}}
+#travelOverlay .travelBox{display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center;padding:0 16px}
+#travelText{font-size:12px;color:#cfe8ff;letter-spacing:1px;line-height:1.6}
+#travelFill{height:100%;width:0;background:linear-gradient(90deg,#5fe8c8,#bfffee);animation:travelFill 1.3s ease-out forwards}
+@keyframes travelFill{to{width:100%}}
+/* ---------- Einstellungen: Tabs ---------- */
+#scrSettings .menuBox{max-width:680px!important;width:min(680px,96vw);max-height:94vh;overflow-y:auto}
+.setTabs .tab{font-size:8px;padding:8px 9px}
+.setPane{text-align:left}
+#setPaneDisplay .note,#setPaneGraphics .note{margin-top:10px}
+.segRow.dim{opacity:.45}
 </style>
 </head>
 <body>
@@ -606,19 +705,40 @@ body.touch #hintBox{top:auto;bottom:200px}
   <div class="panel menuBox" style="max-width:620px">
     <div class="h2" data-i18n="html.set.title">EINSTELLUNGEN</div>
     <div class="tabs setTabs" id="setTabs"></div>
-    <div id="setPaneGeneral">
+    <div id="setPaneGeneral" class="setPane">
     <div class="setGrid">
       <span data-i18n="set.language">Sprache</span><div class="segRow" id="setLang"></div>
-      <span data-i18n="set.nav">Navigationsanzeige</span><div class="segRow" id="setNav"></div>
+      <span data-i18n="html.set.tier">Weltstufe</span><div class="segRow" id="setTier"></div>
+      <span data-i18n="set.helpTips">Tipps &amp; Tutorials</span><div class="segRow" id="setTips"></div>
+    </div>
+    </div>
+    <div id="setPaneGraphics" class="setPane hidden">
+    <div class="setGrid">
       <span data-i18n="html.set.quality">Grafikqualität</span><div class="segRow" id="setQuality"></div>
-      <span data-i18n="html.set.music">Musik</span><input type="range" id="setMusic" min="0" max="100">
-      <span data-i18n="html.set.sfx">Effekte</span><input type="range" id="setSfx" min="0" max="100">
       <span data-i18n="html.set.shake">Bildschirmwackeln</span><div class="segRow" id="setShake"></div>
       <span data-i18n="html.set.weather">Wetter-Effekte</span><div class="segRow" id="setWeather"></div>
       <span data-i18n="html.set.helm">Helm anzeigen</span><div class="segRow" id="setHelm"></div>
-      <span data-i18n="html.set.tier">Weltstufe</span><div class="segRow" id="setTier"></div>
     </div>
     <div class="note" id="setNote" data-i18n="html.set.note">Hoch: weiche Schatten, Bloom, volle Partikel · Niedrig: für schwächere Geräte</div>
+    </div>
+    <div id="setPaneAudio" class="setPane hidden">
+    <div class="setGrid">
+      <span data-i18n="set.sound">Ton</span><div class="segRow" id="setMute"></div>
+      <span data-i18n="html.set.music">Musik</span><input type="range" id="setMusic" min="0" max="100">
+      <span data-i18n="html.set.sfx">Effekte</span><input type="range" id="setSfx" min="0" max="100">
+    </div>
+    </div>
+    <div id="setPaneDisplay" class="setPane hidden">
+    <div class="setGrid">
+      <span data-i18n="set.nav">Navigationsanzeige</span><div class="segRow" id="setNav"></div>
+      <span data-i18n="set.navArrow">Navigationspfeil</span><div class="segRow" id="setNavArrow"></div>
+      <span data-i18n="set.navTrail">Wegführungslinie</span><div class="segRow" id="setNavTrail"></div>
+      <span data-i18n="set.navCompass">Kompassleiste</span><div class="segRow" id="setNavCompass"></div>
+      <span data-i18n="set.navDist">Entfernungsanzeige</span><div class="segRow" id="setNavDist"></div>
+      <span data-i18n="set.navTracker">Quest-Tracker</span><div class="segRow" id="setNavTracker"></div>
+      <span data-i18n="set.minimap">Minikarte</span><div class="segRow" id="setMinimap"></div>
+    </div>
+    <div class="note" data-i18n="set.displayNote">Alle Hilfen sind am Anfang eingeschaltet, damit du den Weg findest. Im Kampf werden sie durchsichtiger, in Dialogen ausgeblendet.</div>
     </div>
     <div id="setPaneControls" class="hidden"></div>
     <div id="setPaneAccount" class="hidden"></div>
@@ -753,10 +873,25 @@ body.touch #hintBox{top:auto;bottom:200px}
 
 <!-- Weltkarte -->
 <div id="ovMap" class="overlay hidden">
-  <div class="panel ovBox">
+  <div class="panel ovBox mapBox">
     <div class="ovHead"><div class="h2" style="margin:0" id="mapTitle">WELTKARTE</div><div class="row" style="display:flex;gap:10px;align-items:center"><div class="tabs" id="mapTabs"></div><button class="ibtn closeX" data-close>X</button></div></div>
-    <div id="mapWrap"><canvas id="worldCanvas" width="960" height="540"></canvas><canvas id="localMapCanvas" class="hidden" width="540" height="540"></canvas><div id="mapTip" class="panel hidden"></div></div>
-    <div class="legend" id="mapLegend"></div>
+    <div id="mapWrap">
+      <canvas id="worldCanvas" width="960" height="540"></canvas><canvas id="localMapCanvas" class="hidden" width="540" height="540"></canvas>
+      <div id="mapFilters" class="mapFilters"></div>
+      <div id="mapZoom" class="mapZoom">
+        <button class="ibtn" id="mapZoomIn" data-i18n-title="map.ui.zoomIn">+</button>
+        <button class="ibtn" id="mapZoomOut" data-i18n-title="map.ui.zoomOut">−</button>
+        <button class="ibtn" id="mapCenter" data-i18n-title="map.ui.center">⌖</button>
+        <button class="ibtn" id="mapAll" data-i18n-title="map.ui.all">▣</button>
+        <button class="ibtn" id="mapHelp" data-i18n-title="map.ui.help">?</button>
+      </div>
+      <div id="mapSide" class="mapSide"><button class="mapSideHead" id="mapSideToggle"><span data-i18n="map.side.title">WAYPOINTS</span><b id="mapSideArrow">◂</b></button><div id="mapSideList"></div></div>
+      <div id="mapLegendBox" class="mapLegend"><button class="mapLegendHead" id="mapLegendToggle"><span data-i18n="map.legend.title">LEGENDE</span><b id="mapLegendArrow">▸</b></button><div id="mapLegend" class="hidden"></div></div>
+      <div id="mapHint" class="mapHint"></div>
+      <div id="mapPanel" class="panel hidden"></div>
+      <div id="mapTip" class="panel hidden"></div>
+      <div id="mapTut" class="mapTut hidden"><div class="panel"><div class="h3" style="margin-top:0" data-i18n="map.tut.title">SO FUNKTIONIERT DIE KARTE</div><div id="mapTutText"></div><button class="btn gold" id="mapTutOk" data-i18n="map.tut.ok">Verstanden</button></div></div>
+    </div>
   </div>
 </div>
 
@@ -808,7 +943,11 @@ body.touch #hintBox{top:auto;bottom:200px}
 </div>
 
 <!-- ============================ Navigationsanzeige ============================ -->
-<div id="navArrow" class="hidden"><div class="navTip"></div><span class="navDist"></span></div>
+<div id="navArrow" class="hidden"><div class="navTip"></div><span class="navDist"></span><span class="navName"></span></div>
+<div id="navMark" class="hidden"><div class="nmIcon">◆</div><div class="nmText"></div></div>
+<div id="compass" class="hidden"><div id="compassStrip"></div><div class="compassMid"></div></div>
+<!-- ============================ Reise-Übergang ============================ -->
+<div id="travelOverlay" class="hidden"><div class="travelBox"><canvas class="logoMark" width="64" height="64"></canvas><div class="pf" id="travelText"></div><div class="loadBar"><div id="travelFill"></div></div></div></div>
 <script>
 /* ===========================================================================
    AETHERFALL: DUNGEONS
@@ -1421,54 +1560,54 @@ const REGIONS = {
   ehbergten: { name: 'Camp & Town of Ehbergten', short: 'Ehbergten', theme: 'meadow', roster: 'bandit', lvl: [1, 4], music: 'meadow', weather: ['clear', 'clear', 'leaves', 'rain'], W: 112, H: 92,
     pois: { camp: { x: 22, y: 30, r: 9, name: 'Camp', safe: true, travel: true }, town: { x: 58, y: 22, r: 14, name: 'Town of Ehbergten', safe: true },
             fields: { x: 26, y: 64, r: 9, name: 'Felder' }, portal: { x: 54, y: 70, r: 7, name: 'Portal Hill', travel: true },
-            mansion: { x: 86, y: 68, r: 8, name: 'Ornate Mansion', dungeon: 'mansion' }, woods: { x: 90, y: 36, r: 9, name: 'Banditenlager' } },
+            mansion: { x: 86, y: 68, r: 8, name: 'Ornate Mansion', dungeon: 'mansion', travel: true }, woods: { x: 90, y: 36, r: 9, name: 'Banditenlager' } },
     exits: { duskwood: { x: 111, y: 34, dir: 'E' }, toxic: { x: 40, y: 91, dir: 'S' } },
     paths: [['camp', 'town'], ['town', 'woods'], ['camp', 'fields'], ['fields', 'portal'], ['portal', 'mansion'], ['town', 'portal'], ['woods', 'exit:duskwood'], ['portal', 'exit:toxic']],
     puzzles: [{ id: 'eh_plates', type: 'plates', poi: 'portal', dx: 0, dy: -9, reward: 'quest' }], secret: { x: 8, y: 56 }, packs: 9 },
   duskwood: { name: 'Duskwood Thicket', short: 'Duskwood', theme: 'duskwood', roster: 'forest', lvl: [4, 8], music: 'forest', weather: ['rain', 'fog', 'clear', 'leaves'], W: 110, H: 86, unlock: 'm4',
     pois: { camp: { x: 16, y: 40, r: 7, name: 'Waldlager', safe: true, travel: true }, forest: { x: 34, y: 20, r: 12, name: 'Forgotten Forest', dungeon: 'ruins' },
-            factory: { x: 74, y: 24, r: 10, name: 'Lost Factory', dungeon: 'factory' }, fields: { x: 56, y: 64, r: 13, name: 'Hollow Fields' } },
+            factory: { x: 74, y: 24, r: 10, name: 'Lost Factory', dungeon: 'factory', travel: true }, fields: { x: 56, y: 64, r: 13, name: 'Hollow Fields' } },
     exits: { ehbergten: { x: 0, y: 40, dir: 'W' }, cinder: { x: 109, y: 46, dir: 'E' } },
     paths: [['exit:ehbergten', 'camp'], ['camp', 'forest'], ['camp', 'fields'], ['forest', 'factory'], ['fields', 'factory'], ['factory', 'exit:cinder'], ['fields', 'exit:cinder']],
     puzzles: [{ id: 'dw_timed', type: 'timed', poi: 'fields', dx: 12, dy: 6, reward: 'chest' }], secret: { x: 96, y: 76 }, packs: 10 },
   toxic: { name: 'Toxic Wastelands', short: 'Toxic Wastelands', theme: 'toxic', roster: 'toxic', lvl: [8, 11], music: 'toxic', weather: ['fog', 'spores', 'clear'], W: 104, H: 88, unlock: 'm7',
     pois: { camp: { x: 46, y: 12, r: 7, name: 'Lioras Lager', safe: true, travel: true }, expanse: { x: 38, y: 58, r: 14, name: 'Parasitic Expanse', dungeon: 'hive' },
-            pools: { x: 78, y: 40, r: 10, name: 'Giftsümpfe' } },
+            pools: { x: 78, y: 40, r: 10, name: 'Giftsümpfe', travel: true } },
     exits: { ehbergten: { x: 46, y: 0, dir: 'N' }, void: { x: 103, y: 56, dir: 'E' } },
     paths: [['exit:ehbergten', 'camp'], ['camp', 'expanse'], ['camp', 'pools'], ['pools', 'exit:void'], ['expanse', 'exit:void']],
     puzzles: [{ id: 'tx_lights', type: 'lights', poi: 'pools', dx: -4, dy: 18, reward: 'chest' }], secret: { x: 12, y: 80 }, packs: 10 },
   cinder: { name: 'Cinder Wastes', short: 'Cinder Wastes', theme: 'cinder', roster: 'cinder', lvl: [11, 14], music: 'cinder', weather: ['ash', 'ash', 'clear'], W: 112, H: 92, unlock: 'm9',
     pois: { hut: { x: 20, y: 24, r: 8, name: "Kael's Hut", safe: true, travel: true }, volcano: { x: 70, y: 24, r: 12, name: 'Volcano of Lost Souls', dungeon: 'volcano' },
-            lava: { x: 68, y: 66, r: 14, name: 'Lava Plains' } },
+            lava: { x: 68, y: 66, r: 14, name: 'Lava Plains', travel: true } },
     exits: { duskwood: { x: 0, y: 40, dir: 'W' }, nightmaw: { x: 80, y: 91, dir: 'S' } },
     paths: [['exit:duskwood', 'hut'], ['hut', 'volcano'], ['hut', 'lava'], ['volcano', 'lava'], ['lava', 'exit:nightmaw']],
     puzzles: [{ id: 'cw_mirrors', type: 'mirrors', poi: 'hut', dx: 4, dy: 22, reward: 'chest' }], secret: { x: 104, y: 12 }, packs: 11 },
   void: { name: 'The Void Rift', short: 'Void Rift', theme: 'voidland', roster: 'void', lvl: [14, 17], music: 'void', weather: ['void', 'void', 'clear'], W: 106, H: 92, unlock: 'm11',
-    pois: { outer: { x: 22, y: 70, r: 10, name: 'Outer Realm', travel: true, safe: true }, arena: { x: 56, y: 28, r: 12, name: 'Void Arena', dungeon: 'arena' },
+    pois: { outer: { x: 22, y: 70, r: 10, name: 'Outer Realm', travel: true, safe: true }, arena: { x: 56, y: 28, r: 12, name: 'Void Arena', dungeon: 'arena', travel: true },
             hideout: { x: 80, y: 70, r: 8, name: 'Suspicious Hideout', dungeon: 'hideout' } },
     exits: { toxic: { x: 0, y: 54, dir: 'W' }, undead: { x: 105, y: 42, dir: 'E' } },
     paths: [['exit:toxic', 'outer'], ['outer', 'arena'], ['outer', 'hideout'], ['arena', 'exit:undead'], ['hideout', 'exit:undead']],
     puzzles: [], secret: { x: 10, y: 14 }, packs: 11 },
   undead: { name: 'Undead Caverns', short: 'Undead Caverns', theme: 'graveyard', roster: 'undead', lvl: [17, 20], music: 'undead', weather: ['fog', 'fog', 'rain', 'clear'], W: 104, H: 92, unlock: 'm13',
-    pois: { gate: { x: 18, y: 22, r: 8, name: 'Friedhofstor', safe: true, travel: true }, cemetery: { x: 52, y: 62, r: 15, name: 'Grand Cemetery', dungeon: 'crypt' },
+    pois: { gate: { x: 18, y: 22, r: 8, name: 'Friedhofstor', safe: true, travel: true }, cemetery: { x: 52, y: 62, r: 15, name: 'Grand Cemetery', dungeon: 'crypt', travel: true },
             caves: { x: 82, y: 26, r: 9, name: 'Kristallhöhlen', dungeon: 'crystal' } },
     exits: { void: { x: 0, y: 44, dir: 'W' }, aelen: { x: 103, y: 52, dir: 'E' } },
     paths: [['exit:void', 'gate'], ['gate', 'cemetery'], ['gate', 'caves'], ['cemetery', 'exit:aelen'], ['caves', 'exit:aelen']],
     puzzles: [{ id: 'ud_runes', type: 'runes', poi: 'cemetery', dx: -24, dy: 8, reward: 'chest' }], secret: { x: 96, y: 84 }, packs: 11 },
   aelen: { name: 'Mount Aelen', short: 'Mount Aelen', theme: 'mountain', roster: 'mountain', lvl: [20, 23], music: 'mountain', weather: ['snow', 'snow', 'clear', 'fog'], W: 108, H: 96, unlock: 'm14',
-    pois: { foothills: { x: 20, y: 70, r: 10, name: 'Foothills', safe: true, travel: true }, peaks: { x: 60, y: 22, r: 13, name: 'Shattered Peaks', dungeon: 'ice' },
+    pois: { foothills: { x: 20, y: 70, r: 10, name: 'Foothills', safe: true, travel: true }, peaks: { x: 60, y: 22, r: 13, name: 'Shattered Peaks', dungeon: 'ice', travel: true },
             climber: { x: 90, y: 60, r: 7, name: 'Absturzstelle' } },
     exits: { undead: { x: 0, y: 56, dir: 'W' }, nightmaw: { x: 54, y: 0, dir: 'N' }, nexus: { x: 107, y: 78, dir: 'E' } },
     paths: [['exit:undead', 'foothills'], ['foothills', 'peaks'], ['foothills', 'climber'], ['peaks', 'exit:nightmaw'], ['climber', 'exit:nexus'], ['peaks', 'climber']],
     puzzles: [{ id: 'ae_elemental', type: 'elemental', poi: 'foothills', dx: 22, dy: -6, reward: 'chest' }], secret: { x: 100, y: 10 }, packs: 11 },
   nightmaw: { name: "Nightmaw's Den", short: "Nightmaw's Den", theme: 'wasteland', roster: 'wasteland', lvl: [23, 26], music: 'wasteland', weather: ['ash', 'clear', 'fog'], W: 104, H: 84, unlock: 'm15',
-    pois: { post: { x: 22, y: 26, r: 8, name: 'Ödlandposten', safe: true, travel: true }, wasteland: { x: 48, y: 54, r: 14, name: 'Wasteland' },
+    pois: { post: { x: 22, y: 26, r: 8, name: 'Ödlandposten', safe: true, travel: true }, wasteland: { x: 48, y: 54, r: 14, name: 'Wasteland', travel: true },
             den: { x: 84, y: 38, r: 9, name: 'The Den', dungeon: 'den' } },
     exits: { cinder: { x: 40, y: 0, dir: 'N' }, aelen: { x: 52, y: 83, dir: 'S' } },
     paths: [['exit:cinder', 'post'], ['post', 'wasteland'], ['wasteland', 'den'], ['wasteland', 'exit:aelen'], ['post', 'den']],
     puzzles: [{ id: 'nm_blocks', type: 'blocks', poi: 'wasteland', dx: -22, dy: 14, reward: 'chest' }], secret: { x: 96, y: 76 }, packs: 11 },
   nexus: { name: 'The Astral Nexus', short: 'Astral Nexus', theme: 'astral', roster: 'astral', lvl: [26, 30], music: 'nexus', weather: ['void', 'stars'], W: 104, H: 90, unlock: 'm16',
-    pois: { trail: { x: 16, y: 46, r: 8, name: 'Dark Matter Trail', safe: true, travel: true }, wastes: { x: 46, y: 22, r: 12, name: 'Void Wastes' },
+    pois: { trail: { x: 16, y: 46, r: 8, name: 'Dark Matter Trail', safe: true, travel: true }, wastes: { x: 46, y: 22, r: 12, name: 'Void Wastes', travel: true },
             nexus: { x: 74, y: 60, r: 11, name: 'Central Nexus', dungeon: 'nexus' } },
     exits: { aelen: { x: 0, y: 46, dir: 'W' } },
     paths: [['exit:aelen', 'trail'], ['trail', 'wastes'], ['wastes', 'nexus'], ['trail', 'nexus']],
@@ -2865,7 +3004,7 @@ I18N.add('de', {
   'game.toast.talkMira': 'Sprich mit <b>Mira</b> (❗) – drücke <b>{k:interact}</b> in ihrer Nähe.',
   'game.toast.controls': 'Tipp: <b>{k:inventory}</b> Inventar · <b>{k:spellbook}</b> Zauber & Talente · <b>{k:questlog}</b> Quests · <b>{k:map}</b> Karte · <b>{k:hint}</b> Rätsel-Hinweis',
   'game.toast.autoQuality': 'Grafikqualität automatisch auf „{q}“ gesenkt ({fps} FPS). Änderbar in den Einstellungen.',
-  'game.toast.travelPick': 'Klicke auf einen aktivierten Wegstein (◆), um dorthin zu reisen.',
+  'game.toast.travelPick': 'Klicke auf einen aktivierten Waypoint (◆), um dorthin zu reisen.',
   'game.toast.invFull': 'Inventar ist voll!',
   'game.toast.salvaged': 'Zerlegt: {name}',
   'game.toast.invFullSalvaged': 'Inventar voll – zerlegt: +{v} ◆',
@@ -2901,7 +3040,7 @@ I18N.add('de', {
   'game.over.level': 'Stufe',
   'game.over.kills': 'Besiegte Gegner (gesamt)',
   'game.over.respawnDungeon': 'Am Dungeoneingang erwachen',
-  'game.over.respawnWaystone': 'Am Wegstein erwachen',
+  'game.over.respawnWaypoint': 'Am Waypoint erwachen',
   // ---- Sieg ----
   'game.victory.text': '{boss} ist gefallen. {dungeon} ist bezwungen.',
   'game.victory.tier': 'Weltstufe',
@@ -2999,12 +3138,12 @@ I18N.add('de', {
   'map.title.world': 'WELTKARTE – HIMMELSINSELN',
   'map.legend.you': 'Du',
   'map.legend.quest': 'Questziel',
-  'map.legend.waystone': 'Wegstein (Klick: Schnellreise)',
+  'map.legend.waypoint': 'Waypoint (Klick: Schnellreise)',
   'map.legend.dungeon': 'Dungeon',
   'map.legend.boss': 'Boss besiegt? ✓/✗',
   'map.legend.locked': 'Gesperrt',
   'map.legend.questChest': 'Questziel / Truhe',
-  'map.legend.portal': 'Portal & Wegstein',
+  'map.legend.portal': 'Portal & Waypoint',
   'map.legend.entrance': 'Eingang',
   'map.legend.people': 'Personen',
   'map.legend.enemies': 'Gegner',
@@ -3016,10 +3155,10 @@ I18N.add('de', {
   'map.tip.available': 'Verfügbar: {list}',
   'map.tip.defeated': 'besiegt',
   'map.tip.undefeated': 'unbesiegt',
-  'map.tip.waystones': 'Wegsteine: {list}',
+  'map.tip.waypoints': 'Waypoints: {list}',
   'map.tip.travelTo': 'Klicken: Schnellreise nach {name}',
   'map.tip.notActive': 'noch nicht aktiviert',
-  'map.toast.notActive': 'Dieser Wegstein wurde noch nicht aktiviert – besuche ihn zuerst.',
+  'map.toast.notActive': 'Dieser Waypoint wurde noch nicht aktiviert – besuche ihn zuerst.',
   'map.toast.noTravelDungeon': 'Im Dungeon ist keine Schnellreise möglich.',
   'map.toast.inCombat': 'Nicht während eines Kampfes!',
 
@@ -3075,7 +3214,7 @@ I18N.add('en', {
   'game.toast.talkMira': 'Talk to <b>Mira</b> (❗) – press <b>{k:interact}</b> when you are close to her.',
   'game.toast.controls': 'Tip: <b>{k:inventory}</b> Inventory · <b>{k:spellbook}</b> Spells & Talents · <b>{k:questlog}</b> Quests · <b>{k:map}</b> Map · <b>{k:hint}</b> Puzzle hint',
   'game.toast.autoQuality': 'Graphics quality automatically lowered to “{q}” ({fps} FPS). You can change this in the settings.',
-  'game.toast.travelPick': 'Click an activated waystone (◆) to travel there.',
+  'game.toast.travelPick': 'Click an activated waypoint (◆) to travel there.',
   'game.toast.invFull': 'Inventory is full!',
   'game.toast.salvaged': 'Salvaged: {name}',
   'game.toast.invFullSalvaged': 'Inventory full – salvaged: +{v} ◆',
@@ -3111,7 +3250,7 @@ I18N.add('en', {
   'game.over.level': 'Level',
   'game.over.kills': 'Enemies defeated (total)',
   'game.over.respawnDungeon': 'Wake at the dungeon entrance',
-  'game.over.respawnWaystone': 'Wake at the waystone',
+  'game.over.respawnWaypoint': 'Wake at the waypoint',
   // ---- Victory ----
   'game.victory.text': '{boss} has fallen. {dungeon} is conquered.',
   'game.victory.tier': 'World Tier',
@@ -3209,12 +3348,12 @@ I18N.add('en', {
   'map.title.world': 'WORLD MAP – SKY ISLES',
   'map.legend.you': 'You',
   'map.legend.quest': 'Quest target',
-  'map.legend.waystone': 'Waystone (click: fast travel)',
+  'map.legend.waypoint': 'Waypoint (click: fast travel)',
   'map.legend.dungeon': 'Dungeon',
   'map.legend.boss': 'Boss defeated? ✓/✗',
   'map.legend.locked': 'Locked',
   'map.legend.questChest': 'Quest target / chest',
-  'map.legend.portal': 'Portal & waystone',
+  'map.legend.portal': 'Portal & waypoint',
   'map.legend.entrance': 'Entrance',
   'map.legend.people': 'People',
   'map.legend.enemies': 'Enemies',
@@ -3226,10 +3365,10 @@ I18N.add('en', {
   'map.tip.available': 'Available: {list}',
   'map.tip.defeated': 'defeated',
   'map.tip.undefeated': 'undefeated',
-  'map.tip.waystones': 'Waystones: {list}',
+  'map.tip.waypoints': 'Waypoints: {list}',
   'map.tip.travelTo': 'Click: fast travel to {name}',
   'map.tip.notActive': 'not yet activated',
-  'map.toast.notActive': 'This waystone has not been activated yet – visit it first.',
+  'map.toast.notActive': 'This waypoint has not been activated yet – visit it first.',
   'map.toast.noTravelDungeon': 'Fast travel is not possible inside a dungeon.',
   'map.toast.inCombat': 'Not while in combat!',
 
@@ -3308,7 +3447,7 @@ I18N.add('de', {
   'html.go.title': 'GEFALLEN',
   'html.go.keep': 'Erfahrung, Beute und Questfortschritt bleiben erhalten.',
   'html.go.retry': 'Dungeon erneut versuchen',
-  'html.go.respawn': 'Am Wegstein erwachen',
+  'html.go.respawn': 'Am Waypoint erwachen',
   'html.vic.title': 'SIEG!',
   'html.vic.continue': 'Weiter',
   'html.credits.title': 'EPILOG',
@@ -3525,7 +3664,7 @@ I18N.add('en', {
   'html.go.title': 'FALLEN',
   'html.go.keep': 'Your experience, loot and quest progress are kept.',
   'html.go.retry': 'Retry Dungeon',
-  'html.go.respawn': 'Awaken at the Waystone',
+  'html.go.respawn': 'Awaken at the Waypoint',
   'html.vic.title': 'VICTORY!',
   'html.vic.continue': 'Continue',
   'html.credits.title': 'EPILOGUE',
@@ -3863,8 +4002,8 @@ I18N.add('de', {
   // ---- Welt ----
   'world.secretTitle': 'GEHEIMNIS ENTDECKT!',
   'world.secretSub': 'Ein verborgener Raum mit besonderer Beute',
-  'world.waystoneLabel': 'Wegstein: Schnellreise',
-  'world.waystoneOn': 'Wegstein aktiviert: <b>{name}</b>',
+  'world.waystoneLabel': 'Waypoint: Schnellreise',
+  'world.waystoneOn': 'Waypoint aktiviert: <b>{name}</b>',
   'world.sealedTitle': 'VERSIEGELT',
   'world.sealedSub': 'Ein uraltes Schloss versperrt den Weg. Folge der Geschichte, um es zu öffnen.',
   // ---- Kampf (Schadenszahlen, Kombos, Aufsammeln) ----
@@ -4055,8 +4194,8 @@ I18N.add('en', {
   // ---- World ----
   'world.secretTitle': 'SECRET DISCOVERED!',
   'world.secretSub': 'A hidden room with special loot',
-  'world.waystoneLabel': 'Waystone: fast travel',
-  'world.waystoneOn': 'Waystone activated: <b>{name}</b>',
+  'world.waystoneLabel': 'Waypoint: fast travel',
+  'world.waystoneOn': 'Waypoint activated: <b>{name}</b>',
   'world.sealedTitle': 'SEALED',
   'world.sealedSub': 'An ancient lock bars the way. Follow the story to open it.',
   // ---- Combat (damage numbers, combos, pickups) ----
@@ -4346,6 +4485,135 @@ I18N.add('en', {
 });
 I18N.add('de', { 'credits.line': 'Aetherfall: Dungeons · ein prozedurales Voxel-Abenteuer – alle Figuren, Welten, Klänge und Melodien entstehen per Code.' });
 I18N.add('en', { 'credits.line': 'Aetherfall: Dungeons · a procedural voxel adventure – every character, world, sound and melody is generated by code.' });
+/* ============================== SPRACHE: WELTKARTE, WAYPOINTS, NAVIGATION, EINSTELLUNGEN ============== */
+I18N.add('de', {
+  // ---- Karte: Bedienelemente ----
+  'map.ui.zoomIn': 'Hineinzoomen (+ / Mausrad)', 'map.ui.zoomOut': 'Herauszoomen (− / Mausrad)', 'map.ui.center': 'Auf mich zentrieren',
+  'map.ui.all': 'Ganze Welt zeigen', 'map.ui.help': 'Kartenhilfe',
+  'map.side.title': 'WAYPOINTS', 'map.legend.title': 'LEGENDE',
+  'map.filter.q': 'Quests', 'map.filter.w': 'Waypoints', 'map.filter.d': 'Dungeons', 'map.filter.m': 'Händler', 'map.filter.p': 'Rätsel',
+  'map.filterTip': 'Kategorie auf der Karte ein- oder ausblenden',
+  'map.hint.mouse': 'Mausrad: zoomen · Ziehen: verschieben · Klick auf ◆ Waypoint: Schnellreise · Klick auf Quest: verfolgen',
+  'map.hint.touch': 'Zwei Finger: zoomen · Wischen: verschieben · Tippen auf ◆ Waypoint: Schnellreise · Tippen auf Quest: verfolgen',
+  'map.hint.pad': 'Linker Stick: verschieben · LT/RT: zoomen · X: Waypoint/Quest unter dem Fadenkreuz wählen · LB/RB: Menüs wechseln',
+  'map.tut.title': 'SO FUNKTIONIERT DIE KARTE', 'map.tut.ok': 'Verstanden',
+  'map.tut.text': '<p><b>Zoomen:</b> Mausrad, zwei Finger oder die Knöpfe + / −. Je näher du heranzoomst, desto mehr Details erscheinen: erst Regionen, dann Orte, Wege und Dungeons, ganz nah Quests, Truhen, Rätsel und Händler.</p>'
+    + '<p><b>Verschieben:</b> Karte ziehen oder mit den Bewegungstasten / dem linken Stick.</p>'
+    + '<p><b>◆ Waypoints</b> sind Schnellreisepunkte. Aktiviere sie in der Welt (einfach hingehen oder [{k:interact}] drücken). Danach kannst du sie hier anklicken und mit „Hierhin reisen“ sofort dorthin springen. Graue „?“ sind noch nicht entdeckt.</p>'
+    + '<p><b>★ / ◆ Quests:</b> Gold = Hauptquest, Blau = Nebenquest, „?“ = Abgabe bereit. Ein gestrichelter Kreis heißt: Das Ziel liegt irgendwo in diesem Bereich. Klick auf eine Quest, um sie zu verfolgen.</p>'
+    + '<p>Mit den Filtern oben blendest du Kategorien aus. Das „?“ rechts zeigt diese Hilfe erneut.</p>',
+  // ---- Legende ----
+  'map.legend.you': 'Du', 'map.legend.wpOn': 'Waypoint (aktiviert)', 'map.legend.wpOff': 'Waypoint (unentdeckt)', 'map.legend.wpCur': 'Waypoint (du bist hier)',
+  'map.legend.qMain': 'Hauptquest', 'map.legend.qSide': 'Nebenquest', 'map.legend.qReady': 'Quest abgeben', 'map.legend.qAvail': 'Neue Quest verfügbar',
+  'map.legend.area': 'Zielgebiet (ungefähr)', 'map.legend.dungeonDone': 'Dungeon (Boss besiegt)', 'map.legend.camp': 'Lager / sicherer Ort',
+  'map.legend.merchant': 'Händler & Dienste', 'map.legend.smith': 'Schmied', 'map.legend.puzzle': 'Rätsel', 'map.legend.chest': 'Truhe', 'map.legend.secret': 'Geheimnis',
+  // ---- Waypoints ----
+  'map.wp.state.on': 'Aktiviert – Schnellreise möglich', 'map.wp.state.unknown': 'Noch nicht entdeckt', 'map.wp.state.current': 'Du bist hier',
+  'map.wp.unknownName': 'Unbekannter Waypoint',
+  'map.wp.howFind': 'Finde diesen Waypoint in der Welt (Lichtsäule) und aktiviere ihn, um hierher reisen zu können.',
+  'map.wp.hereNow': 'Du stehst bereits an diesem Waypoint.',
+  'map.wp.clickTravel': 'Klicken, um hierher zu reisen.',
+  'map.wp.travel': 'Hierhin reisen',
+  'map.traveling': 'Reise nach {name} …',
+  // ---- Tooltips ----
+  'map.tip.dist': 'Entfernung: {n} m',
+  'map.tip.availFrom': 'Verfügbar bei {npc}',
+  'map.tip.focus': 'Fokus', 'map.tip.tracked': 'verfolgt',
+  'map.tip.goal': 'Ziel', 'map.tip.reward': 'Belohnung',
+  'map.tip.areaHint': 'Das Ziel liegt irgendwo im markierten Bereich.',
+  'map.tip.clickQuest': 'Klicken, um die Quest zu verfolgen.',
+  'map.tip.safe': 'Sicherer Ort',
+  'map.tip.solved': 'Gelöst', 'map.tip.unsolved': 'Noch ungelöst',
+  'map.tip.opened': 'Geöffnet', 'map.tip.unopened': 'Noch nicht geöffnet',
+  'map.tip.secretFound': 'Entdeckt',
+  'map.tip.lockedTitle': 'Gesperrt – es fehlt:',
+  'map.tip.progress': 'Quests {q}/{qt} · Waypoints {w}/{wt} · Bosse {bd}/{bt}',
+  'map.tip.unexplored': 'Noch nicht erkundet – der Nebel lichtet sich, sobald du die Gegend betrittst.',
+  'map.enemyLvl': 'Gegner St. {n}',
+  'map.progress': 'St. {a}–{b} · Quests {q}/{qt} · ◆ {w}/{wt} · Bosse {bd}/{bt}',
+  'map.lock.quest': 'Quest „{quest}“ abschließen', 'map.lock.level': 'Stufe {n} erreichen', 'map.lock.story': 'Fortschritt in der Hauptgeschichte',
+  'map.q.track': 'Verfolgen', 'map.q.untrack': 'Nicht mehr verfolgen', 'map.q.focus': 'Als Fokus setzen', 'map.close': 'Schließen',
+  // ---- Waypoints in der Welt ----
+  'wp.prompt.activate': 'Waypoint aktivieren', 'wp.prompt.travel': 'Schnellreise ({name})',
+  'wp.discovered': 'Waypoint entdeckt: <b>{name}</b>', 'wp.discoveredTitle': 'WAYPOINT ENTDECKT',
+  'wp.firstTip': 'Tipp: Öffne die Weltkarte mit [{k:map}] und klicke auf einen aktivierten ◆ Waypoint, um dorthin zu reisen.',
+  // ---- HUD-Navigation ----
+  'nav.exitDungeon': 'Ausgang', 'nav.toRegion': 'Weg nach {name}',
+  'nav.dir.N': 'N', 'nav.dir.NE': 'NO', 'nav.dir.E': 'O', 'nav.dir.SE': 'SO', 'nav.dir.S': 'S', 'nav.dir.SW': 'SW', 'nav.dir.W': 'W', 'nav.dir.NW': 'NW',
+  'nav.tipTitle': 'NAVIGATIONSHILFEN',
+  'nav.tip': 'Pfeil, Leuchtspur und Kompass führen dich zum Ziel der fokussierten Quest. Einzeln abschaltbar unter Einstellungen › Anzeige – oder alles mit [{k:nav}].',
+  // ---- Quest-Log / Tracker ----
+  'ui.q.untrack': 'Nicht mehr verfolgen', 'ui.q.focus': 'Als Fokus setzen', 'ui.q.clickMap': 'Klicken: Ziel auf der Karte zeigen',
+  'ui.q.trackerTip': 'Klicken: als Fokus setzen · nochmal: auf der Karte zeigen',
+  'ui.q.focusSet': 'Fokus: <b>{name}</b>',
+  'ui.q.trackLimit': 'Höchstens 4 Quests gleichzeitig verfolgbar – die älteste wurde entfernt.',
+  // ---- Einstellungen ----
+  'set.tab.graphics': 'Grafik', 'set.tab.audio': 'Audio', 'set.tab.display': 'Anzeige',
+  'set.helpTips': 'Tipps & Tutorials', 'set.sound': 'Ton',
+  'set.navArrow': 'Navigationspfeil', 'set.navTrail': 'Wegführungslinie', 'set.navCompass': 'Kompassleiste', 'set.navDist': 'Entfernungsanzeige',
+  'set.navTracker': 'Quest-Tracker', 'set.minimap': 'Minikarte',
+  'set.displayNote': 'Alle Hilfen sind anfangs eingeschaltet. Im Kampf werden sie durchsichtiger, in Dialogen und Zwischensequenzen ausgeblendet. Mit [{k:nav}] schaltest du die Navigation schnell ein/aus.',
+});
+I18N.add('en', {
+  'map.ui.zoomIn': 'Zoom in (+ / mouse wheel)', 'map.ui.zoomOut': 'Zoom out (− / mouse wheel)', 'map.ui.center': 'Center on me',
+  'map.ui.all': 'Show whole world', 'map.ui.help': 'Map help',
+  'map.side.title': 'WAYPOINTS', 'map.legend.title': 'LEGEND',
+  'map.filter.q': 'Quests', 'map.filter.w': 'Waypoints', 'map.filter.d': 'Dungeons', 'map.filter.m': 'Merchants', 'map.filter.p': 'Puzzles',
+  'map.filterTip': 'Show or hide this category on the map',
+  'map.hint.mouse': 'Wheel: zoom · Drag: pan · Click a ◆ waypoint: fast travel · Click a quest: track it',
+  'map.hint.touch': 'Two fingers: zoom · Swipe: pan · Tap a ◆ waypoint: fast travel · Tap a quest: track it',
+  'map.hint.pad': 'Left stick: pan · LT/RT: zoom · X: select the waypoint/quest under the crosshair · LB/RB: switch menus',
+  'map.tut.title': 'HOW THE MAP WORKS', 'map.tut.ok': 'Got it',
+  'map.tut.text': '<p><b>Zoom:</b> mouse wheel, two fingers or the + / − buttons. The closer you zoom, the more detail appears: first regions, then places, paths and dungeons, and up close quests, chests, puzzles and merchants.</p>'
+    + '<p><b>Pan:</b> drag the map or use the movement keys / left stick.</p>'
+    + '<p><b>◆ Waypoints</b> are fast-travel points. Activate them in the world (walk up to them or press [{k:interact}]). Then click them here and choose “Travel here” to jump there instantly. Grey “?” marks are still undiscovered.</p>'
+    + '<p><b>★ / ◆ Quests:</b> gold = main quest, blue = side quest, “?” = ready to turn in. A dashed circle means the goal is somewhere inside that area. Click a quest to track it.</p>'
+    + '<p>Use the filters at the top to hide categories. The “?” on the right shows this help again.</p>',
+  'map.legend.you': 'You', 'map.legend.wpOn': 'Waypoint (activated)', 'map.legend.wpOff': 'Waypoint (undiscovered)', 'map.legend.wpCur': 'Waypoint (you are here)',
+  'map.legend.qMain': 'Main quest', 'map.legend.qSide': 'Side quest', 'map.legend.qReady': 'Turn in quest', 'map.legend.qAvail': 'New quest available',
+  'map.legend.area': 'Target area (approximate)', 'map.legend.dungeonDone': 'Dungeon (boss defeated)', 'map.legend.camp': 'Camp / safe place',
+  'map.legend.merchant': 'Merchants & services', 'map.legend.smith': 'Blacksmith', 'map.legend.puzzle': 'Puzzle', 'map.legend.chest': 'Chest', 'map.legend.secret': 'Secret',
+  'map.wp.state.on': 'Activated – fast travel available', 'map.wp.state.unknown': 'Not discovered yet', 'map.wp.state.current': 'You are here',
+  'map.wp.unknownName': 'Unknown waypoint',
+  'map.wp.howFind': 'Find this waypoint in the world (pillar of light) and activate it to be able to travel here.',
+  'map.wp.hereNow': 'You are already standing at this waypoint.',
+  'map.wp.clickTravel': 'Click to travel here.',
+  'map.wp.travel': 'Travel here',
+  'map.traveling': 'Travelling to {name} …',
+  'map.tip.dist': 'Distance: {n} m',
+  'map.tip.availFrom': 'Available from {npc}',
+  'map.tip.focus': 'focus', 'map.tip.tracked': 'tracked',
+  'map.tip.goal': 'Goal', 'map.tip.reward': 'Reward',
+  'map.tip.areaHint': 'The goal is somewhere inside the marked area.',
+  'map.tip.clickQuest': 'Click to track this quest.',
+  'map.tip.safe': 'Safe place',
+  'map.tip.solved': 'Solved', 'map.tip.unsolved': 'Not solved yet',
+  'map.tip.opened': 'Opened', 'map.tip.unopened': 'Not opened yet',
+  'map.tip.secretFound': 'Discovered',
+  'map.tip.lockedTitle': 'Locked – still missing:',
+  'map.tip.progress': 'Quests {q}/{qt} · Waypoints {w}/{wt} · Bosses {bd}/{bt}',
+  'map.tip.unexplored': 'Not explored yet – the fog lifts as soon as you enter the area.',
+  'map.enemyLvl': 'Enemies Lv. {n}',
+  'map.progress': 'Lv. {a}–{b} · Quests {q}/{qt} · ◆ {w}/{wt} · Bosses {bd}/{bt}',
+  'map.lock.quest': 'Complete the quest “{quest}”', 'map.lock.level': 'Reach level {n}', 'map.lock.story': 'Progress in the main story',
+  'map.q.track': 'Track', 'map.q.untrack': 'Stop tracking', 'map.q.focus': 'Set as focus', 'map.close': 'Close',
+  'wp.prompt.activate': 'Activate waypoint', 'wp.prompt.travel': 'Fast travel ({name})',
+  'wp.discovered': 'Waypoint discovered: <b>{name}</b>', 'wp.discoveredTitle': 'WAYPOINT DISCOVERED',
+  'wp.firstTip': 'Tip: open the world map with [{k:map}] and click an activated ◆ waypoint to travel there.',
+  'nav.exitDungeon': 'Exit', 'nav.toRegion': 'Way to {name}',
+  'nav.dir.N': 'N', 'nav.dir.NE': 'NE', 'nav.dir.E': 'E', 'nav.dir.SE': 'SE', 'nav.dir.S': 'S', 'nav.dir.SW': 'SW', 'nav.dir.W': 'W', 'nav.dir.NW': 'NW',
+  'nav.tipTitle': 'NAVIGATION AIDS',
+  'nav.tip': 'The arrow, light trail and compass lead you to the goal of your focused quest. Turn each off under Settings › Display – or everything at once with [{k:nav}].',
+  'ui.q.untrack': 'Stop tracking', 'ui.q.focus': 'Set as focus', 'ui.q.clickMap': 'Click: show the goal on the map',
+  'ui.q.trackerTip': 'Click: set as focus · again: show on the map',
+  'ui.q.focusSet': 'Focus: <b>{name}</b>',
+  'ui.q.trackLimit': 'At most 4 quests can be tracked at once – the oldest one was removed.',
+  'set.tab.graphics': 'Graphics', 'set.tab.audio': 'Audio', 'set.tab.display': 'Display',
+  'set.helpTips': 'Tips & tutorials', 'set.sound': 'Sound',
+  'set.navArrow': 'Navigation arrow', 'set.navTrail': 'Guide line', 'set.navCompass': 'Compass bar', 'set.navDist': 'Distance display',
+  'set.navTracker': 'Quest tracker', 'set.minimap': 'Minimap',
+  'set.displayNote': 'All aids are on by default. They become more transparent in combat and are hidden in dialogues and cutscenes. Press [{k:nav}] to quickly toggle navigation.',
+});
 /* ============================== I18N: INHALTSTABELLEN ===================== */
 // Datentabellen mit Texten werden registriert; Sprachpakete (I18N.addContent) überschreiben sie per Pfad.
 for (const [n, o] of Object.entries({ RARITY, MELEE, RANGED, SPECIALS, ARMOR, HELMS, CAPES, ARTIFACTS, ENCH, RUNES, UNIQUES, ADJ, ADJ_SOFT,
@@ -4908,7 +5176,9 @@ const Keys = {
     if (root !== this.navRoot) { this.navRoot = root; if (this.navEl) this.navEl.classList.remove('padFocus'); this.navEl = null; if (root && this.usePad()) { const els = this.focusables(root); if (els.length) this.focus(els[0]); } }
     if (!root) return;
     const H = Input.pad.held, now = performance.now();
-    const dir = H.has('Pad12') || H.has('PadLY-') ? 'u' : H.has('Pad13') || H.has('PadLY+') ? 'd' : H.has('Pad14') || H.has('PadLX-') ? 'l' : H.has('Pad15') || H.has('PadLX+') ? 'r' : null;
+    // Auf der Weltkarte verschiebt der linke Stick die Karte; den Fokus bewegt dort nur das Steuerkreuz
+    const st = !(typeof Game !== 'undefined' && Game.overlay === 'map' && typeof WorldMap !== 'undefined' && WorldMap.tab === 'world');
+    const dir = H.has('Pad12') || (st && H.has('PadLY-')) ? 'u' : H.has('Pad13') || (st && H.has('PadLY+')) ? 'd' : H.has('Pad14') || (st && H.has('PadLX-')) ? 'l' : H.has('Pad15') || (st && H.has('PadLX+')) ? 'r' : null;
     if (dir) {
       if (dir !== Input.pad.navDir) { Input.pad.navDir = dir; Input.pad.navT = now + 380; this.navMove(root, dir); }
       else if (now > Input.pad.navT) { Input.pad.navT = now + 120; this.navMove(root, dir); }
@@ -6839,18 +7109,48 @@ class Portal {
   }
 }
 class Waystone {
+  // Waypoint (Schnellreisepunkt): Steinsäule mit Kristall, weithin sichtbare Lichtsäule und aufsteigende Funken.
+  // Aktivierung durch Berühren oder mit der Interagieren-Taste; aktiviert öffnet er die Karte zur Schnellreise.
   constructor(world, x, z, id, name) {
-    this.world = world; this.x = x; this.z = z; this.id = id; this.name0 = name; this.t = 0;
-    this.m = Models.waystone(Save.has('travel', id)); this.m.g.position.set(x, 0, z); world.group.add(this.m.g); world.setBlock(Math.floor(x), Math.floor(z), 2);
-    world.torches.push({ x, y: 2.1, z, color: 0x7affe0, seed: x, i: 0.9, dist: 7 });
-    world.stations.push({ id: 'waystone', x, z: z + 1.3, get label() { return t('world.waystoneLabel'); }, ref: this });
+    this.world = world; this.x = x; this.z = z; this.id = id; this.name0 = name; this.t = Math.random() * 6; this.sparkT = 0; this.flashT = 0;
+    const on = Save.has('travel', id);
+    this.m = Models.waystone(on); this.m.g.position.set(x, 0, z); world.group.add(this.m.g); world.setBlock(Math.floor(x), Math.floor(z), 2);
+    // Lichtsäule + Bodenring (additiv, ohne Tiefenschreiben)
+    const beamMat = new THREE.MeshBasicMaterial({ color: on ? 0x7affe0 : 0x8a96a8, transparent: true, opacity: on ? 0.22 : 0.07, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
+    this.beam = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.55, 11, 12, 1, true), beamMat); this.beam.position.y = 5.5 + 1.9; this.m.g.add(this.beam);
+    const ringMat = new THREE.MeshBasicMaterial({ color: on ? 0x7affe0 : 0x6a7484, transparent: true, opacity: on ? 0.5 : 0.25, blending: THREE.AdditiveBlending, depthWrite: false });
+    this.ring = new THREE.Mesh(new THREE.RingGeometry(0.9, 1.25, 28), ringMat); this.ring.rotation.x = -Math.PI / 2; this.ring.position.y = 0.04; this.m.g.add(this.ring);
+    this.light = { x, y: 2.1, z, color: on ? 0x7affe0 : 0x8090a0, seed: x, i: on ? 1.0 : 0.45, dist: 8 }; world.torches.push(this.light);
+    const self = this;
+    world.stations.push({ id: 'waystone', x, z: z + 1.3, get label() { return Save.has('travel', self.id) ? t('wp.prompt.travel', { name: self.name }) : t('wp.prompt.activate'); }, ref: this });
   }
   // Ortsname live aus REGIONS (id = 'region:ort'), damit ein Sprachwechsel greift
   get name() { const [r, k] = String(this.id).split(':'), P = REGIONS[r] && REGIONS[r].pois && REGIONS[r].pois[k]; return P && P.name ? P.name : this.name0; }
+  get active() { return Save.has('travel', this.id); }
+  // Entdeckung: Effekt, Klang, Meldung
+  activate() {
+    if (this.active) return;
+    Save.mark('travel', this.id); Profile.save(true);
+    this.m.crystal.material.color.setHex(0x7affe0); this.beam.material.color.setHex(0x7affe0); this.ring.material.color.setHex(0x7affe0);
+    this.light.color = 0x7affe0; this.light.i = 1.0; this.flashT = 1.2;
+    AudioSys.play('unlock'); Shake.add && Shake.add(0.25);
+    Particles.burst(this.x, 2, this.z, { n: 46, colors: [0x7affe0, 0xffffff, 0xbff8ff], speed: 4, up: 5 });
+    UI.toast(t('wp.discovered', { name: escapeHtml(this.name) }), '#7affe0');
+    UI.banner(t('wp.discoveredTitle'), this.name, 2.2);
+    if (typeof WorldMap !== 'undefined') WorldMap.wpCache = null;
+    if (!Profile.settings.wpTipSeen && Profile.settings.tips !== false) { Profile.settings.wpTipSeen = true; Profile.saveSettings(); setTimeout(() => UI.toast(t('wp.firstTip'), '#cfe8ff'), 1600); }
+  }
   update(dt) {
     this.t += dt; this.m.crystal.position.y = 2.0 + Math.sin(this.t * 2) * 0.1; this.m.crystal.rotation.y += dt;
-    const p = Game.player;
-    if (p && !Save.has('travel', this.id) && dist2(p.x, p.z, this.x, this.z) < 9) { Save.mark('travel', this.id); this.m.crystal.material.color.setHex(0x7affe0); AudioSys.play('unlock'); UI.toast(t('world.waystoneOn', { name: escapeHtml(this.name) }), '#7affe0'); Particles.burst(this.x, 2, this.z, { n: 30, colors: [0x7affe0, 0xffffff], speed: 3, up: 3 }); }
+    const on = this.active, f = Math.max(0, this.flashT); this.flashT -= dt;
+    this.beam.material.opacity = (on ? 0.18 + 0.07 * Math.sin(this.t * 2.4) : 0.06) + f * 0.5; this.beam.scale.set(1 + f * 0.8, 1, 1 + f * 0.8);
+    this.ring.material.opacity = (on ? 0.35 + 0.2 * Math.sin(this.t * 3) : 0.2) + f * 0.4; this.ring.scale.setScalar(1 + 0.08 * Math.sin(this.t * 2) + f * 0.6);
+    const p = Game.player; if (!p) return;
+    const d2 = dist2(p.x, p.z, this.x, this.z);
+    // aufsteigende Funken nur in der Nähe (Leistung)
+    if (d2 < 900) { this.sparkT -= dt; if (this.sparkT <= 0) { this.sparkT = on ? 0.12 : 0.4; Particles.spawn(this.x + rand(-0.5, 0.5), 0.3, this.z + rand(-0.5, 0.5), rand(-0.2, 0.2), rand(1.6, 2.6), rand(-0.2, 0.2), 1.6, 0.09, on ? 0x9affea : 0x9aa4b4, -0.4, 0.4); } }
+    // Herantreten (gut 2 Kacheln) aktiviert; alternativ per Interaktionstaste
+    if (!on && d2 < 5.3 && !p.dead) this.activate();
   }
 }
 class Entrance {
@@ -8011,6 +8311,13 @@ const ZoneGen = {
     L.start = start;
     this.cache[id] = L; return L;
   },
+  // Freier Platz für einen Waypoint nahe des Ortes (links unten vom Zentrum, nicht auf Gebäuden, Wegen, Rätseln oder NPC-Plätzen)
+  waystoneSpot(w, L, P) {
+    const bx = Math.floor(P.x - 3), bz = Math.floor(P.z + 3);
+    const free = (x, z) => { if (!w.inb(x, z)) return false; for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) { const i = w.i(x + dx, z + dz); if (!w.inb(x + dx, z + dz) || w.tiles[i] !== 1 || w.block[i] || w.npcTile.has(i) || w.bridgeMask[i]) return false; } return !L.sites.some(s => x > s.x - 3 && x < s.x + s.w + 3 && z > s.y - 3 && z < s.y + s.h + 3); };
+    for (let r = 0; r <= 7; r++) for (let dz = -r; dz <= r; dz++) for (let dx = -r; dx <= r; dx++) { if (Math.max(Math.abs(dx), Math.abs(dz)) !== r) continue; if (free(bx + dx, bz + dz)) return { x: bx + dx, z: bz + dz }; }
+    return { x: bx, z: bz };
+  },
   generate(id) {
     const L = this.layout(id), R0 = REGIONS[id], B = THEMES[R0.theme], w = new World(L.W, L.H, B, 'zone'), rng = new RNG(strHash('zdeco:' + id)), r = () => rng.next();
     w.tiles.set(L.tiles); w.pathMask.set(L.path); w.bridgeMask.set(L.bridge); w.reserved.set(L.keep);
@@ -8022,7 +8329,7 @@ const ZoneGen = {
     for (const k in L.poi) {
       const P = L.poi[k], f = POI_BUILD[id + ':' + k]; if (f) f(S, P, w);
       if (P.safe) S.keep(P.x, P.z, P.r * 0.8);
-      if (P.travel) { const wx = Math.floor(P.x - 3), wz = Math.floor(P.z + 3); w.tiles[w.i(wx, wz)] = 1; w.waystones.push(new Waystone(w, wx + 0.5, wz + 0.5, id + ':' + k, P.name)); S.keep(wx + 0.5, wz + 0.5, 2); }
+      if (P.travel) { const sp = this.waystoneSpot(w, L, P); w.tiles[w.i(sp.x, sp.z)] = 1; w.waystones.push(new Waystone(w, sp.x + 0.5, sp.z + 0.5, id + ':' + k, P.name)); S.keep(sp.x + 0.5, sp.z + 0.5, 2); }
       if (P.dungeon) { const e = new Entrance(w, P.x, P.z, P.dungeon, 0); w.entrances.push(e); S.keep(P.x, P.z + 2, 3); }
     }
     w.npcTile.forEach(i => { w.block[i] = 0; });
@@ -9888,7 +10195,7 @@ const Quests = {
     const q = this.q(id), old = this.S[id] || {};
     this.S[id] = { st: 'active', step: 0, prog: 0, day: todayKey(), times: old.times || 0 };
     if (q.startFlag) this.setFlag(q.startFlag);
-    if (!Profile.data.tracked || this.isDone(Profile.data.tracked) || q.type === 'main') Profile.data.tracked = id;
+    if (!Profile.data.tracked || this.isDone(Profile.data.tracked) || q.type === 'main') this.track(id, true, true); else if (this.trackList().length < 4) this.track(id, true, true, true);
     UI.toast(t('quest.toast.new', { name: escapeHtml(q.name) }), '#ffd060'); AudioSys.play('quest');
     this.onStep(id); Profile.save(); UI.refreshQuests();
   },
@@ -9952,9 +10259,30 @@ const Quests = {
     s.st = 'done'; s.times = (s.times || 0) + 1; s.day = todayKey();
     const rw = this.giveReward(q.reward);
     UI.banner(t('quest.banner.complete'), `${q.name}${rw.length ? ' – ' + rw.join(', ') : ''}`, 3.4); AudioSys.play('questDone');
-    if (Profile.data.tracked === id) Profile.data.tracked = this.nextTracked();
+    this.cleanTrack();
     Profile.save(true); UI.refreshQuests(); Game.refreshQuestWorld(); UI.refreshHud();
     if (q.reward.flag === 'gameWon') setTimeout(() => Game.onGameWon(), 1500);
+  },
+  // ---------- Verfolgen: bis zu 4 Quests, davon höchstens eine Hauptquest; die erste ist der Fokus (Navigation) ----------
+  trackList() { const D = Profile.data; if (!D) return []; if (!Array.isArray(D.track)) D.track = D.tracked ? [D.tracked] : []; return D.track; },
+  isTracked(id) { return this.trackList().includes(id); },
+  track(id, on, quiet, back) {
+    const D = Profile.data; if (!D) return;
+    let T = this.trackList().filter(k => k !== id && this.isActive(k));
+    if (on !== false && this.isActive(id)) {
+      if (this.q(id).type === 'main') T = T.filter(k => this.q(k).type !== 'main');
+      if (back) T.push(id); else T.unshift(id);
+      if (T.length > 4 && !quiet) UI.toast(t('ui.q.trackLimit'), '#cfe8ff');
+      T = T.slice(0, 4);
+    }
+    D.track = T; D.tracked = T[0] || null; Profile.dirty = true; Nav.recalcT = 0;
+    if (!quiet) { Game.refreshQuestWorld(); UI.renderTracker(); if (Game.overlay === 'quests') UI.renderQuests(); }
+  },
+  cleanTrack() {
+    const D = Profile.data; if (!D) return;
+    D.track = this.trackList().filter(k => this.isActive(k));
+    if (!D.track.length) { const n = this.nextTracked(); if (n) D.track = [n]; }
+    D.tracked = D.track[0] || null;
   },
   nextTracked() { const act = Object.keys(this.S).filter(k => this.isActive(k)); return act.find(k => this.q(k).type === 'main') || act[0] || null; },
   // Questmarker über NPCs
@@ -10096,9 +10424,16 @@ const Save = {
   mark(cat, id) { const D = Profile.data; if (!D) return; (D.marks[cat] || (D.marks[cat] = {}))[id] = 1; Profile.dirty = true; },
   count(cat) { const D = Profile.data; return D && D.marks[cat] ? Object.keys(D.marks[cat]).length : 0; },
 };
+// Einstellungen, die mit dem Cloud-Profil (Supabase, Spalte settings) abgeglichen werden
+const SYNC_SETTINGS = ['quality', 'music', 'sfx', 'shake', 'weather', 'helm', 'muted', 'nav', 'navArrow', 'navTrail', 'navCompass', 'navDist', 'navTracker', 'minimap', 'tips', 'mapFilter', 'mapTut', 'wpTipSeen', 'navTipSeen'];
 const Profile = {
   data: null, canSave: true, dirty: false, mem: {}, slot: 1, owner: 'guest', rec: null, _store: undefined,
-  settings: { quality: 2, music: 0.8, sfx: 1, shake: true, weather: true, helm: true, muted: false, lang: null, nav: true, keys: null, guest: false, displayName: '', updated: 0 },
+  settings: {
+    quality: 2, music: 0.8, sfx: 1, shake: true, weather: true, helm: true, muted: false, lang: null, keys: null, guest: false, displayName: '', updated: 0,
+    // Anzeige/Navigation (alle anfangs an) · Tipps · Weltkarte
+    nav: true, navArrow: true, navTrail: true, navCompass: true, navDist: true, navTracker: true, minimap: true,
+    tips: true, mapFilter: null, mapTut: false, wpTipSeen: false, navTipSeen: false,
+  },
   storage() {
     if (this._store !== undefined) return this._store;
     try { const s = window.localStorage; const k = '__af_test'; s.setItem(k, '1'); s.removeItem(k); this._store = s; } catch (e) { this.canSave = false; this._store = null; }
@@ -10204,6 +10539,7 @@ const Profile = {
     const d = rec && this.validate(rec.data); if (!d) return false;
     this.slot = slot; this.rec = rec; this.data = d; Slots.setLast(slot);
     if (typeof Loot !== 'undefined' && Loot.relabelAll) Loot.relabelAll(d);
+    if (typeof Quests !== 'undefined' && Quests.cleanTrack) Quests.cleanTrack();
     return true;
   },
   hasSave() { return Slots.list().some(s => s.rec); },
@@ -10357,12 +10693,28 @@ const UI = {
     document.querySelectorAll('#tSpells [data-t]').forEach(b => { const k = b.dataset.t; if (k === 'special') b.innerHTML = `<img src="${Icons.get('special', 0xffd060)}" alt="">`; else { const id = D.hotbar[+k[1]]; b.innerHTML = id ? `<img src="${Icons.spell(id)}" alt="">` : '–'; } });
     this.last = {}; this.renderTracker();
   },
+  // Quest-Tracker (HUD): verfolgte Quests, die erste ist der Fokus der Navigation. Klick = Fokus, nochmal = Karte.
   renderTracker() {
-    const D = Profile.data; if (!D) return; const act = Object.keys(D.quests).filter(k => Quests.isActive(k));
-    const order = act.sort((a, b) => (b === D.tracked) - (a === D.tracked) || (Quests.q(b).type === 'main') - (Quests.q(a).type === 'main')).slice(0, 3);
-    const html = order.map(id => { const q = Quests.q(id), rd = Quests.isReady(id); return `<div class="qtItem${q.type === 'main' ? ' main' : ''}"><div class="qn">${escapeHtml(q.name)}</div><div class="qo${rd ? ' done' : ''}">${escapeHtml(Quests.objText(id))}</div></div>`; }).join('');
-    if (this.last.qt !== html) { this.last.qt = html; this.els.questTracker.innerHTML = html; }
+    const D = Profile.data, el = this.els.questTracker; if (!D || !el) return;
+    if (Profile.settings.navTracker === false) { el.classList.add('hidden'); return; }
+    el.classList.remove('hidden');
+    let list = Quests.trackList().filter(k => Quests.isActive(k));
+    if (!list.length) list = Object.keys(D.quests).filter(k => Quests.isActive(k)).sort((a, b) => (Quests.q(b).type === 'main') - (Quests.q(a).type === 'main')).slice(0, 3);
+    const tip = escapeHtml(t('ui.q.trackerTip'));
+    const html = list.map(id => {
+      const q = Quests.q(id), rd = Quests.isReady(id), focus = D.tracked === id;
+      return `<div class="qtItem${q.type === 'main' ? ' main' : ''}${focus ? ' focus' : ''}" data-q="${id}" title="${tip}"><div class="qn">${focus ? '◆ ' : ''}${escapeHtml(q.name)}</div><div class="qo${rd ? ' done' : ''}">${escapeHtml(Quests.objText(id))}</div></div>`;
+    }).join('');
+    if (this.last.qt !== html) { this.last.qt = html; el.innerHTML = html; }
+    if (!el.onclick) el.onclick = e => {
+      const it = e.target.closest('.qtItem'); if (!it || !Profile.data || Game.state !== 'play') return;
+      const id = it.dataset.q; AudioSys.play('click');
+      if (Profile.data.tracked !== id) { Quests.track(id, true); this.toast(t('ui.q.focusSet', { name: escapeHtml(Quests.q(id).name) }), '#ffd060'); }
+      else Game.openOverlay('map', { quest: id });
+    };
   },
+  // Quest im Quest-Log → Karte öffnen und zum Ziel springen
+  questToMap(qid) { AudioSys.play('click'); Game.closeOverlay(); Game.openOverlay('map', { quest: qid }); },
   refreshQuests() { this.renderTracker(); if (Game.overlay === 'quests') this.renderQuests(); if (Game.overlay === 'board') this.renderBoard(); Game.refreshNPCs && Game.refreshNPCs(); },
   /* ---------------- Minimap mit Nebel des Krieges ---------------- */
   buildMapCanvas(w) { this.mapCv = document.createElement('canvas'); this.mapCv.width = w.W; this.mapCv.height = w.H; this.mapCtx = this.mapCv.getContext('2d'); this.mapImg = this.mapCtx.createImageData(w.W, w.H); w.mapDirty = true; },
@@ -10627,8 +10979,10 @@ const UI = {
     const tag = q => `<span class="qTag ${q.type}">${{ main: q.act || t('ui.q.tag.main'), side: t('ui.q.tag.side'), bounty: t('ui.q.tag.bounty'), daily: t('ui.q.tag.daily') }[q.type]}</span>`;
     for (const q of list) {
       const e = document.createElement('div'); e.className = 'qEntry' + (q.id === this.qSel ? ' on' : '') + (Quests.isReady(q.id) ? ' done' : '');
-      e.innerHTML = `<b>${tag(q)} ${escapeHtml(q.name)}${D.tracked === q.id ? ' ◆' : ''}</b><span class="qt">${REGIONS[q.region] ? REGIONS[q.region].short : t('ui.q.anywhere')} · ${t('ui.level', { n: q.lvl })}</span>`;
-      e.onclick = () => { AudioSys.play('click'); this.qSel = q.id; this.renderQuests(); }; ql.appendChild(e);
+      e.innerHTML = `<b>${tag(q)} ${escapeHtml(q.name)}${D.tracked === q.id ? ' ★' : Quests.isTracked(q.id) ? ' ◆' : ''}</b><span class="qt">${REGIONS[q.region] ? REGIONS[q.region].short : t('ui.q.anywhere')} · ${t('ui.level', { n: q.lvl })}</span>`;
+      e.onclick = () => { AudioSys.play('click'); if (this.qSel === q.id && Quests.isActive(q.id) && Quests.targets(q.id).length) { this.questToMap(q.id); return; } this.qSel = q.id; this.renderQuests(); };
+      e.ondblclick = () => { if (Quests.isActive(q.id) && Quests.targets(q.id).length) this.questToMap(q.id); };
+      e.title = Quests.isActive(q.id) ? t('ui.q.clickMap') : ''; ql.appendChild(e);
     }
     if (!list.length) ql.innerHTML = `<div class="note">${this.qTab === 'active' ? t('ui.q.empty.active') : this.qTab === 'done' ? t('ui.q.empty.done') : t('ui.q.empty.avail')}</div>`;
     const det = $('qDetail'), q = this.qSel && QUEST_BY_ID[this.qSel]; det.innerHTML = '';
@@ -10643,8 +10997,12 @@ const UI = {
     h += `<div class="h3">${t('ui.q.reward')}</div><div class="note">${rw.join(' · ') || '–'}</div>`;
     det.innerHTML = h;
     const row = document.createElement('div'); row.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;margin-top:10px';
-    if (Quests.isActive(q.id)) { const b = document.createElement('button'); b.className = 'btn small gold'; b.textContent = D.tracked === q.id ? t('ui.q.tracked') : t('ui.q.track'); b.onclick = () => { D.tracked = q.id; Game.refreshQuestWorld(); this.renderQuests(); this.renderTracker(); }; row.appendChild(b); }
-    if (Quests.isActive(q.id) && Quests.targets(q.id).length) { const b = document.createElement('button'); b.className = 'btn small'; b.textContent = t('ui.q.showMap'); b.onclick = () => { WorldMap.focus = Quests.targets(q.id)[0].region; Game.openOverlay('map'); }; row.appendChild(b); }
+    if (Quests.isActive(q.id)) {
+      const tr = Quests.isTracked(q.id), b = document.createElement('button'); b.className = 'btn small ' + (tr ? '' : 'gold'); b.textContent = tr ? t('ui.q.untrack') : t('ui.q.track');
+      b.onclick = () => { AudioSys.play('click'); Quests.track(q.id, !tr); }; row.appendChild(b);
+      if (tr && D.tracked !== q.id) { const f = document.createElement('button'); f.className = 'btn small gold'; f.textContent = t('ui.q.focus'); f.onclick = () => { AudioSys.play('click'); Quests.track(q.id, true); }; row.appendChild(f); }
+    }
+    if (Quests.isActive(q.id) && Quests.targets(q.id).length) { const b = document.createElement('button'); b.className = 'btn small'; b.textContent = t('ui.q.showMap'); b.onclick = () => this.questToMap(q.id); row.appendChild(b); }
     if (q.giver === 'board' && Quests.available(q)) { const b = document.createElement('button'); b.className = 'btn small gold'; b.textContent = t('ui.q.accept'); b.onclick = () => { Quests.accept(q.id); this.renderQuests(); }; row.appendChild(b); }
     det.appendChild(row);
   },
@@ -10666,10 +11024,11 @@ const UI = {
   /* ---------------- Einstellungen ---------------- */
   showSettings(ret) { this.setReturn = ret; this.renderSettings(); this.showScreen('scrSettings'); },
   renderSettings() {
-    const S = Profile.settings, seg = (id, list, cur, fn) => this.tabs($(id), list, cur, k => { fn(k); this.renderSettings(); });
+    const S = Profile.settings, seg = (id, list, cur, fn) => this.tabs($(id), list, cur, k => { fn(k); Profile.saveSettings(); this.renderSettings(); });
     seg('setQuality', QUALITY.map((q, i) => [i, q.name]), S.quality, k => { S.quality = +k; S.autoQ = false; R.applyQuality(S.quality); if (Game.world) Weather.set(Weather.type); });
     $('setMusic').value = Math.round(S.music * 100); $('setSfx').value = Math.round(S.sfx * 100);
     $('setMusic').oninput = e => { S.music = e.target.value / 100; AudioSys.setVolumes(S.music, S.sfx); }; $('setSfx').oninput = e => { S.sfx = e.target.value / 100; AudioSys.setVolumes(S.music, S.sfx); AudioSys.play('click'); };
+    $('setMusic').onchange = $('setSfx').onchange = () => Profile.saveSettings();
     const onOff = [[1, t('ui.set.on')], [0, t('ui.set.off')]];
     seg('setShake', onOff, S.shake ? 1 : 0, k => { S.shake = !!+k; Shake.enabled = S.shake; });
     seg('setWeather', onOff, S.weather ? 1 : 0, k => { S.weather = !!+k; Weather.enabled = S.weather; if (Game.world) Weather.set(Weather.type); });
@@ -10677,7 +11036,7 @@ const UI = {
     const D = Profile.data;
     if (D) seg('setTier', WORLD_TIERS.map((wt, i) => [i, (i > D.maxTier ? '🔒 ' : '') + wt.name]), D.tier, k => { k = +k; if (k > D.maxTier) { AudioSys.play('error'); this.toast(t('ui.set.tierLocked'), '#ff8a60'); return; } if (k !== D.tier) { D.tier = k; Game.tier = k; Profile.save(); this.toast(t('ui.set.tierSet', { name: WORLD_TIERS[k].name }), '#ffd060'); } });
     else $('setTier').innerHTML = `<span class="note" style="margin:0">${t('ui.set.inGameOnly')}</span>`;
-    SetTabs.render(); // Tabs Allgemein/Steuerung/Konto, Sprache, Navigationsanzeige
+    SetTabs.render(); // sechs Tabs, Sprache, Tipps, Ton, Navigationshilfen
   },
   /* ---------------- Sprachwechsel: alles Sichtbare neu aufbauen ---------------- */
   // Läuft nach I18N.applyDom() (statisches HTML ist dann schon übersetzt).
@@ -10840,102 +11199,501 @@ const Creator = {
   relang() { if (Game.state !== 'creator' || !this.look || $('scrCreator').classList.contains('hidden')) return; this.texts(); this.render(); },
 };
 I18N.onChange(() => Creator.relang());
-
 /* ============================== WELTKARTE ================================ */
-// Pixel-Art-Karte der Himmelsinseln: jede Region wird aus ihrem echten Grundriss gezeichnet (1 Kachel = 1 Pixel).
+// Zoombare Pixel-Art-Karte der Himmelsinseln.
+//  · Kartenraum: 1 Einheit = 1 Kachel; jede Region liegt um ihren Mittelpunkt MAP_POS.
+//  · Kamera { x, y, z } (z = Bildschirmpixel je Kachel) gleitet weich zum Ziel (Mausrad, Pinch, +/−, Ziehen, Pfeiltasten).
+//  · Detailstufen: weit (Regionen, Fortschritt) · mittel (Orte, Wege, Dungeons, Lager, Waypoints) · nah (Quests mit Text,
+//    Gegnerstufen, Truhen, Rätsel, Händler/Schmied, entdeckte Geheimnisse).
+//  · Leistung: jede Insel wird einmal als Offscreen-Canvas (4 px je Kachel) gezeichnet; Nebel als weiche Maske;
+//    pro Bild werden nur sichtbare Inseln/Symbole gezeichnet.
 const MAP_POS = { ehbergten: [118, 128], duskwood: [292, 112], cinder: [478, 118], toxic: [124, 340], void: [282, 446], undead: [470, 452], aelen: [668, 420], nightmaw: [628, 252], nexus: [858, 292] };
+const MAP_DS = 4, MAP_CLIFF = 8, MAP_LOD = { mid: 1.9, near: 3.6 }, MAP_ZMAX = 10;
+const MAP_FILTERS = ['q', 'w', 'd', 'm', 'p'];
 const WorldMap = {
-  tab: 'world', focus: null, hover: null, t: 0, cache: {}, clouds: null, stars: null,
+  tab: 'world', t: 0, cam: { x: 480, y: 290, z: 1 }, tgt: { x: 480, y: 290, z: 1 }, cache: {}, fog: {}, hits: [], hover: null, sel: null,
+  pointers: new Map(), drag: null, pinch: null, W: 960, H: 540, dpr: 1, flash: null, sideOpen: true, legendOpen: false, clouds: null, stars: null, wpCache: null,
   init() {
     const cv = $('worldCanvas'); this.cv = cv; this.g = cv.getContext('2d');
-    this.clouds = []; for (let k = 0; k < 26; k++) this.clouds.push({ x: rand(0, 960), y: rand(0, 540), w: rand(40, 110), h: rand(10, 22), v: rand(4, 10), a: rand(0.08, 0.2) });
-    this.stars = []; for (let k = 0; k < 90; k++) this.stars.push({ x: rand(0, 960), y: rand(0, 540), s: chance(0.2) ? 2 : 1, p: rand(0, 6) });
-    cv.addEventListener('mousemove', e => this.onMove(e)); cv.addEventListener('mouseleave', () => { this.hover = null; $('mapTip').classList.add('hidden'); });
-    cv.addEventListener('click', e => this.onClick(e));
+    this.stars = []; for (let k = 0; k < 140; k++) this.stars.push({ x: Math.random(), y: Math.random(), s: chance(0.2) ? 2 : 1, p: rand(0, 6), d: rand(0.2, 0.6) });
+    this.clouds = []; for (let k = 0; k < 22; k++) this.clouds.push({ x: rand(-100, 1100), y: rand(-50, 650), w: rand(60, 160), h: rand(14, 30), v: rand(2, 6), a: rand(0.06, 0.16) });
+    cv.addEventListener('pointerdown', e => this.onDown(e));
+    cv.addEventListener('pointermove', e => this.onPointerMove(e));
+    cv.addEventListener('pointerup', e => this.onUp(e)); cv.addEventListener('pointercancel', e => this.onUp(e, true));
+    cv.addEventListener('pointerleave', () => { if (!this.drag) { this.hover = null; this.tip(null); } });
+    cv.addEventListener('wheel', e => { e.preventDefault(); const p = this.local(e); this.zoomAt(p.x, p.y, Math.pow(1.0018, -e.deltaY)); }, { passive: false });
+    const on = (id, fn) => { const b = $(id); if (b) b.onclick = e => { e.stopPropagation(); AudioSys.play('click'); fn(); }; };
+    on('mapZoomIn', () => this.zoomAt(this.W / 2, this.H / 2, 1.6)); on('mapZoomOut', () => this.zoomAt(this.W / 2, this.H / 2, 1 / 1.6));
+    on('mapCenter', () => this.centerPlayer()); on('mapAll', () => this.fitAll()); on('mapHelp', () => this.showTut(true));
+    on('mapTutOk', () => this.showTut(false));
+    on('mapSideToggle', () => { this.sideOpen = !this.sideOpen; this.chrome(); this.clampTgt(); });
+    on('mapLegendToggle', () => { this.legendOpen = !this.legendOpen; this.chrome(); });
+    const ro = () => { if (Game.overlay === 'map') this.resize(); };
+    try { if (window.ResizeObserver) new ResizeObserver(ro).observe($('mapWrap')); } catch (e) { /* ohne ResizeObserver */ }
+    addEventListener('resize', ro);
   },
-  open() {
-    this.tab = Game.world && Game.world.isDungeon ? 'local' : this.tab; this.cache = {};
-    this.chrome();
-    AudioSys.play('map'); this.draw();
+  // ---------- Öffnen, Oberfläche ----------
+  open(o) {
+    const opt = o || {};
+    this.tab = Game.world && Game.world.isDungeon && !opt.world ? 'local' : 'world';
+    this.fog = {}; this.wpCache = null; this.sel = null; $('mapPanel').classList.add('hidden'); this.tip(null);
+    this.sideOpen = innerWidth > 760;
+    this.chrome(); this.resize();
+    if (!this.opened) { this.opened = true; this.fitAll(true); }
+    if (opt.quest) this.focusQuest(opt.quest, true);
+    else if (opt.waypoint) this.focusWaypoint(opt.waypoint, true);
+    else if (opt.region) this.flyTo(this.regionCenter(opt.region), 2.4);
+    else this.centerPlayer(this.tgt.z < 1.2 ? 2.2 : this.tgt.z);
+    AudioSys.play('map');
+    const S = Profile.settings; if (!S.mapTut && S.tips !== false) { this.showTut(true); S.mapTut = true; Profile.saveSettings(); }
+    this.draw();
   },
-  // Reiter, Titel und Legende (auch nach einem Sprachwechsel)
+  filters() { const S = Profile.settings; if (!S.mapFilter) S.mapFilter = { q: 1, w: 1, d: 1, m: 1, p: 1 }; return S.mapFilter; },
   chrome() {
-    UI.tabs($('mapTabs'), [['world', t('map.tab.world')], ['local', Game.world && Game.world.isDungeon ? t('map.tab.dungeon') : t('map.tab.area')]], this.tab, k => { this.tab = k; this.open(); });
-    $('worldCanvas').classList.toggle('hidden', this.tab !== 'world'); $('localMapCanvas').classList.toggle('hidden', this.tab !== 'local');
-    $('mapTitle').textContent = this.tab === 'world' ? t('map.title.world') : (Game.world && Game.world.isDungeon ? DUNGEONS[Game.world.dungeon].name.toUpperCase() : REGIONS[Game.region].name.toUpperCase());
-    const lg = (c, k) => `<span><i style="background:${c}"></i>${t(k)}</span>`;
-    $('mapLegend').innerHTML = this.tab === 'world'
-      ? lg('#ffffff', 'map.legend.you') + lg('#ffd060', 'map.legend.quest') + lg('#7affe0', 'map.legend.waystone') + lg('#c070ff', 'map.legend.dungeon') + lg('#ff4a4a', 'map.legend.boss') + lg('#555', 'map.legend.locked')
-      : lg('#ffffff', 'map.legend.you') + lg('#ffd060', 'map.legend.questChest') + lg('#7affe0', 'map.legend.portal') + lg('#c070ff', 'map.legend.entrance') + lg('#ffe040', 'map.legend.people') + lg('#ff5a4a', 'map.legend.enemies');
+    const inD = Game.world && Game.world.isDungeon;
+    UI.tabs($('mapTabs'), [['world', t('map.tab.world')], ['local', inD ? t('map.tab.dungeon') : t('map.tab.area')]], this.tab, k => { this.tab = k; this.chrome(); this.resize(); });
+    const local = this.tab === 'local';
+    $('worldCanvas').classList.toggle('hidden', local); $('localMapCanvas').classList.toggle('hidden', !local);
+    for (const id of ['mapFilters', 'mapZoom', 'mapSide', 'mapLegendBox', 'mapHint']) $(id).classList.toggle('hidden', local);
+    $('mapTitle').textContent = !local ? t('map.title.world') : (inD ? DUNGEONS[Game.world.dungeon].name.toUpperCase() : REGIONS[Game.region].name.toUpperCase());
+    // Filter
+    const F = this.filters(), fb = $('mapFilters'); fb.innerHTML = '';
+    for (const k of MAP_FILTERS) { const b = document.createElement('button'); b.className = 'tab' + (F[k] ? ' on' : ''); b.innerHTML = `<span class="mfI mf-${k}"></span>${escapeHtml(t('map.filter.' + k))}`; b.title = t('map.filterTip'); b.onclick = () => { F[k] = F[k] ? 0 : 1; Profile.saveSettings(); AudioSys.play('click'); this.chrome(); }; fb.appendChild(b); }
+    // Seitenleiste mit allen Waypoints, nach Region sortiert
+    $('mapSide').classList.toggle('closed', !this.sideOpen); $('mapSideArrow').textContent = this.sideOpen ? '◂' : '▸';
+    const sl = $('mapSideList'); sl.innerHTML = '';
+    for (const id in REGIONS) {
+      const list = this.waypoints().filter(w => w.region === id); if (!list.length) continue;
+      const open = Game.regionOpen(id), h = document.createElement('div'); h.className = 'msReg' + (open ? '' : ' locked'); h.textContent = (open ? '' : '🔒 ') + REGIONS[id].short; sl.appendChild(h);
+      for (const w of list) {
+        const st = this.wpState(w), b = document.createElement('button'); b.className = 'msWp ' + st; b.dataset.nav = '1';
+        b.innerHTML = `<i></i><span>${st === 'unknown' && !this.visited(id) ? '???' : escapeHtml(w.name)}</span>`;
+        b.title = t('map.wp.state.' + st);
+        b.onclick = () => { AudioSys.play('click'); this.focusWaypoint(w.id, false); this.select({ type: 'wp', w }); };
+        sl.appendChild(b);
+      }
+    }
+    // Legende
+    $('mapLegendBox').classList.toggle('open', this.legendOpen); $('mapLegendArrow').textContent = this.legendOpen ? '▾' : '▸';
+    const lg = $('mapLegend'); lg.classList.toggle('hidden', !this.legendOpen); lg.innerHTML = '';
+    for (const [kind, key] of [['player', 'you'], ['wp', 'wpOn'], ['wpUnknown', 'wpOff'], ['wpCur', 'wpCur'], ['qMain', 'qMain'], ['qSide', 'qSide'], ['qReady', 'qReady'], ['qAvail', 'qAvail'], ['area', 'area'], ['dungeon', 'dungeon'], ['dungeonDone', 'dungeonDone'], ['camp', 'camp'], ['merchant', 'merchant'], ['smith', 'smith'], ['puzzle', 'puzzle'], ['chest', 'chest'], ['secret', 'secret'], ['lock', 'locked']]) {
+      const row = document.createElement('div'), c = document.createElement('canvas'); c.width = c.height = 28; const g = c.getContext('2d'); this.icon(g, kind, 14, 14, 1, 0.5);
+      const s = document.createElement('span'); s.textContent = t('map.legend.' + key); row.append(c, s); lg.appendChild(row);
+    }
+    let coarse = false; try { coarse = matchMedia('(pointer: coarse)').matches; } catch (e) { /* ältere Browser */ }
+    $('mapHint').textContent = Input.lastDevice === 'pad' ? t('map.hint.pad') : Input.touch || coarse ? t('map.hint.touch') : t('map.hint.mouse');
+    $('mapHint').classList.toggle('hidden', local || !!this.used);
+    $('mapTutText').innerHTML = t('map.tut.text');
   },
+  showTut(on) { $('mapTut').classList.toggle('hidden', !on); },
+  resize() {
+    const wrap = $('mapWrap'), r = wrap.getBoundingClientRect(); if (!r.width) return;
+    this.dpr = Math.min(2, window.devicePixelRatio || 1); this.W = Math.max(200, Math.round(r.width)); this.H = Math.max(200, Math.round(r.height));
+    this.cv.width = Math.round(this.W * this.dpr); this.cv.height = Math.round(this.H * this.dpr);
+    const lc = $('localMapCanvas'), s = Math.min(this.W, this.H); lc.width = lc.height = Math.round(s); lc.style.width = lc.style.height = s + 'px';
+    this.clampTgt(); this.draw();
+  },
+  // ---------- Kamera ----------
+  // Breite der offenen Waypoint-Seitenleiste (nur auf breiten Bildschirmen links neben der Karte)
+  padL() { return this.sideOpen && this.W > 760 ? 226 : 0; },
+  bounds() { let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9; for (const id in REGIONS) { const o = this.origin(id), R0 = REGIONS[id]; x0 = Math.min(x0, o.x); y0 = Math.min(y0, o.y); x1 = Math.max(x1, o.x + R0.W); y1 = Math.max(y1, o.y + R0.H + MAP_CLIFF); } return { x0: x0 - 30, y0: y0 - 40, x1: x1 + 30, y1: y1 + 30 }; },
+  zmin() { const b = this.bounds(); return Math.min((this.W - this.padL()) / (b.x1 - b.x0), this.H / (b.y1 - b.y0)); },
+  // Passt die ganze Welt ins Bild, bleibt sie zentriert; sonst darf der Mittelpunkt bis an den Weltrand
+  // (so lassen sich auch Ziele am Rand mittig anzeigen, nicht verdeckt von der Seitenleiste).
+  clampTgt() {
+    const T = this.tgt, b = this.bounds(); T.z = clamp(T.z, this.zmin() * 0.95, MAP_ZMAX);
+    const hh = this.H / 2 / T.z;
+    T.x = (b.x1 - b.x0) < (this.W - this.padL()) / T.z ? (b.x0 + b.x1) / 2 - this.padL() / 2 / T.z : clamp(T.x, b.x0 - this.padL() / 2 / T.z, b.x1);
+    T.y = (b.y1 - b.y0) < hh * 2 ? (b.y0 + b.y1) / 2 : clamp(T.y, b.y0, b.y1);
+  },
+  fitAll(instant) { const b = this.bounds(); this.flyTo({ x: (b.x0 + b.x1) / 2, y: (b.y0 + b.y1) / 2 }, this.zmin(), instant); },
+  flyTo(p, z, instant) { if (!p) return; if (z) this.tgt.z = clamp(z, this.zmin() * 0.95, MAP_ZMAX); this.tgt.x = p.x - this.padL() / 2 / this.tgt.z; this.tgt.y = p.y; this.clampTgt(); if (instant) Object.assign(this.cam, this.tgt); },
+  // Bedienhinweis ausblenden, sobald die Karte einmal verschoben oder gezoomt wurde
+  markUsed() { if (!this.used) { this.used = true; $('mapHint').classList.add('hidden'); } },
+  zoomAt(sx, sy, f) {
+    this.markUsed();
+    const T = this.tgt, mx = T.x + (sx - this.W / 2) / T.z, my = T.y + (sy - this.H / 2) / T.z;
+    T.z = clamp(T.z * f, this.zmin() * 0.95, MAP_ZMAX);
+    T.x = mx - (sx - this.W / 2) / T.z; T.y = my - (sy - this.H / 2) / T.z; this.clampTgt();
+  },
+  centerPlayer(z) { const p = this.playerPos(); if (p) this.flyTo(p, z || Math.max(this.tgt.z, 3)); },
+  toScreen(mx, my) { const C = this.cam; return { x: (mx - C.x) * C.z + this.W / 2, y: (my - C.y) * C.z + this.H / 2 }; },
+  toMap(sx, sy) { const C = this.cam; return { x: C.x + (sx - this.W / 2) / C.z, y: C.y + (sy - this.H / 2) / C.z }; },
+  local(e) { const r = this.cv.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; },
+  // ---------- Daten ----------
+  origin(id) { const R0 = REGIONS[id], [cx, cy] = MAP_POS[id]; return { x: Math.round(cx - R0.W / 2), y: Math.round(cy - R0.H / 2) }; },
+  regionCenter(id) { const o = this.origin(id), R0 = REGIONS[id]; return { x: o.x + R0.W / 2, y: o.y + R0.H / 2 }; },
   visited(id) { return Save.has('visited', id); },
-  // Insel als Offscreen-Canvas (mit Erkundungsnebel)
-  island(id) {
-    if (this.cache[id]) return this.cache[id];
-    const L = ZoneGen.layout(id), B = THEMES[REGIONS[id].theme], cv = document.createElement('canvas'); cv.width = L.W; cv.height = L.H + 8;
-    const g = cv.getContext('2d'), img = g.createImageData(L.W, L.H + 8), d = img.data, open = Game.regionOpen(id), vis = this.visited(id);
-    const fog = Game.fogFor(id), rgb = c => [(c >> 16) & 255, (c >> 8) & 255, c & 255];
-    const floor = rgb(B.floor[0]), floor2 = rgb(B.floor[1] || B.floor[0]), path = rgb(B.stone[0]), pit = rgb(B.pit), cliff = rgb(B.cliff ? B.cliff[0] : 0x4a3a2a), bridge = [138, 96, 56];
-    const put = (x, y, c, a = 255) => { const o = (y * L.W + x) * 4; d[o] = c[0]; d[o + 1] = c[1]; d[o + 2] = c[2]; d[o + 3] = a; };
+  poiPos(id, k) { const o = this.origin(id), P = REGIONS[id].pois[k]; return P ? { x: o.x + P.x + 0.5, y: o.y + P.y + 0.5, r: P.r } : null; },
+  playerPos() {
+    const id = Game.region; if (!id || !REGIONS[id]) return null; const o = this.origin(id), P = Game.player;
+    if (Game.world && Game.world.isZone && P) return { x: o.x + P.x, y: o.y + P.z, yaw: P.yaw, region: id };
+    if (Game.dungeonReturn) return { x: o.x + Game.dungeonReturn.x, y: o.y + Game.dungeonReturn.z, region: id };
+    const c = this.regionCenter(id); return { x: c.x, y: c.y, region: id };
+  },
+  // Alle Waypoints (Schnellreisepunkte); im aktuellen Gebiet mit der echten Position des Steins
+  waypoints() {
+    if (this.wpCache) return this.wpCache;
+    const out = [];
+    for (const id in REGIONS) for (const k in REGIONS[id].pois) {
+      const P = REGIONS[id].pois[k]; if (!P.travel) continue;
+      const key = id + ':' + k, o = this.origin(id); let x = o.x + P.x - 2.5, y = o.y + P.y + 3.5;
+      if (Game.world && Game.world.isZone && Game.region === id) { const ws = Game.world.waystones.find(w => w.id === key); if (ws) { x = o.x + ws.x; y = o.y + ws.z; } }
+      out.push({ id: key, region: id, poi: k, x, y, get name() { return REGIONS[id].pois[k].name; } });
+    }
+    return this.wpCache = out;
+  },
+  wpState(w) {
+    const pp = this.playerPos();
+    if (pp && Game.world && Game.world.isZone && pp.region === w.region && dist(pp.x, pp.y, w.x, w.y) < 7) return 'current';
+    return Save.has('travel', w.id) ? 'on' : 'unknown';
+  },
+  // Questmarker aller aktiven Quests (+ verfügbare Quests als kleine Ausrufezeichen)
+  questMarkers() {
+    const D = Profile.data, out = []; if (!D) return out;
+    for (const qid in D.quests) {
+      if (!Quests.isActive(qid)) continue; const q = Quests.q(qid); if (!q) continue;
+      const ready = Quests.isReady(qid), tracked = Quests.isTracked(qid), focus = D.tracked === qid;
+      Quests.targets(qid).forEach((tg, i) => {
+        if (!tg.region || !REGIONS[tg.region]) return; let p = null, area = 0;
+        if (tg.npc && NPCS[tg.npc]) { const n = NPCS[tg.npc], pp = this.poiPos(n.region, n.poi); if (pp) p = { x: pp.x + n.dx, y: pp.y + n.dy }; }
+        else if (tg.poi) { const pp = this.poiPos(tg.region, tg.poi); if (pp) { p = pp; area = pp.r; } }
+        else { p = this.regionCenter(tg.region); area = Math.min(REGIONS[tg.region].W, REGIONS[tg.region].H) * 0.3; }
+        if (Game.world && Game.world.isZone && Game.region === tg.region && Game.questMarks.length && focus && i === 0) { const o = this.origin(tg.region), m = Game.questMarks[0]; p = { x: o.x + m.x, y: o.y + m.z }; area = 0; }
+        if (p) out.push({ qid, q, x: p.x, y: p.y, area, ready, tracked, focus, region: tg.region, main: q.type === 'main', idx: i });
+      });
+    }
+    for (const q of QUESTS) {
+      if (q.giver === 'board' || !Quests.available(q) || !NPCS[q.giver]) continue; const n = NPCS[q.giver], pp = this.poiPos(n.region, n.poi);
+      if (pp && Game.regionOpen(n.region)) out.push({ qid: q.id, q, x: pp.x + n.dx, y: pp.y + n.dy, area: 0, avail: true, region: n.region, main: q.type === 'main' });
+    }
+    return out;
+  },
+  regionProgress(id) {
+    const qs = QUESTS.filter(q => q.region === id && q.type !== 'daily'), done = qs.filter(q => Quests.isDone(q.id)).length;
+    const wps = this.waypoints().filter(w => w.region === id), won = wps.filter(w => Save.has('travel', w.id)).length;
+    const bosses = []; for (const k in REGIONS[id].pois) { const P = REGIONS[id].pois[k]; if (P.dungeon && DUNGEONS[P.dungeon].boss) bosses.push(!!(Profile.data && Profile.data.flags['boss_' + DUNGEONS[P.dungeon].boss])); }
+    return { done, total: qs.length, won, wps: wps.length, bossDone: bosses.filter(Boolean).length, bosses: bosses.length };
+  },
+  lockReason(id) {
+    const q = QUESTS.find(qq => qq.reward && qq.reward.unlock === id), R0 = REGIONS[id], out = [];
+    if (q) out.push(t('map.lock.quest', { quest: q.name }));
+    if (Profile.data && Profile.data.level < R0.lvl[0]) out.push(t('map.lock.level', { n: R0.lvl[0] }));
+    return out.length ? out : [t('map.lock.story')];
+  },
+  dungeonLock(dg) { const D = DUNGEONS[dg]; if (!D.lock || Quests.flag(D.lock)) return null; const q = QUESTS.find(qq => (qq.reward && qq.reward.flag === D.lock) || (qq.obj || []).some(o => o.flag === D.lock)); return q ? t('map.lock.quest', { quest: q.name }) : t('map.lock.story'); },
+  distTo(p) { const pp = this.playerPos(); return pp ? Math.round(dist(pp.x, pp.y, p.x, p.y)) : null; },
+  // ---------- Insel-Cache (Pixel-Art, 4 px je Kachel) ----------
+  island(id, locked) {
+    const key = id + (locked ? ':l' : ''); if (this.cache[key]) return this.cache[key];
+    if (locked) {
+      const src = this.island(id, false), c2 = document.createElement('canvas'); c2.width = src.width; c2.height = src.height; const g2 = c2.getContext('2d'); g2.drawImage(src, 0, 0);
+      const im = g2.getImageData(0, 0, c2.width, c2.height), d = im.data; for (let i = 0; i < d.length; i += 4) { const v = (d[i] * 0.3 + d[i + 1] * 0.59 + d[i + 2] * 0.11) * 0.55 + 22; d[i] = v; d[i + 1] = v; d[i + 2] = v + 8; }
+      g2.putImageData(im, 0, 0); return this.cache[key] = c2;
+    }
+    const L = ZoneGen.layout(id), R0 = REGIONS[id], B = THEMES[R0.theme], S = MAP_DS, CW = L.W * S, CH = (L.H + MAP_CLIFF) * S;
+    const cv = document.createElement('canvas'); cv.width = CW; cv.height = CH; const g = cv.getContext('2d');
+    const img = g.createImageData(CW, CH), d = img.data, rgb = c => [(c >> 16) & 255, (c >> 8) & 255, c & 255];
+    const put = (x, y, c, f) => { if (x < 0 || y < 0 || x >= CW || y >= CH) return; const o = (y * CW + x) * 4, k = f || 1; d[o] = Math.min(255, c[0] * k); d[o + 1] = Math.min(255, c[1] * k); d[o + 2] = Math.min(255, c[2] * k); d[o + 3] = 255; };
+    const h = (x, y, s) => hash2(x, y, s);
+    const floors = B.floor.map(rgb), stone = rgb(B.stone[0]), stone2 = rgb(B.stone[1] || B.stone[0]), pit = rgb(B.pit), cliffs = (B.cliff || [0x5a4430, 0x4a3828, 0x3a2c20]).map(rgb), plank = [150, 104, 60], plank2 = [112, 76, 42];
+    const kind = B.pitKind || 'water', tile = (x, y) => (x >= 0 && y >= 0 && x < L.W && y < L.H) ? L.tiles[y * L.W + x] : 0;
     for (let y = 0; y < L.H; y++) for (let x = 0; x < L.W; x++) {
-      const i = y * L.W + x, t = L.tiles[i]; if (!t) continue;
-      let c = t === 2 ? pit : L.bridge[i] ? bridge : L.path[i] ? path : ((x >> 2) + (y >> 2)) % 2 ? floor : floor2;
-      if (!open) c = [60, 60, 70]; else if (!vis || !fog || !fog[i]) c = c.map(v => Math.round(v * 0.45 + 70));
-      put(x, y, c);
-      // Klippe unter Kanten (Tiefe der schwebenden Insel)
-      if (y + 1 < L.H && !L.tiles[i + L.W]) for (let k = 1; k <= 6; k++) if (y + k < L.H + 8 && (y + k >= L.H || !L.tiles[i + L.W * k])) put(x, y + k, (open ? cliff : [40, 40, 48]).map(v => Math.round(v * (1 - k * 0.09))));
+      const i = y * L.W + x, tt = L.tiles[i]; if (!tt) continue;
+      for (let py = 0; py < S; py++) for (let px = 0; px < S; px++) {
+        const X = x * S + px, Y = y * S + py, n = h(X, Y, 7);
+        if (tt === 2) {
+          if (kind === 'lava') { const w = Math.sin(X * 0.35 + Y * 0.2) + n; put(X, Y, w > 1.2 ? [255, 214, 90] : w > 0.4 ? [255, 120, 30] : [190, 50, 20]); }
+          else if (kind === 'toxic') put(X, Y, n > 0.9 ? [200, 255, 120] : pit, 0.8 + n * 0.3);
+          else if (kind === 'void') put(X, Y, n > 0.92 ? [230, 200, 255] : [40, 16, 70], 0.9 + n * 0.3);
+          else put(X, Y, (Y % 6 === 0 && n > 0.55) ? [200, 230, 255] : pit, 0.85 + n * 0.25);
+        } else if (L.bridge[i]) put(X, Y, py === 0 || py === S - 1 ? plank2 : plank, 0.9 + n * 0.15);
+        else if (L.path[i]) put(X, Y, n > 0.82 ? stone2 : stone, 0.88 + n * 0.18);
+        else { const fc = floors[Math.floor(h(x, y, 3) * floors.length)] || floors[0]; put(X, Y, fc, n > 0.93 ? 1.25 : n < 0.06 ? 0.82 : 0.95 + n * 0.08); }
+      }
+      // heller Rand oben, Klippe unten
+      if (!tile(x, y - 1)) for (let px = 0; px < S; px++) { const o = ((y * S) * CW + x * S + px) * 4; d[o] = Math.min(255, d[o] * 1.25 + 10); d[o + 1] = Math.min(255, d[o + 1] * 1.25 + 10); d[o + 2] = Math.min(255, d[o + 2] * 1.2 + 10); }
+      if (!tile(x, y + 1)) {
+        let depth = 0; while (depth < MAP_CLIFF && !tile(x, y + 1 + depth)) depth++;
+        const hgt = Math.max(2, Math.round(depth * S * 0.8 * (0.6 + 0.4 * h(x, 0, 11))));
+        for (let py = 0; py < hgt; py++) for (let px = 0; px < S; px++) { const c = cliffs[Math.min(cliffs.length - 1, Math.floor(py / hgt * cliffs.length))], n = h(x * S + px, py, 13); put(x * S + px, (y + 1) * S + py, c, (1 - py / hgt * 0.45) * (0.85 + n * 0.25)); }
+        for (let px = 0; px < S; px++) put(x * S + px, (y + 1) * S, [0, 0, 0], 1);
+      }
+      if (!tile(x - 1, y)) for (let py = 0; py < S; py++) put(x * S, y * S + py, floors[0], 0.6);
+      if (!tile(x + 1, y)) for (let py = 0; py < S; py++) put(x * S + S - 1, y * S + py, floors[0], 0.6);
     }
     g.putImageData(img, 0, 0);
-    return this.cache[id] = cv;
+    this.decorate(g, id, L, R0, B);
+    return this.cache[key] = cv;
   },
-  origin(id) { const R0 = REGIONS[id], [cx, cy] = MAP_POS[id]; return { x: Math.round(cx - R0.W / 2), y: Math.round(cy - R0.H / 2) }; },
+  // Gebäude, Bäume, Berge und Wahrzeichen (deterministisch je Region)
+  decorate(g, id, L, R0, B) {
+    const S = MAP_DS, rng = new RNG(strHash('mapdeco:' + id)), r = () => rng.next();
+    const px = (x, y, w, h, c) => { g.fillStyle = c; g.fillRect(Math.round(x), Math.round(y), w, h); };
+    const ok = (x, y, rad) => { for (let dy = -rad; dy <= rad; dy++) for (let dx = -rad; dx <= rad; dx++) { const xx = x + dx, yy = y + dy; if (xx < 0 || yy < 0 || xx >= L.W || yy >= L.H) return false; const i = yy * L.W + xx; if (L.tiles[i] !== 1 || L.path[i] || L.bridge[i]) return false; } return true; };
+    const nearPoi = (x, y, f) => Object.values(L.poi).some(P => dist(x, y, P.x, P.z) < P.r * f);
+    const tree = (x, y, c1, c2, s) => { px(x - 1, y + s, 2, 3, '#4a2e18'); px(x - s, y - s + 1, s * 2, s * 2 - 1, c2); px(x - s + 1, y - s, s * 2 - 2, s * 2, c1); px(x - s + 2, y - s + 1, 2, 2, 'rgba(255,255,255,.25)'); };
+    const pine = (x, y, c, snow, s) => { px(x - 1, y + s + 1, 2, 2, '#4a2e18'); for (let k = 0; k <= s; k++) px(x - k, y - s + k * 1.4, k * 2 + 1, 2, c); if (snow) px(x - 1, y - s, 3, 2, '#f4f8ff'); };
+    const rock = (x, y, c) => { px(x - 2, y - 1, 5, 3, c); px(x - 1, y - 2, 3, 1, shadeCss(c, 1.3)); };
+    const peak = (x, y, s, c, cap) => { for (let k = 0; k < s; k++) { px(x - k, y - s + k, k * 2 + 1, 1, k < s * 0.35 && cap ? cap : c); } px(x - s, y, s * 2 + 1, 1, '#000'); };
+    const house = (x, y, w, roof) => { px(x - w / 2 - 1, y - 5, w + 2, 9, '#000'); px(x - w / 2, y - 2, w, 5, '#e8d8b8'); px(x - w / 2 - 1, y - 5, w + 2, 4, roof); px(x - 1, y, 2, 3, '#5a3a20'); px(x + 2, y - 1, 2, 2, '#ffd27a'); };
+    const tent = (x, y, c) => { for (let k = 0; k < 5; k++) px(x - k, y - 5 + k, k * 2 + 1, 1, c); px(x - 1, y - 2, 2, 3, '#2a1a10'); };
+    const T = R0.theme, dens = { meadow: 0.03, duskwood: 0.075, toxic: 0.025, cinder: 0.02, voidland: 0.02, graveyard: 0.035, mountain: 0.045, wasteland: 0.02, astral: 0.02 }[T] || 0.03;
+    for (let y = 2; y < L.H - 2; y++) for (let x = 2; x < L.W - 2; x++) {
+      if (r() > dens || !ok(x, y, 1) || nearPoi(x, y, 0.9)) continue;
+      const X = x * S + 2, Y = y * S + 2, q = r();
+      if (T === 'meadow') q < 0.8 ? tree(X, Y, '#5fa83a', '#3c7a26', 3) : rock(X, Y, '#9a9a8a');
+      else if (T === 'duskwood') q < 0.7 ? tree(X, Y, '#2e6a34', '#1c4422', 4) : pine(X, Y, '#264e2a', false, 4);
+      else if (T === 'toxic') { if (q < 0.5) { px(X - 1, Y, 2, 4, '#c8b89a'); px(X - 3, Y - 3, 7, 3, '#b04ad0'); px(X - 2, Y - 3, 2, 1, '#e8a0ff'); } else px(X - 2, Y - 1, 5, 4, '#7aa030'); }
+      else if (T === 'cinder') q < 0.5 ? (px(X, Y - 4, 1, 6, '#2a1a14'), px(X - 2, Y - 3, 2, 1, '#2a1a14'), px(X + 1, Y - 2, 2, 1, '#2a1a14')) : rock(X, Y, '#3a2a28');
+      else if (T === 'voidland') { px(X - 1, Y - 5, 2, 6, '#b070ff'); px(X + 1, Y - 3, 2, 4, '#7a3ad0'); px(X - 1, Y - 5, 1, 2, '#e8d0ff'); }
+      else if (T === 'graveyard') q < 0.55 ? (px(X - 1, Y - 3, 3, 5, '#8a8a90'), px(X - 2, Y - 2, 5, 1, '#8a8a90')) : (px(X, Y - 4, 1, 6, '#3a2e28'), px(X - 2, Y - 3, 2, 1, '#3a2e28'));
+      else if (T === 'mountain') q < 0.75 ? pine(X, Y, '#2a5a44', true, 4) : rock(X, Y, '#a8b8c8');
+      else if (T === 'wasteland') q < 0.5 ? (px(X - 2, Y, 5, 1, '#e8e0c8'), px(X - 1, Y - 1, 1, 1, '#e8e0c8')) : rock(X, Y, '#4a3a34');
+      else { px(X - 1, Y - 4, 3, 6, '#8ab0ff'); px(X, Y - 5, 1, 1, '#ffffff'); }
+    }
+    // Berge auf dem Mount Aelen, Vulkan in den Cinder Wastes
+    if (T === 'mountain') for (let k = 0; k < 9; k++) { const x = rng.int(6, L.W - 6), y = rng.int(6, L.H - 6); if (!ok(x, y, 2) || nearPoi(x, y, 1.1)) continue; peak(x * S, y * S + 6, 9 + rng.int(0, 5), '#7a8a9a', '#f4f8ff'); }
+    if (T === 'cinder') for (let k = 0; k < 6; k++) { const x = rng.int(6, L.W - 6), y = rng.int(6, L.H - 6); if (!ok(x, y, 2) || nearPoi(x, y, 1.1)) continue; peak(x * S, y * S + 6, 7 + rng.int(0, 4), '#3a2a28', '#ff7a2a'); }
+    // Orte
+    for (const k in L.poi) {
+      const P = L.poi[k], X = P.x * S, Y = P.z * S;
+      if (P.dungeon) {
+        const dg = P.dungeon;
+        if (dg === 'volcano') { peak(X, Y + 4, 22, '#4a2e26', null); px(X - 4, Y - 18, 9, 3, '#ff6a20'); px(X - 2, Y - 20, 5, 2, '#ffd060'); }
+        else if (dg === 'mansion') { house(X - 9, Y + 6, 10, '#6a2a5a'); house(X + 5, Y + 6, 12, '#6a2a5a'); px(X - 4, Y - 6, 9, 12, '#000'); px(X - 3, Y - 5, 7, 10, '#c8b8a8'); px(X - 4, Y - 8, 9, 3, '#4a1a3a'); }
+        else if (dg === 'factory') { px(X - 10, Y - 4, 20, 10, '#000'); px(X - 9, Y - 3, 18, 8, '#7a6a5a'); px(X + 4, Y - 14, 4, 11, '#5a4a40'); px(X + 4, Y - 18, 6, 3, 'rgba(200,200,200,.5)'); }
+        else if (dg === 'crypt') { for (let a = 0; a < 6; a++) { const gx = X - 12 + (a % 3) * 10, gy = Y - 6 + Math.floor(a / 3) * 9; px(gx, gy, 3, 5, '#9a9aa0'); px(gx - 1, gy + 1, 5, 1, '#9a9aa0'); } }
+        else if (dg === 'arena') { g.strokeStyle = '#000'; g.lineWidth = 3; g.beginPath(); g.ellipse(X, Y, 14, 9, 0, 0, TAU); g.stroke(); g.strokeStyle = '#b070ff'; g.lineWidth = 2; g.stroke(); }
+        else if (dg === 'nexus') { for (let a = 0; a < 8; a++) { const an = a / 8 * TAU; px(X + Math.cos(an) * 10, Y + Math.sin(an) * 7, 2, 3, '#bfd8ff'); } px(X - 2, Y - 6, 4, 8, '#ffffff'); }
+        else { peak(X, Y + 4, 10, '#4a4048', null); }
+        px(X - 3, Y - 1, 7, 6, '#000'); px(X - 2, Y, 5, 5, '#1a0a20');
+      } else if (P.safe) {
+        if (id === 'ehbergten' && k === 'town') { for (let a = 0; a < 9; a++) { const an = a / 9 * TAU + 0.3, rr = 10 + (a % 3) * 7; house(X + Math.cos(an) * rr * 1.5, Y + Math.sin(an) * rr, 8 + (a % 2) * 4, ['#a8402a', '#2a5a9a', '#6a3a2a'][a % 3]); } px(X - 2, Y - 2, 5, 5, '#5a8ac8'); }
+        else if (k === 'hut') house(X, Y, 12, '#5a3a20');
+        else if (k === 'post' || k === 'gate') { px(X - 3, Y - 14, 7, 18, '#000'); px(X - 2, Y - 13, 5, 16, '#7a5a3a'); px(X - 4, Y - 15, 9, 3, '#4a2e18'); }
+        else { tent(X - 8, Y, '#c8a060'); tent(X + 6, Y - 3, '#a84a3a'); tent(X - 1, Y + 7, '#5a7ac8'); px(X - 1, Y + 1, 3, 3, '#ff9a30'); }
+      } else if (k === 'fields') { for (let a = 0; a < 6; a++) px(X - 16, Y - 10 + a * 4, 32, 2, a % 2 ? '#c8a040' : '#8a6a2a'); }
+      else if (k === 'portal') { g.strokeStyle = '#000'; g.lineWidth = 4; g.beginPath(); g.arc(X, Y - 2, 8, Math.PI, 0); g.stroke(); g.strokeStyle = '#9a9a90'; g.lineWidth = 2; g.stroke(); px(X - 6, Y - 2, 12, 2, '#7affe0'); }
+      else if (k === 'woods') { tent(X - 5, Y, '#5a4a3a'); tent(X + 5, Y + 3, '#5a4a3a'); }
+      else if (k === 'pools') { for (let a = 0; a < 5; a++) px(X - 10 + a * 5, Y - 4 + (a % 2) * 6, 5, 3, '#9aff40'); }
+    }
+  },
+  // Wolkiger Nebel des Krieges: liegt nur über Land (inkl. Klippen), weich ausgeblendet an erkundeten Stellen.
+  // 1 Pixel je Kachel, beim Zeichnen geglättet hochskaliert → weiche Ränder. Wird pro Öffnen neu berechnet.
+  fogMask(id) {
+    if (this.fog[id]) return this.fog[id];
+    const L = ZoneGen.layout(id), vis = this.visited(id), f = vis ? Game.fogFor(id) : null, W = L.W, H = L.H + MAP_CLIFF;
+    const c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d'), im = g.createImageData(W, H), d = im.data;
+    const tile = (x, y) => x >= 0 && y >= 0 && x < L.W && y < L.H && L.tiles[y * L.W + x];
+    // Kachel → Landzelle darüber (Klippen gehören zur Kachel, unter der sie hängen)
+    const owner = (x, y) => { for (let k = 0; k <= MAP_CLIFF; k++) if (tile(x, y - k)) return (y - k) * L.W + x; return -1; };
+    const un = new Float32Array(W * H), land = new Uint8Array(W * H);
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const o = owner(x, y); if (o < 0) { un[y * W + x] = 1; continue; } land[y * W + x] = 1; un[y * W + x] = !f || !f[o] ? 1 : 0; }
+    const vn = (x, y, sc, seed) => { const gx = x / sc, gy = y / sc, x0 = Math.floor(gx), y0 = Math.floor(gy), fx = gx - x0, fy = gy - y0, sx = fx * fx * (3 - 2 * fx), sy = fy * fy * (3 - 2 * fy);
+      return lerp(lerp(hash2(x0, y0, seed), hash2(x0 + 1, y0, seed), sx), lerp(hash2(x0, y0 + 1, seed), hash2(x0 + 1, y0 + 1, seed), sx), sy); };
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      let a = 0, n = 0, l = 0;
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const xx = x + dx, yy = y + dy; if (xx < 0 || yy < 0 || xx >= W || yy >= H) { a += 1; n++; continue; } a += un[yy * W + xx]; l |= land[yy * W + xx]; n++; }
+      const o = (y * W + x) * 4; if (!l) { d[o + 3] = 0; continue; }
+      const cl = vn(x, y, 7, 3) * 0.65 + vn(x, y, 3, 9) * 0.35, sh = 0.86 + cl * 0.2;
+      d[o] = 178 * sh; d[o + 1] = 190 * sh; d[o + 2] = 222 * sh; d[o + 3] = Math.round((a / n) * (vis ? 200 : 168) * (0.7 + cl * 0.42));
+    }
+    g.putImageData(im, 0, 0);
+    return this.fog[id] = c;
+  },
+  // ---------- Symbole ----------
+  icon(g, kind, x, y, s, pulse) {
+    const P = pulse || 0, ring = (r, c, w) => { g.strokeStyle = c; g.lineWidth = w; g.beginPath(); g.arc(x, y, r, 0, TAU); g.stroke(); };
+    const poly = (pts, fill, stroke, lw) => { g.beginPath(); pts.forEach(([a, b], i) => i ? g.lineTo(x + a * s, y + b * s) : g.moveTo(x + a * s, y + b * s)); g.closePath(); if (stroke) { g.strokeStyle = stroke; g.lineWidth = lw || 3; g.lineJoin = 'round'; g.stroke(); } g.fillStyle = fill; g.fill(); };
+    const text = (tx, c, size) => { g.font = `bold ${Math.round(size * s)}px "Press Start 2P", monospace`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineWidth = 3; g.strokeStyle = '#000'; g.strokeText(tx, x, y + 1); g.fillStyle = c; g.fillText(tx, x, y + 1); };
+    if (kind === 'wp' || kind === 'wpUnknown' || kind === 'wpCur') {
+      const on = kind !== 'wpUnknown', col = kind === 'wpCur' ? '#ffd060' : on ? '#7affe0' : '#8a94a4';
+      if (on) { const gr = g.createRadialGradient(x, y, 2, x, y, 16 * s); gr.addColorStop(0, kind === 'wpCur' ? 'rgba(255,208,96,.65)' : 'rgba(122,255,224,.6)'); gr.addColorStop(1, 'rgba(122,255,224,0)'); g.fillStyle = gr; g.beginPath(); g.arc(x, y, 16 * s, 0, TAU); g.fill(); ring(9 * s + P * 6 * s, `rgba(${kind === 'wpCur' ? '255,208,96' : '122,255,224'},${0.8 - P * 0.7})`, 2); }
+      poly([[0, -10], [7, 0], [0, 10], [-7, 0]], col, '#000', 4);
+      poly([[0, -6], [4, 0], [0, 6], [-4, 0]], on ? '#ffffff' : '#5a6070');
+      if (kind === 'wpUnknown') text('?', '#ffffff', 7);
+      if (kind === 'wpCur') { g.fillStyle = '#000'; g.fillRect(x - 2 * s, y - 15 * s, 4 * s, 4 * s); g.fillStyle = '#fff'; g.fillRect(x - 1 * s, y - 14 * s, 2 * s, 2 * s); }
+      return;
+    }
+    if (kind === 'qMain' || kind === 'qSide' || kind === 'qReady' || kind === 'qReadySide' || kind === 'qAvail') {
+      const main = kind === 'qMain' || kind === 'qReady' || kind === 'qAvail', col = main ? '#ffd040' : '#4fb0ff';
+      if (kind !== 'qAvail') ring(10 * s + P * 6 * s, `rgba(${main ? '255,208,64' : '79,176,255'},${0.75 - P * 0.6})`, 2);
+      if (main && kind !== 'qAvail') { const st = []; for (let k = 0; k < 10; k++) { const a = k / 10 * TAU - Math.PI / 2, r = k % 2 ? 4.5 : 10; st.push([Math.cos(a) * r, Math.sin(a) * r]); } poly(st, col, '#000', 3.5); }
+      else poly([[0, -9], [8, 0], [0, 9], [-8, 0]], kind === 'qAvail' ? '#ffe680' : col, '#000', 3.5);
+      text(kind === 'qReady' || kind === 'qReadySide' ? '?' : '!', '#ffffff', kind === 'qAvail' ? 6 : 7);
+      return;
+    }
+    if (kind === 'area') { g.setLineDash([4, 3]); ring(10 * s, 'rgba(255,208,64,.9)', 2); g.setLineDash([]); return; }
+    if (kind === 'player') { g.save(); g.translate(x, y); g.rotate(pulse || 0); g.beginPath(); g.moveTo(0, -9 * s); g.lineTo(6 * s, 7 * s); g.lineTo(0, 3 * s); g.lineTo(-6 * s, 7 * s); g.closePath(); g.lineWidth = 4; g.strokeStyle = '#000'; g.stroke(); g.fillStyle = '#ffffff'; g.fill(); g.restore(); return; }
+    if (kind === 'dungeon' || kind === 'dungeonDone' || kind === 'dungeonLock') {
+      poly([[-7, 6], [-7, -2], [-4, -7], [4, -7], [7, -2], [7, 6]], kind === 'dungeonLock' ? '#7a3a3a' : '#7a4ad0', '#000', 3);
+      poly([[-3, 6], [-3, 0], [0, -3], [3, 0], [3, 6]], '#14081e');
+      if (kind === 'dungeonDone') { g.fillStyle = '#7dff6a'; g.fillRect(x + 4 * s, y - 10 * s, 5 * s, 5 * s); g.strokeStyle = '#000'; g.lineWidth = 1; g.strokeRect(x + 4 * s, y - 10 * s, 5 * s, 5 * s); }
+      else if (kind === 'dungeon') { g.fillStyle = '#ff4a4a'; g.fillRect(x + 4 * s, y - 10 * s, 5 * s, 5 * s); g.strokeStyle = '#000'; g.lineWidth = 1; g.strokeRect(x + 4 * s, y - 10 * s, 5 * s, 5 * s); }
+      return;
+    }
+    if (kind === 'camp') { poly([[0, -7], [7, 5], [-7, 5]], '#e8b860', '#000', 3); poly([[0, -1], [2, 5], [-2, 5]], '#3a2010'); return; }
+    if (kind === 'merchant') { g.fillStyle = '#000'; g.beginPath(); g.arc(x, y + 1, 7 * s, 0, TAU); g.fill(); g.fillStyle = '#ffd040'; g.beginPath(); g.arc(x, y + 1, 5.5 * s, 0, TAU); g.fill(); text('◆', '#7a5a10', 4); return; }
+    if (kind === 'smith') { poly([[-7, -3], [7, -3], [5, 1], [2, 1], [3, 6], [-3, 6], [-2, 1], [-7, 1]], '#a8b0c0', '#000', 3); return; }
+    if (kind === 'puzzle' || kind === 'puzzleDone') { ring(6 * s, '#000', 5); ring(6 * s, kind === 'puzzleDone' ? '#7dff6a' : '#c8a0ff', 2.5); text('✦', kind === 'puzzleDone' ? '#7dff6a' : '#e8d8ff', 5); return; }
+    if (kind === 'chest' || kind === 'chestOpen') { g.fillStyle = '#000'; g.fillRect(x - 7 * s, y - 5 * s, 14 * s, 11 * s); g.fillStyle = kind === 'chestOpen' ? '#6a5a4a' : '#b8742a'; g.fillRect(x - 6 * s, y - 4 * s, 12 * s, 9 * s); g.fillStyle = '#ffd040'; g.fillRect(x - 1 * s, y - 1 * s, 2 * s, 3 * s); return; }
+    if (kind === 'secret') { const st = []; for (let k = 0; k < 8; k++) { const a = k / 8 * TAU, r = k % 2 ? 2.5 : 8; st.push([Math.cos(a) * r, Math.sin(a) * r]); } poly(st, '#fff8c0', '#000', 3); return; }
+    if (kind === 'lock') { g.fillStyle = '#000'; g.fillRect(x - 8 * s, y - 3 * s, 16 * s, 13 * s); g.fillStyle = '#c8a050'; g.fillRect(x - 7 * s, y - 2 * s, 14 * s, 11 * s); g.fillStyle = '#5a4a2a'; g.fillRect(x - 1.5 * s, y + 1 * s, 3 * s, 5 * s); g.strokeStyle = '#000'; g.lineWidth = 5 * s; g.beginPath(); g.arc(x, y - 4 * s, 5 * s, Math.PI, 0); g.stroke(); g.strokeStyle = '#c8a050'; g.lineWidth = 2.5 * s; g.stroke(); return; }
+  },
+  label(g, txt, x, y, o) {
+    const O = o || {}; g.font = O.font || '8px "Press Start 2P", monospace'; g.textAlign = O.align || 'center'; g.textBaseline = 'middle';
+    g.lineJoin = 'round'; g.lineWidth = O.lw || 4; g.strokeStyle = O.stroke || 'rgba(0,0,0,.9)'; g.strokeText(txt, x, y); g.fillStyle = O.color || '#f4ead6'; g.fillText(txt, x, y);
+  },
+  // Pixel-Wolke aus gestuften Rechtecken (nur ein Füllaufruf je Wolke)
+  cloud(g, x, y, w, h, col) {
+    if (x > this.W || y > this.H || x + w < 0 || y + h < -h) return;
+    const r = Math.round; g.fillStyle = col; g.beginPath();
+    g.rect(r(x), r(y), r(w), r(h)); g.rect(r(x + w * 0.14), r(y - h * 0.45), r(w * 0.36), r(h * 0.5)); g.rect(r(x + w * 0.42), r(y - h * 0.8), r(w * 0.3), r(h * 0.85)); g.rect(r(x + w * 0.7), r(y - h * 0.3), r(w * 0.18), r(h * 0.35));
+    g.fill('nonzero');
+  },
+  // Beschriftung vormerken (Priorität: höher gewinnt bei Überlappung)
+  ql(txt, x, y, o, prio) { if (txt) this.lq.push({ txt, x, y, o, prio, n: this.lq.length }); },
+  flushLabels(g, placed) {
+    this.lq.sort((a, b) => b.prio - a.prio || a.n - b.n);
+    for (const L of this.lq) {
+      g.font = L.o.font || '8px "Press Start 2P", monospace'; const hw = g.measureText(L.txt).width / 2 + 3, hh = (parseInt(g.font, 10) || 8) / 2 + 2;
+      const r = [L.x - hw, L.y - hh, L.x + hw, L.y + hh];
+      if (placed.some(q => r[0] < q[2] && r[2] > q[0] && r[1] < q[3] && r[3] > q[1])) continue;
+      placed.push(r); this.label(g, L.txt, L.x, L.y, L.o);
+    }
+    this.lq = [];
+  },
+  // ---------- Zeichnen ----------
+  update(dt) {
+    this.t += dt;
+    if (this.tab === 'world') {
+      // Pfeiltasten / Bewegungs-Belegung / Gamepad-Stick verschieben die Karte, +/− zoomen
+      const mx = Keys.value('moveRight') - Keys.value('moveLeft'), my = Keys.value('moveDown') - Keys.value('moveUp');
+      if (Math.abs(mx) + Math.abs(my) > 0.1) { this.tgt.x += mx * dt * 420 / this.tgt.z; this.tgt.y += my * dt * 420 / this.tgt.z; this.clampTgt(); }
+      if (Input.pressed('Equal') || Input.pressed('NumpadAdd') || Input.pad.held.has('Pad7')) this.zoomAt(this.W / 2, this.H / 2, Input.pad.held.has('Pad7') ? 1 + dt * 1.6 : 1.5);
+      if (Input.pressed('Minus') || Input.pressed('NumpadSubtract') || Input.pad.held.has('Pad6')) this.zoomAt(this.W / 2, this.H / 2, Input.pad.held.has('Pad6') ? 1 / (1 + dt * 1.6) : 1 / 1.5);
+      // Gamepad: Fadenkreuz in der Mitte zeigt den Tooltip, X wählt aus (A bleibt für fokussierte Knöpfe)
+      if (Input.lastDevice === 'pad') {
+        this.padT = (this.padT || 0) - dt;
+        if (this.padT <= 0) { this.padT = 0.15; const h = this.hitAt(this.W / 2, this.H / 2); this.hover = h; this.tip(h, this.W / 2, this.H / 2); }
+        if (Input.pressed('Pad2')) { const h = this.hitAt(this.W / 2, this.H / 2); if (h && (h.type === 'wp' || (h.type === 'quest' && !h.m.avail))) { AudioSys.play('click'); this.select(h); } else if (h && h.type === 'region') this.zoomAt(this.W / 2, this.H / 2, 1.6); }
+      }
+      const k = 1 - Math.exp(-dt * 10), C = this.cam, T = this.tgt;
+      C.x += (T.x - C.x) * k; C.y += (T.y - C.y) * k; C.z += (T.z - C.z) * k;
+    }
+    this.draw();
+  },
   draw() {
     if (this.tab === 'local') { this.drawLocal(); return; }
-    const g = this.g, W = 960, H = 540, tm = this.t; g.imageSmoothingEnabled = false;
-    const grd = g.createLinearGradient(0, 0, 0, H); grd.addColorStop(0, '#0d1838'); grd.addColorStop(0.6, '#1c2c5a'); grd.addColorStop(1, '#3a3a6a'); g.fillStyle = grd; g.fillRect(0, 0, W, H);
-    for (const s of this.stars) { g.globalAlpha = 0.35 + 0.35 * Math.sin(tm * 2 + s.p); g.fillStyle = '#dfe8ff'; g.fillRect(s.x, s.y, s.s, s.s); } g.globalAlpha = 1;
-    for (const c of this.clouds) if (c.y > 270) { g.fillStyle = `rgba(200,210,240,${c.a})`; g.fillRect(Math.round((c.x + tm * c.v) % 1060 - 100), c.y, c.w, c.h); }
+    const g = this.g, W = this.W, H = this.H, C = this.cam, tm = this.t, z = C.z, F = this.filters();
+    g.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    const lod = z >= MAP_LOD.near ? 2 : z >= MAP_LOD.mid ? 1 : 0;
+    this.hits = []; this.lq = [];
+    // Himmel, Sterne, untere Wolken
+    const grd = g.createLinearGradient(0, 0, 0, H); grd.addColorStop(0, '#0b1430'); grd.addColorStop(0.6, '#1a2a58'); grd.addColorStop(1, '#3a3a6a'); g.fillStyle = grd; g.fillRect(0, 0, W, H);
+    for (const s of this.stars) { g.globalAlpha = 0.3 + 0.35 * Math.sin(tm * 2 + s.p); g.fillStyle = '#dfe8ff'; g.fillRect(((s.x * W - C.x * s.d * 0.3) % W + W) % W, ((s.y * H - C.y * s.d * 0.3) % H + H) % H, s.s, s.s); } g.globalAlpha = 1;
+    for (const c of this.clouds) { if (c.y < 300) continue; const p = this.toScreen((c.x + tm * c.v) % 1200 - 100, c.y); this.cloud(g, p.x, p.y, c.w * Math.min(z, 3), c.h * Math.min(z, 3), `rgba(200,210,240,${c.a * clamp(1.5 - z * 0.25, 0.3, 1)})`); }
     // Brücken zwischen den Regionen
-    g.lineWidth = 3;
     for (const a in REGIONS) for (const b in REGIONS[a].exits) {
-      if (a > b) continue; const ea = ZoneGen.exitPoint(REGIONS[a], b), eb = REGIONS[b].exits[a] ? ZoneGen.exitPoint(REGIONS[b], a) : null; if (!eb) continue;
-      const oa = this.origin(a), ob = this.origin(b), x1 = oa.x + ea.x, y1 = oa.y + ea.z, x2 = ob.x + eb.x, y2 = ob.y + eb.z, open = Game.regionOpen(a) && Game.regionOpen(b);
-      const n = Math.ceil(dist(x1, y1, x2, y2) / 5); for (let k = 0; k <= n; k++) { const q = k / n, x = lerp(x1, x2, q), y = lerp(y1, y2, q) + Math.sin(q * Math.PI) * 6; g.fillStyle = open ? (k % 2 ? '#8a6038' : '#6a4422') : '#3a3a44'; g.fillRect(Math.round(x) - 2, Math.round(y) - 2, 4, 4); }
+      if (a > b || !REGIONS[b].exits[a]) continue;
+      const ea = ZoneGen.exitPoint(REGIONS[a], b), eb = ZoneGen.exitPoint(REGIONS[b], a), oa = this.origin(a), ob = this.origin(b), open = Game.regionOpen(a) && Game.regionOpen(b);
+      const p1 = this.toScreen(oa.x + ea.x, oa.y + ea.z), p2 = this.toScreen(ob.x + eb.x, ob.y + eb.z), n = Math.max(4, Math.ceil(dist(p1.x, p1.y, p2.x, p2.y) / Math.max(4, z * 2.2))), w = Math.max(3, z * 1.6);
+      for (let k = 0; k <= n; k++) { const q = k / n, x = lerp(p1.x, p2.x, q), y = lerp(p1.y, p2.y, q) + Math.sin(q * Math.PI) * 5 * z; g.fillStyle = '#000'; g.fillRect(x - w / 2 - 1, y - w / 2 - 1, w + 2, w + 2); g.fillStyle = open ? (k % 2 ? '#a07040' : '#7a5028') : '#3a3a44'; g.fillRect(x - w / 2, y - w / 2, w, w); }
     }
-    // Inseln
+    // Inseln (nur sichtbare), Nebel, Schloss
+    g.imageSmoothingEnabled = z < 2;
     for (const id in REGIONS) {
-      const o = this.origin(id), cv = this.island(id), bob = Math.round(Math.sin(tm * 0.8 + o.x * 0.01) * 2), R0 = REGIONS[id], open = Game.regionOpen(id);
-      g.globalAlpha = 0.35; g.fillStyle = '#000'; g.drawImage(cv, o.x + 6, o.y + 10 + bob); g.globalAlpha = 1;
-      g.drawImage(cv, o.x, o.y + bob);
-      if (this.hover === id) { g.strokeStyle = '#ffd060'; g.lineWidth = 2; g.strokeRect(o.x - 3, o.y - 3 + bob, R0.W + 6, R0.H + 6); }
-      // POI-Symbole
-      if (open) for (const k in R0.pois) {
-        const P = R0.pois[k], x = o.x + P.x, y = o.y + P.y + bob, vis = this.visited(id);
-        if (P.dungeon) { const D = DUNGEONS[P.dungeon], dead = D.boss && Profile.data && Profile.data.flags['boss_' + D.boss]; g.fillStyle = '#000'; g.fillRect(x - 4, y - 4, 9, 9); g.fillStyle = D.lock && !Quests.flag(D.lock) ? '#d04a3a' : '#c070ff'; g.fillRect(x - 3, y - 3, 7, 7); if (vis) { g.fillStyle = dead ? '#7dff6a' : '#ff4a4a'; g.fillRect(x + 4, y - 6, 3, 3); } }
-        if (P.travel) { const on = Save.has('travel', id + ':' + k); g.fillStyle = '#000'; g.fillRect(x - 6, y + 1, 5, 7); g.fillStyle = on ? '#7affe0' : '#5a6a7a'; g.fillRect(x - 5, y + 2, 3, 5); }
-        if (P.safe && vis) { g.fillStyle = '#000'; g.fillRect(x + 1, y + 1, 7, 6); g.fillStyle = '#e8c890'; g.fillRect(x + 2, y + 2, 5, 4); g.fillStyle = '#a83a2a'; g.fillRect(x + 1, y, 7, 2); }
-      }
-      // Wolkendecke über unbesuchten Regionen
-      if (!this.visited(id)) for (let k = 0; k < 7; k++) { g.fillStyle = `rgba(220,226,250,${open ? 0.22 : 0.12})`; const cx = o.x + ((k * 37 + tm * 5) % R0.W), cy = o.y + (k * 23) % R0.H; g.fillRect(Math.round(cx) - 14, cy - 5 + bob, 30, 10); }
-      // Name und Schloss
-      g.font = '8px "Press Start 2P", monospace'; g.textAlign = 'center';
-      const label = R0.short.toUpperCase(), lx = o.x + R0.W / 2, ly = o.y - 6 + bob;
-      g.fillStyle = '#000'; g.fillText(label, lx + 1, ly + 1); g.fillStyle = open ? (Game.region === id ? '#ffd060' : '#f0e6d2') : '#8a8a96'; g.fillText(label, lx, ly);
-      const lv = t('map.lvlRange', { a: R0.lvl[0], b: R0.lvl[1] });
-      g.font = '7px "Press Start 2P", monospace'; g.fillStyle = '#000'; g.fillText(lv, lx + 1, o.y + R0.H + 18 + bob); g.fillStyle = '#c8b898'; g.fillText(lv, lx, o.y + R0.H + 17 + bob);
-      if (!open) { const cx = o.x + R0.W / 2, cy = o.y + R0.H / 2 + bob; g.fillStyle = '#000'; g.fillRect(cx - 9, cy - 5, 18, 16); g.fillStyle = '#c8a050'; g.fillRect(cx - 8, cy - 4, 16, 14); g.fillStyle = '#5a4a2a'; g.fillRect(cx - 2, cy, 4, 6); g.strokeStyle = '#c8a050'; g.lineWidth = 3; g.beginPath(); g.arc(cx, cy - 6, 6, Math.PI, 0); g.stroke(); }
+      const o = this.origin(id), R0 = REGIONS[id], p = this.toScreen(o.x, o.y), w = R0.W * z, hh = (R0.H + MAP_CLIFF) * z;
+      if (p.x > W || p.y > H || p.x + w < 0 || p.y + hh < 0) continue;
+      const open = Game.regionOpen(id), bob = Math.sin(tm * 0.8 + o.x * 0.01) * Math.min(2, z * 0.5);
+      g.globalAlpha = 0.35; g.drawImage(this.island(id, !open), p.x + 4 * z, p.y + 6 * z + bob, w, hh); g.globalAlpha = 1;
+      g.drawImage(this.island(id, !open), p.x, p.y + bob, w, hh);
+      g.imageSmoothingEnabled = true; g.drawImage(this.fogMask(id), p.x, p.y + bob, w, hh); g.imageSmoothingEnabled = z < 2;
+      this.hits.push({ type: 'region', id, x0: p.x, y0: p.y, x1: p.x + w, y1: p.y + R0.H * z, prio: 0 });
     }
-    // Questziele
-    const D = Profile.data; if (D) {
-      const marks = []; for (const id in D.quests) if (Quests.isActive(id)) for (const tg of Quests.targets(id)) if (tg.region && tg.poi && REGIONS[tg.region] && REGIONS[tg.region].pois[tg.poi]) marks.push({ tg, tracked: id === D.tracked });
-      for (const m of marks) { const o = this.origin(m.tg.region), P = REGIONS[m.tg.region].pois[m.tg.poi], x = o.x + P.x, y = o.y + P.y - 10 + Math.sin(tm * 4) * 2; g.fillStyle = '#000'; g.fillRect(x - 3, y - 3, 7, 7); g.fillStyle = m.tracked ? '#ffd060' : '#c8a050'; g.fillRect(x - 2, y - 2, 5, 5); }
+    g.imageSmoothingEnabled = true;
+    const vis = (x, y, m) => x > -m && y > -m && x < W + m && y < H + m;
+    const pulse = (tm * 1.2) % 1;
+    // Orte, Dungeons, Lager, Rätsel, Händler (ab mittlerer Stufe)
+    for (const id in REGIONS) {
+      if (!Game.regionOpen(id)) continue; const R0 = REGIONS[id], o = this.origin(id), visited = this.visited(id), L = ZoneGen.layout(id), fog = visited ? Game.fogFor(id) : null;
+      const seen = (x, y) => fog && fog[Math.floor(y) * L.W + Math.floor(x)];
+      for (const k in R0.pois) {
+        const P = R0.pois[k], s = this.toScreen(o.x + P.x + 0.5, o.y + P.y + 0.5); if (!vis(s.x, s.y, 60)) continue;
+        if (P.dungeon && F.d && lod >= 1) {
+          const D0 = DUNGEONS[P.dungeon], lock = this.dungeonLock(P.dungeon), done = D0.boss && Profile.data && Profile.data.flags['boss_' + D0.boss];
+          this.icon(g, lock ? 'dungeonLock' : done ? 'dungeonDone' : 'dungeon', s.x, s.y, 1);
+          this.hits.push({ type: 'dungeon', id: P.dungeon, region: id, x: s.x, y: s.y, r: 12, prio: 3 });
+          this.ql(D0.name, s.x, s.y + 16, { font: '7px "Press Start 2P", monospace', color: '#e0c8ff' }, 5);
+          if (lod >= 2) this.ql(t('map.enemyLvl', { n: D0.lvl + WORLD_TIERS[Game.tier].lvl }), s.x, s.y + 28, { font: '7px "Press Start 2P", monospace', color: '#ff9a8a' }, 2);
+        } else if (lod >= 1) {
+          if (P.safe) this.icon(g, 'camp', s.x, s.y, 0.9);
+          this.ql(P.name, s.x, s.y + (P.safe ? 14 : 0), { font: '7px "Press Start 2P", monospace', color: P.safe ? '#ffe8b0' : '#f0e6d2' }, P.safe ? 4 : 3);
+          if (lod >= 2 && !P.safe) this.ql(t('map.enemyLvl', { n: R0.lvl[0] + WORLD_TIERS[Game.tier].lvl + '–' + (R0.lvl[1] + WORLD_TIERS[Game.tier].lvl) }), s.x, s.y + 12, { font: '7px "Press Start 2P", monospace', color: '#ff9a8a' }, 1);
+          this.hits.push({ type: 'poi', region: id, poi: k, x: s.x, y: s.y, r: 14, prio: 1 });
+        }
+      }
+      if (lod >= 2) {
+        if (F.p) for (const site of L.sites) { const cx = site.x + site.w / 2, cy = site.y + site.h / 2; if (!visited) continue; const s = this.toScreen(o.x + cx, o.y + cy); if (!vis(s.x, s.y, 20)) continue; const done = Save.has('puzzles', site.def.id); this.icon(g, done ? 'puzzleDone' : 'puzzle', s.x, s.y, 1); this.hits.push({ type: 'puzzle', site, x: s.x, y: s.y, r: 10, prio: 2 }); }
+        if (F.m) for (const nid in NPCS) { const n = NPCS[nid]; if (n.region !== id || !(n.service === 'merchant' || n.service === 'smith' || n.service === 'tailor' || n.service === 'trainer' || n.service === 'board')) continue; const pp = this.poiPos(id, n.poi); if (!pp) continue; const s = this.toScreen(pp.x + n.dx, pp.y + n.dy); if (!vis(s.x, s.y, 20)) continue; this.icon(g, n.service === 'smith' ? 'smith' : 'merchant', s.x, s.y - 8, 0.9); this.hits.push({ type: 'npc', npc: nid, x: s.x, y: s.y - 8, r: 9, prio: 2 }); }
+        if (L.secret && Save.has('secrets', id + '_secret')) { const s = this.toScreen(o.x + L.secret.x + 0.5, o.y + L.secret.y + 0.5); if (vis(s.x, s.y, 20)) { this.icon(g, 'secret', s.x, s.y, 1); this.hits.push({ type: 'secret', x: s.x, y: s.y, r: 9, prio: 2 }); } }
+        if (Game.world && Game.world.isZone && Game.region === id) for (const ch of Game.world.chests || []) { if (!seen(ch.x, ch.z)) continue; const s = this.toScreen(o.x + ch.x, o.y + ch.z); if (!vis(s.x, s.y, 20)) continue; const opened = ch.opened || ch.open || (ch.id && Save.has('chests', ch.id)); this.icon(g, opened ? 'chestOpen' : 'chest', s.x, s.y, 0.8); this.hits.push({ type: 'chest', opened, x: s.x, y: s.y, r: 8, prio: 2 }); }
+      }
+    }
+    // Regionsnamen + Fortschritt (weit) bzw. nur Namen (mittel/nah)
+    for (const id in REGIONS) {
+      const R0 = REGIONS[id], o = this.origin(id), s = this.toScreen(o.x + R0.W / 2, o.y - 4), open = Game.regionOpen(id); if (!vis(s.x, s.y, 200)) continue;
+      const big = lod === 0, cur = Game.region === id;
+      this.ql((big ? R0.name : R0.short).toUpperCase(), s.x, s.y - (big ? 6 : 2), { font: (big ? 10 : 9) + 'px "Press Start 2P", monospace', color: !open ? '#9a9aa6' : cur ? '#ffd060' : '#fff4dc', lw: 5 }, 9);
+      if (big || !open) {
+        const pr = this.regionProgress(id), line = open ? t('map.progress', { a: R0.lvl[0], b: R0.lvl[1], q: pr.done, qt: pr.total, w: pr.won, wt: pr.wps, bd: pr.bossDone, bt: pr.bosses }) : t('map.lvlRange', { a: R0.lvl[0], b: R0.lvl[1] });
+        this.ql(line, s.x, s.y + 9, { font: '7px "Press Start 2P", monospace', color: open ? '#cfe0ff' : '#9a9aa6' }, 8);
+      }
+      if (!open) { const c = this.toScreen(o.x + R0.W / 2, o.y + R0.H / 2); this.icon(g, 'lock', c.x, c.y, Math.min(1.6, 0.8 + z * 0.3)); }
+    }
+    // Questmarker mit Zielgebiet (aktive Quests; verfügbare als kleines „!“)
+    if (F.q) for (const m of this.questMarkers()) {
+      const s = this.toScreen(m.x, m.y); if (!vis(s.x, s.y, 120)) continue;
+      if (m.avail) { if (lod < 1) continue; this.icon(g, 'qAvail', s.x, s.y - 14, 0.8); this.hits.push({ type: 'quest', m, x: s.x, y: s.y - 14, r: 9, prio: 4 }); continue; }
+      if (m.area && lod >= 1) { const rr = m.area * z; g.setLineDash([6, 5]); g.strokeStyle = `rgba(${m.main ? '255,208,64' : '79,176,255'},${0.35 + 0.25 * Math.sin(tm * 3)})`; g.lineWidth = 2; g.beginPath(); g.arc(s.x, s.y, rr, 0, TAU); g.stroke(); g.setLineDash([]); g.fillStyle = `rgba(${m.main ? '255,208,64' : '79,176,255'},0.08)`; g.fill(); }
+      const kind = m.ready ? (m.main ? 'qReady' : 'qReadySide') : m.main ? 'qMain' : 'qSide', sc = m.focus ? 1.35 : m.tracked ? 1.15 : 1, bob = Math.sin(tm * 4 + m.x) * 2;
+      this.icon(g, kind, s.x, s.y - 16 + bob, sc, pulse);
+      if (m.focus) this.label(g, '◆', s.x, s.y - 34 + bob, { font: '8px "Press Start 2P", monospace', color: '#ffd060' });
+      this.hits.push({ type: 'quest', m, x: s.x, y: s.y - 16, r: 13 * sc, prio: 5 });
+      if (m.idx) continue; // weitere Ziele derselben Quest (z. B. Eskorte) ohne Beschriftung
+      if (lod >= 2 || m.focus && lod >= 1) {
+        const ob = Quests.objText(m.qid), short = ob.length > 46 ? ob.slice(0, 44) + '…' : ob, pr = m.focus ? 7 : m.tracked ? 6 : 4;
+        this.ql(m.q.name, s.x, s.y + 8, { font: '7px "Press Start 2P", monospace', color: m.main ? '#ffe080' : '#9ad0ff' }, pr);
+        if (lod >= 2 && (m.focus || m.tracked)) this.ql(short, s.x, s.y + 26, { font: '16px VT323, monospace', color: '#f4ead6', lw: 4 }, pr - 0.5);
+      }
     }
     // Spieler
-    if (Game.region && REGIONS[Game.region]) { const o = this.origin(Game.region), P = Game.player; let px = o.x + REGIONS[Game.region].W / 2, py = o.y + REGIONS[Game.region].H / 2;
-      if (Game.world && Game.world.isZone && P) { px = o.x + P.x; py = o.y + P.z; } else if (Game.dungeonReturn) { px = o.x + Game.dungeonReturn.x; py = o.y + Game.dungeonReturn.z; }
-      const s = 3 + Math.round(Math.sin(tm * 6)); g.fillStyle = '#000'; g.fillRect(px - s - 1, py - s - 1, s * 2 + 2, s * 2 + 2); g.fillStyle = '#ffffff'; g.fillRect(px - s, py - s, s * 2, s * 2); }
-    for (const c of this.clouds) if (c.y <= 270) { g.fillStyle = `rgba(220,226,250,${c.a * 0.7})`; g.fillRect(Math.round((c.x + tm * c.v) % 1060 - 100), c.y, c.w, c.h); }
-    if (this.focus && REGIONS[this.focus]) { const o = this.origin(this.focus), R0 = REGIONS[this.focus], p = 0.5 + 0.5 * Math.sin(tm * 5); g.strokeStyle = `rgba(255,208,96,${p})`; g.lineWidth = 3; g.strokeRect(o.x - 6, o.y - 6, R0.W + 12, R0.H + 12); }
+    const pp = this.playerPos();
+    if (pp) { const s = this.toScreen(pp.x, pp.y); g.strokeStyle = `rgba(255,255,255,${0.7 - pulse * 0.7})`; g.lineWidth = 2; g.beginPath(); g.arc(s.x, s.y, 6 + pulse * 14, 0, TAU); g.stroke(); this.icon(g, 'player', s.x, s.y, 1.1, pp.yaw !== undefined ? Math.PI - pp.yaw : 0); this.hits.push({ type: 'player', x: s.x, y: s.y, r: 9, prio: 1 }); }
+    // obere Wolken
+    for (const c of this.clouds) { if (c.y >= 300) continue; const p = this.toScreen((c.x + tm * c.v * 1.4) % 1200 - 100, c.y); this.cloud(g, p.x, p.y, c.w * Math.min(z, 2.5), c.h * Math.min(z, 2.5), `rgba(225,230,250,${c.a * 0.55 * clamp(1.5 - z * 0.25, 0.3, 1)})`); }
+    // Waypoints zuletzt: immer sichtbar, nie verdeckt. Ihre Flächen werden vorab reserviert,
+    // damit andere Beschriftungen ihnen ausweichen; danach alle übrigen Beschriftungen ohne Überlappung.
+    const wps = [], placed = [], WF = '7px "Press Start 2P", monospace';
+    if (F.w) for (const w of this.waypoints()) {
+      const st = this.wpState(w); if (st === 'unknown' && !this.visited(w.region)) continue;
+      const s = this.toScreen(w.x, w.y); if (!vis(s.x, s.y, 30)) continue;
+      const sc = Math.min(1.5, 0.95 + z * 0.08) * (this.sel && this.sel.w === w ? 1.25 : 1), txt = lod >= 1 || (this.hover && this.hover.w === w) ? (st === 'unknown' ? '???' : w.name) : '';
+      wps.push({ w, st, s, sc, txt }); placed.push([s.x - 12 * sc, s.y - 12 * sc, s.x + 12 * sc, s.y + 12 * sc]);
+      if (txt) { g.font = WF; const tw = g.measureText(txt).width / 2 + 3; placed.push([s.x - tw, s.y + 18 * sc - 6, s.x + tw, s.y + 18 * sc + 6]); }
+    }
+    this.flushLabels(g, placed);
+    for (const p of wps) {
+      const { w, st, s, sc } = p;
+      this.icon(g, st === 'current' ? 'wpCur' : st === 'on' ? 'wp' : 'wpUnknown', s.x, s.y, sc, (pulse + w.x * 0.01) % 1);
+      if (p.txt) this.label(g, p.txt, s.x, s.y + 18 * sc, { font: WF, color: st === 'on' ? '#aaffee' : st === 'current' ? '#ffe080' : '#b8c0cc' });
+      this.hits.push({ type: 'wp', w, st, x: s.x, y: s.y, r: 13 * sc, prio: 9 });
+    }
+    // Fokus-Blinken (Quest-Log-Sprung)
+    if (this.flash && this.flash.t > tm) { const s = this.toScreen(this.flash.x, this.flash.y), a = (this.flash.t - tm) / 2.5; g.strokeStyle = `rgba(255,224,120,${a})`; g.lineWidth = 3; for (let k = 0; k < 2; k++) { g.beginPath(); g.arc(s.x, s.y, 12 + ((tm * 40 + k * 20) % 40), 0, TAU); g.stroke(); } }
+    // Gamepad: Fadenkreuz in der Mitte
+    if (Input.lastDevice === 'pad') { g.strokeStyle = 'rgba(255,255,255,.8)'; g.lineWidth = 2; g.strokeRect(W / 2 - 6, H / 2 - 6, 12, 12); }
   },
   drawLocal() {
     const cv = $('localMapCanvas'), g = cv.getContext('2d'), w = Game.world; if (!w || !Game.player) return;
@@ -10945,50 +11703,137 @@ const WorldMap = {
     g.fillStyle = '#0d0a08'; g.fillRect(0, 0, cv.width, cv.height);
     UI.drawMapLayer(g, cv.width, Math.min(scale, 9), (x0 + x1) / 2, (z0 + z1) / 2, true);
   },
-  toCanvas(e) { const r = this.cv.getBoundingClientRect(); return { x: (e.clientX - r.left) / r.width * 960, y: (e.clientY - r.top) / r.height * 540 }; },
-  regionAt(x, y) {
-    for (const id in REGIONS) { const o = this.origin(id), R0 = REGIONS[id], L = ZoneGen.layout(id), tx = Math.floor(x - o.x), ty = Math.floor(y - o.y); if (tx < -4 || ty < -4 || tx > R0.W + 4 || ty > R0.H + 4) continue;
-      for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) { const xx = tx + dx, yy = ty + dy; if (xx >= 0 && yy >= 0 && xx < L.W && yy < L.H && L.tiles[yy * L.W + xx]) return id; } }
-    return null;
-  },
-  waystoneAt(x, y) {
-    for (const id in REGIONS) { const o = this.origin(id), R0 = REGIONS[id]; for (const k in R0.pois) { const P = R0.pois[k]; if (!P.travel) continue; if (dist(x, y, o.x + P.x - 3, o.y + P.y + 4) < 9) return { region: id, poi: k, P }; } }
-    return null;
-  },
-  onMove(e) {
-    if (this.tab !== 'world') return; this.lastMove = e; const p = this.toCanvas(e), id = this.regionAt(p.x, p.y), ws = this.waystoneAt(p.x, p.y); this.hover = id;
-    const tip = $('mapTip'); if (!id) { tip.classList.add('hidden'); this.cv.style.cursor = 'default'; return; }
-    const R0 = REGIONS[id], open = Game.regionOpen(id), D = Profile.data;
-    let h = `<div class="tn">${escapeHtml(R0.name)}</div><div>${t('map.tip.recLevel')} <b style="color:var(--gold)">${R0.lvl[0]}–${R0.lvl[1]}</b>${D && D.level < R0.lvl[0] ? ` <span style="color:#ff8a6a">(${t('map.tip.dangerous')})</span>` : ''}</div>`;
-    if (!open) { const q = QUESTS.find(qq => qq.reward.unlock === id); h += `<div style="color:#ff8a6a">🔒 ${t('map.tip.locked', { quest: q ? escapeHtml(q.name) : '?' })}</div>`; }
-    else {
-      const qa = QUESTS.filter(q => q.region === id && Quests.isActive(q.id)), qv = QUESTS.filter(q => q.region === id && Quests.available(q) && q.giver !== 'board');
-      if (qa.length) h += `<div>${t('map.tip.active', { list: qa.map(q => escapeHtml(q.name)).join(', ') })}</div>`; if (qv.length) h += `<div style="color:#ffe040">❗ ${t('map.tip.available', { list: qv.map(q => escapeHtml(q.name)).join(', ') })}</div>`;
-      for (const k in R0.pois) { const P = R0.pois[k]; if (!P.dungeon) continue; const Dg = DUNGEONS[P.dungeon], B = BOSSES[Dg.boss], dead = D && D.flags['boss_' + Dg.boss]; h += `<div>${escapeHtml(Dg.name)}: ${B ? escapeHtml(B.name) : ''} ${dead ? `<span style="color:#7dff6a">✓ ${t('map.tip.defeated')}</span>` : `<span style="color:#ff8a6a">✗ ${t('map.tip.undefeated')}</span>`}</div>`; }
-      const wsl = Object.keys(R0.pois).filter(k => R0.pois[k].travel); h += `<div style="color:#7affe0">${t('map.tip.waystones', { list: wsl.map(k => (Save.has('travel', id + ':' + k) ? '◆ ' : '◇ ') + escapeHtml(R0.pois[k].name)).join(', ') })}</div>`;
-      if (ws && ws.region === id) h += `<div style="color:var(--gold)">${t('map.tip.travelTo', { name: escapeHtml(ws.P.name) })}${Save.has('travel', id + ':' + ws.poi) ? '' : ` (${t('map.tip.notActive')})`}</div>`;
+  // ---------- Treffer, Tooltips, Panels ----------
+  // Symbole haben Vorrang (Waypoints zuerst), sonst die Insel unter dem Zeiger
+  hitAt(x, y) {
+    let best = null, region = null;
+    for (const h of this.hits) {
+      if (h.type === 'region') {
+        if (region || x < h.x0 || x > h.x1 || y < h.y0 || y > h.y1) continue;
+        const m = this.toMap(x, y), o = this.origin(h.id), L = ZoneGen.layout(h.id), tx = Math.floor(m.x - o.x), ty = Math.floor(m.y - o.y);
+        let hit = false; for (let dy = -2; dy <= 2 && !hit; dy++) for (let dx = -2; dx <= 2 && !hit; dx++) { const xx = tx + dx, yy = ty + dy; if (xx >= 0 && yy >= 0 && xx < L.W && yy < L.H && L.tiles[yy * L.W + xx]) hit = true; }
+        if (hit) region = h; continue;
+      }
+      const d = dist(x, y, h.x, h.y); if (d <= h.r + 3 && (!best || h.prio > best.prio || (h.prio === best.prio && d < best.d))) best = Object.assign({ d }, h);
     }
-    tip.innerHTML = h; tip.classList.remove('hidden');
-    const wr = $('mapWrap').getBoundingClientRect(); let lx = e.clientX - wr.left + 16, ly = e.clientY - wr.top + 12; if (lx + tip.offsetWidth > wr.width) lx -= tip.offsetWidth + 30; if (ly + tip.offsetHeight > wr.height) ly = wr.height - tip.offsetHeight - 4;
-    tip.style.left = lx + 'px'; tip.style.top = Math.max(0, ly) + 'px'; this.cv.style.cursor = ws ? 'pointer' : 'default';
+    return best || region;
   },
-  onClick(e) {
-    if (this.tab !== 'world') return; const p = this.toCanvas(e), ws = this.waystoneAt(p.x, p.y);
-    if (!ws) return;
-    const key = ws.region + ':' + ws.poi;
-    if (!Save.has('travel', key)) { AudioSys.play('error'); UI.toast(t('map.toast.notActive'), '#ff8a60'); return; }
-    if (Game.world && Game.world.isDungeon) { AudioSys.play('error'); UI.toast(t('map.toast.noTravelDungeon'), '#ff8a60'); return; }
-    if (Game.inCombat()) { AudioSys.play('error'); UI.toast(t('map.toast.inCombat'), '#ff8a60'); return; }
-    AudioSys.play('travel'); Game.closeOverlay(); Game.travelTo(ws.region, { poi: ws.poi });
+  tipHtml(h) {
+    const dm = p => { const d = this.distTo(p); return d === null ? '' : `<div class="tdist">${t('map.tip.dist', { n: d })}</div>`; };
+    if (h.type === 'wp') { const w = h.w; return `<div class="tn">◆ ${escapeHtml(h.st === 'unknown' ? t('map.wp.unknownName') : w.name)}</div><div>${escapeHtml(REGIONS[w.region].name)}</div><div style="color:${h.st === 'unknown' ? '#b8c0cc' : '#7affe0'}">${escapeHtml(t('map.wp.state.' + h.st))}</div>${dm(w)}<div class="note" style="margin:4px 0 0">${escapeHtml(t(h.st === 'unknown' ? 'map.wp.howFind' : h.st === 'current' ? 'map.wp.hereNow' : 'map.wp.clickTravel'))}</div>`; }
+    if (h.type === 'quest') {
+      const m = h.m, q = m.q, rw = this.rewardText(q);
+      if (m.avail) return `<div class="tn">❗ ${escapeHtml(q.name)}</div><div>${escapeHtml(t('map.tip.availFrom', { npc: NPCS[q.giver].name }))}</div><div>${t('map.tip.recLevel')} <b style="color:var(--gold)">${q.lvl}</b></div>${dm(m)}`;
+      return `<div class="tn">${m.main ? '★' : '◆'} ${escapeHtml(q.name)}${m.focus ? ` <span style="color:#ffd060">(${escapeHtml(t('map.tip.focus'))})</span>` : m.tracked ? ` <span style="color:#9ad0ff">(${escapeHtml(t('map.tip.tracked'))})</span>` : ''}</div>`
+        + `<div>${t('map.tip.goal')}: ${escapeHtml(Quests.objText(m.qid))}</div>${rw ? `<div>${t('map.tip.reward')}: ${rw}</div>` : ''}<div>${t('map.tip.recLevel')} <b style="color:var(--gold)">${q.lvl}</b>${Profile.data && Profile.data.level < q.lvl ? ` <span style="color:#ff8a6a">(${t('map.tip.dangerous')})</span>` : ''}</div>${m.area ? `<div class="note" style="margin:2px 0">${escapeHtml(t('map.tip.areaHint'))}</div>` : ''}${dm(m)}<div class="note" style="margin:4px 0 0">${escapeHtml(t('map.tip.clickQuest'))}</div>`;
+    }
+    if (h.type === 'dungeon') { const D0 = DUNGEONS[h.id], B = BOSSES[D0.boss], lock = this.dungeonLock(h.id), done = B && Profile.data && Profile.data.flags['boss_' + D0.boss]; return `<div class="tn">${escapeHtml(D0.name)}</div><div>${t('map.tip.recLevel')} <b style="color:var(--gold)">${D0.lvl}</b></div>${B ? `<div>${escapeHtml(B.name)} ${done ? `<span style="color:#7dff6a">✓ ${t('map.tip.defeated')}</span>` : `<span style="color:#ff8a6a">✗ ${t('map.tip.undefeated')}</span>`}</div>` : ''}${lock ? `<div style="color:#ff8a6a">🔒 ${escapeHtml(lock)}</div>` : ''}${dm({ x: h.x, y: h.y, ...this.toMap(h.x, h.y) })}`; }
+    if (h.type === 'poi') { const P = REGIONS[h.region].pois[h.poi]; return `<div class="tn">${escapeHtml(P.name)}</div><div>${escapeHtml(REGIONS[h.region].name)}</div>${P.safe ? `<div style="color:#7dff6a">${t('map.tip.safe')}</div>` : `<div style="color:#ff9a8a">${t('map.enemyLvl', { n: REGIONS[h.region].lvl[0] + '–' + REGIONS[h.region].lvl[1] })}</div>`}`; }
+    if (h.type === 'puzzle') return `<div class="tn">✦ ${escapeHtml(PUZZLE_INFO[h.site.def.type] ? PUZZLE_INFO[h.site.def.type].name : t('map.legend.puzzle'))}</div><div style="color:${Save.has('puzzles', h.site.def.id) ? '#7dff6a' : '#c8a0ff'}">${t(Save.has('puzzles', h.site.def.id) ? 'map.tip.solved' : 'map.tip.unsolved')}</div>`;
+    if (h.type === 'npc') { const n = NPCS[h.npc]; return `<div class="tn">${escapeHtml(n.name)}</div><div>${escapeHtml(n.role)}</div>`; }
+    if (h.type === 'chest') return `<div class="tn">${t('map.legend.chest')}</div><div>${t(h.opened ? 'map.tip.opened' : 'map.tip.unopened')}</div>`;
+    if (h.type === 'secret') return `<div class="tn">${t('map.legend.secret')}</div><div>${t('map.tip.secretFound')}</div>`;
+    if (h.type === 'player') return `<div class="tn">${escapeHtml(Profile.data ? Profile.data.name : '')}</div><div>${t('map.legend.you')}</div>`;
+    if (h.type === 'region') {
+      const R0 = REGIONS[h.id], open = Game.regionOpen(h.id), D = Profile.data, pr = this.regionProgress(h.id);
+      let s = `<div class="tn">${escapeHtml(R0.name)}</div><div>${t('map.tip.recLevel')} <b style="color:var(--gold)">${R0.lvl[0]}–${R0.lvl[1]}</b>${D && D.level < R0.lvl[0] ? ` <span style="color:#ff8a6a">(${t('map.tip.dangerous')})</span>` : ''}</div>`;
+      if (!open) return s + `<div style="color:#ff8a6a">🔒 ${t('map.tip.lockedTitle')}</div>` + this.lockReason(h.id).map(x => `<div style="color:#ffb08a">· ${escapeHtml(x)}</div>`).join('');
+      s += `<div>${t('map.tip.progress', { q: pr.done, qt: pr.total, w: pr.won, wt: pr.wps, bd: pr.bossDone, bt: pr.bosses })}</div>`;
+      if (!this.visited(h.id)) s += `<div class="note" style="margin:2px 0">${t('map.tip.unexplored')}</div>`;
+      return s;
+    }
+    return '';
   },
-  update(dt) { this.t += dt; this.draw(); },
-  // Sprachwechsel bei offener Karte: Reiter, Legende und Tooltip neu (Canvas zeichnet ohnehin jedes Bild neu)
-  relang() {
-    if (Game.overlay !== 'map') return;
-    this.chrome(); this.draw();
-    if (this.lastMove && this.hover && !$('mapTip').classList.contains('hidden')) this.onMove(this.lastMove);
+  rewardText(q) { const r = q.reward || {}, a = []; if (r.xp) a.push(t('ui.q.rw.xp', { n: r.xp })); if (r.gems) a.push(t('ui.q.rw.gems', { n: r.gems })); if (r.item) a.push(SLOT_NAMES[r.item.slot]); if (r.spell) a.push(SPELLS[r.spell].name); if (r.unlock) a.push(t('ui.q.rw.unlock', { name: REGIONS[r.unlock].name })); return a.map(escapeHtml).join(' · '); },
+  tip(h, sx, sy) {
+    const tip = $('mapTip'); this.tipArgs = h ? [h, sx, sy] : null; if (!h) { tip.classList.add('hidden'); return; }
+    const html = this.tipHtml(h); if (!html) { tip.classList.add('hidden'); return; }
+    tip.innerHTML = html; tip.classList.remove('hidden');
+    let lx = sx + 18, ly = sy + 14; if (lx + tip.offsetWidth > this.W) lx = sx - tip.offsetWidth - 18; if (ly + tip.offsetHeight > this.H) ly = this.H - tip.offsetHeight - 4;
+    tip.style.left = Math.max(4, lx) + 'px'; tip.style.top = Math.max(4, ly) + 'px';
   },
+  select(h) {
+    const pn = $('mapPanel'); this.sel = h; if (!h) { pn.classList.add('hidden'); return; }
+    pn.innerHTML = ''; const head = document.createElement('div'); head.innerHTML = this.tipHtml(h).replace(/<div class="note"[^>]*>[^<]*<\/div>$/, ''); pn.appendChild(head);
+    const row = document.createElement('div'); row.className = 'mpBtns';
+    const btn = (k, cls, fn, dis) => { const b = document.createElement('button'); b.className = 'btn small ' + (cls || ''); b.textContent = t(k); if (dis) { b.disabled = true; b.title = dis; } b.onclick = () => { AudioSys.play('click'); fn(); }; row.appendChild(b); return b; };
+    if (h.type === 'wp') {
+      if (h.st === 'on') { const why = this.travelBlock(h.w); btn('map.wp.travel', 'gold', () => this.travel(h.w), why); if (why) { const n = document.createElement('div'); n.className = 'note'; n.style.margin = '4px 0 0'; n.textContent = why; pn.appendChild(row); pn.appendChild(n); row.dataset.done = 1; } }
+      else if (h.st === 'unknown') { const n = document.createElement('div'); n.className = 'note'; n.textContent = t('map.wp.howFind'); pn.appendChild(n); }
+      else { const n = document.createElement('div'); n.className = 'note'; n.textContent = t('map.wp.hereNow'); pn.appendChild(n); }
+    }
+    if (h.type === 'quest' && !h.m.avail) {
+      const tr = Quests.isTracked(h.m.qid);
+      btn(tr ? 'map.q.untrack' : 'map.q.track', tr ? '' : 'gold', () => { Quests.track(h.m.qid, !tr); this.select(Object.assign({}, h, { m: Object.assign({}, h.m, { tracked: !tr, focus: !tr }) })); });
+      if (tr && Profile.data.tracked !== h.m.qid) btn('map.q.focus', '', () => { Quests.track(h.m.qid, true); this.select(h); });
+    }
+    btn('map.close', '', () => this.select(null));
+    if (!row.dataset.done) pn.appendChild(row);
+    pn.classList.remove('hidden');
+    const b0 = pn.querySelector('button:not([disabled])'); if (b0 && Input.lastDevice === 'pad') Keys.focus(b0);
+  },
+  travelBlock(w) {
+    if (Game.world && Game.world.isDungeon) return t('map.toast.noTravelDungeon');
+    if (Game.inCombat()) return t('map.toast.inCombat');
+    if (this.wpState(w) === 'current') return t('map.wp.hereNow');
+    return null;
+  },
+  // Schnellreise mit Ladeübergang
+  travel(w) {
+    const why = this.travelBlock(w); if (why) { AudioSys.play('error'); UI.toast(why, '#ff8a60'); return; }
+    if (!Save.has('travel', w.id)) { AudioSys.play('error'); UI.toast(t('map.toast.notActive'), '#ff8a60'); return; }
+    const ov = $('travelOverlay'); $('travelText').textContent = t('map.traveling', { name: w.name }); ov.classList.remove('hidden', 'out');
+    AudioSys.play('travel'); Game.closeOverlay();
+    setTimeout(() => {
+      if (Game.region === w.region && Game.world && Game.world.isZone) { const ws = Game.world.waystones.find(x => x.id === w.id); if (ws) Game.teleportInWorld(ws.x, ws.z + 1.6); }
+      else Game.travelTo(w.region, { poi: w.poi, wp: w.id });
+      setTimeout(() => { ov.classList.add('out'); setTimeout(() => ov.classList.add('hidden'), 450); }, 900);
+    }, 420);
+  },
+  focusQuest(qid, instant) {
+    const ms = this.questMarkers().filter(m => m.qid === qid && !m.avail); if (!ms.length) { const q = Quests.q(qid); if (q && REGIONS[q.region]) this.flyTo(this.regionCenter(q.region), 2.2, instant); return; }
+    const m = ms[0]; this.flyTo({ x: m.x, y: m.y }, Math.max(MAP_LOD.near + 0.4, this.tgt.z), instant); this.flash = { x: m.x, y: m.y, t: this.t + 2.5 };
+  },
+  focusWaypoint(id, instant) { const w = this.waypoints().find(x => x.id === id); if (!w) return; this.flyTo({ x: w.x, y: w.y }, Math.max(MAP_LOD.mid + 0.6, this.tgt.z), instant); this.flash = { x: w.x, y: w.y, t: this.t + 2 }; },
+  // ---------- Zeiger: Ziehen, Pinch, Klick, Hover ----------
+  onDown(e) {
+    this.cv.setPointerCapture && this.cv.setPointerCapture(e.pointerId);
+    const p = this.local(e); this.pointers.set(e.pointerId, p);
+    if (this.pointers.size === 2) { const [a, b] = [...this.pointers.values()]; this.pinch = { d: dist(a.x, a.y, b.x, b.y), z: this.tgt.z }; this.drag = null; }
+    else this.drag = { x: p.x, y: p.y, cx: this.tgt.x, cy: this.tgt.y, moved: 0 };
+  },
+  onPointerMove(e) {
+    const p = this.local(e);
+    if (this.pointers.has(e.pointerId)) this.pointers.set(e.pointerId, p);
+    if (this.pinch && this.pointers.size === 2) { const [a, b] = [...this.pointers.values()], d = dist(a.x, a.y, b.x, b.y); const f = (this.pinch.z * d / this.pinch.d) / this.tgt.z; this.zoomAt((a.x + b.x) / 2, (a.y + b.y) / 2, f); this.tip(null); return; }
+    if (this.drag) {
+      const dx = p.x - this.drag.x, dy = p.y - this.drag.y; this.drag.moved = Math.max(this.drag.moved, Math.hypot(dx, dy));
+      if (this.drag.moved > 4) { this.markUsed(); this.tgt.x = this.drag.cx - dx / this.tgt.z; this.tgt.y = this.drag.cy - dy / this.tgt.z; this.clampTgt(); this.cam.x = this.tgt.x; this.cam.y = this.tgt.y; this.tip(null); this.cv.style.cursor = 'grabbing'; return; }
+    }
+    if (e.pointerType === 'touch') return;
+    const h = this.hitAt(p.x, p.y); this.hover = h; this.tip(h, p.x, p.y);
+    this.cv.style.cursor = h && (h.type === 'wp' || h.type === 'quest') ? 'pointer' : 'grab';
+  },
+  onUp(e, cancel) {
+    const p = this.local(e); this.pointers.delete(e.pointerId);
+    if (this.pinch) { if (this.pointers.size < 2) this.pinch = null; this.drag = null; return; }
+    const dr = this.drag; this.drag = null; this.cv.style.cursor = 'grab';
+    if (cancel || !dr || dr.moved > 6) return;
+    const h = this.hitAt(p.x, p.y);
+    if (!h || h.type === 'region' && this.cam.z < MAP_LOD.mid) {
+      if (h && h.type === 'region') { this.flyTo(this.toMap(p.x, p.y), MAP_LOD.mid + 0.5); AudioSys.play('click'); }
+      if (!h) this.select(null);
+      if (e.pointerType === 'touch') this.tip(h, p.x, p.y);
+      return;
+    }
+    if (h.type === 'wp' || (h.type === 'quest' && !h.m.avail)) { AudioSys.play('click'); this.select(h); this.tip(null); return; }
+    if (h.type === 'region') this.flyTo(this.toMap(p.x, p.y), Math.min(MAP_ZMAX, this.tgt.z * 1.6));
+    this.tip(h, p.x, p.y);
+  },
+  // Sprachwechsel bei offener Karte
+  relang() { if (Game.overlay !== 'map') return; this.chrome(); if (this.sel) this.select(this.sel); if (this.tipArgs) this.tip(...this.tipArgs); this.draw(); },
 };
+const shadeCss = (css, f) => { const n = parseInt(css.slice(1), 16); return hexCss(shade(n, f)); };
 I18N.onChange(() => WorldMap.relang());
 
 /* ============================== GAME ===================================== */
@@ -11051,8 +11896,10 @@ const Game = {
     const uid = Auth.user ? Auth.user.id : null;
     AccountUI.renderBar();
     if (uid === this.authUid) return;
-    this.authUid = uid;
-    if (!uid) { Profile.settings.guest = false; Profile.saveSettings(); Cloud.rows = {}; Cloud.setState(Cloud.configured() ? 'off' : 'off'); }
+    const prev = this.authUid; this.authUid = uid;
+    // Nur ein echtes Abmelden setzt die Gastwahl zurück – nicht der Start ohne Anmeldung (sonst ginge „Als Gast spielen“ verloren)
+    if (!uid && prev) { Profile.settings.guest = false; Profile.saveSettings(); }
+    if (!uid) { Cloud.rows = {}; Cloud.setState('off'); }
     this.reloadTitleSave();
     if (uid && this.onlineReady && Cloud.sb) Cloud.onSignedIn().then(() => this.reloadTitleSave());
   },
@@ -11069,7 +11916,10 @@ const Game = {
   },
   showTitleMenu() { if (this.state !== 'title') return; UI.showScreen('scrStart'); this.reloadTitleSave(); },
   applySettings() {
-    const S = Profile.settings; R.applyQuality(S.quality); AudioSys.muted = !!S.muted; AudioSys.setVolumes(S.music, S.sfx); Shake.enabled = S.shake !== false; Weather.enabled = S.weather !== false; this.updateMuteLabels();
+    const S = Profile.settings; R.applyQuality(S.quality); AudioSys.setMuted(!!S.muted); AudioSys.setVolumes(S.music, S.sfx); Shake.enabled = S.shake !== false; Weather.enabled = S.weather !== false; this.updateMuteLabels();
+    Nav.applyMinimap(); if (Profile.data) UI.renderTracker(); if (!S.nav || S.navCompass === false) Nav.hide();
+    if (this.overlay === 'map') WorldMap.relang();
+    if (UI.els && UI.els.hud && !$('scrSettings').classList.contains('hidden')) UI.renderSettings();
   },
   setState(s) { this.state = s; this.refreshTouchUI(); },
   /* ---------------- Titelbildschirm ---------------- */
@@ -11256,7 +12106,7 @@ const Game = {
   refreshTouchUI() { const show = Input.touch && this.state === 'play' && !this.isPaused(); UI.els.touchUI.classList.toggle('hidden', !show); },
   /* ---------------- Overlays ---------------- */
   toggleOverlay(name) { if (this.overlay === name) this.closeOverlay(); else this.openOverlay(name); },
-  openOverlay(name) {
+  openOverlay(name, opt) {
     if (this.overlay) this.closeOverlay();
     if (!Profile.data || !this.player) return;
     this.overlay = name; Input.release();
@@ -11268,7 +12118,7 @@ const Game = {
     if (name === 'spells') UI.renderSpells();
     if (name === 'quests') UI.renderQuests();
     if (name === 'board') UI.renderBoard();
-    if (name === 'map') WorldMap.open();
+    if (name === 'map') WorldMap.open(opt);
     UI.last.gems = null; this.refreshTouchUI();
   },
   closeOverlay() {
@@ -11277,7 +12127,7 @@ const Game = {
     this.last = performance.now(); this.refreshTouchUI();
   },
   rerenderOverlay() { const o = this.overlay; if (o === 'inventory') UI.renderInventory(); if (o === 'smith') UI.renderSmith(); if (o === 'merchant') UI.renderMerchant(); if (o === 'spells') UI.renderSpells(); },
-  openTravelMap() { WorldMap.tab = 'world'; this.openOverlay('map'); UI.toast(t('game.toast.travelPick'), '#7affe0'); },
+  openTravelMap(wp) { this.openOverlay('map', { world: true, waypoint: wp }); UI.toast(t('game.toast.travelPick'), '#7affe0'); },
   /* ---------------- Ausrüstung & Gegenstände ---------------- */
   equippedFor(it) { const e = Profile.data.equip; if (it.slot === 'artifact') return e.art.find(a => a && a.type === it.type) || e.art.find(a => a) || null; if (it.slot === 'rune' || it.slot === 'tome') return null; return e[it.slot] || null; },
   isEquipped(it) { const e = Profile.data.equip; return ['melee', 'ranged', 'armor', 'helm', 'cape'].some(s => e[s] === it) || e.art.includes(it); },
@@ -11397,7 +12247,7 @@ const Game = {
     const w = this.world, where = w.isDungeon ? DUNGEONS[w.dungeon].name : REGIONS[this.region].name;
     $('goText').textContent = t(this.goKey || 'game.over.flavor1');
     $('goStats').innerHTML = `<span>${t('game.over.where')}</span><b>${escapeHtml(where)}</b><span>${t('game.over.level')}</span><b>${Profile.data.level}</b><span>${t('game.over.kills')}</span><b>${Profile.data.stats.kills}</b>`;
-    $('btnRetry').classList.toggle('hidden', !w.isDungeon); $('btnRespawn').textContent = w.isDungeon ? t('game.over.respawnDungeon') : t('game.over.respawnWaystone');
+    $('btnRetry').classList.toggle('hidden', !w.isDungeon); $('btnRespawn').textContent = w.isDungeon ? t('game.over.respawnDungeon') : t('game.over.respawnWaypoint');
   },
   respawn(retry) {
     UI.showScreen(null); const w = this.world;
@@ -11464,6 +12314,7 @@ const Game = {
       let pos = null;
       if (o.pos && o.pos.x != null) pos = this.validSpot(w, o.pos.x, o.pos.z);
       else if (o.from && w.exitSpawn[o.from]) pos = this.validSpot(w, w.exitSpawn[o.from].x, w.exitSpawn[o.from].z);
+      else if (o.wp && w.waystones.find(x => x.id === o.wp)) { const ws = w.waystones.find(x => x.id === o.wp); pos = this.validSpot(w, ws.x, ws.z + 1.8); }
       else if (o.poi && w.poi[o.poi]) pos = this.validSpot(w, w.poi[o.poi].x - 3, w.poi[o.poi].z + 4.6);
       if (!pos) pos = this.validSpot(w, w.spawn.x, w.spawn.z);
       this.loadWorld(w, pos.x, pos.z);
@@ -11582,7 +12433,7 @@ const Game = {
     const it = this.nearInteract; if (!it || this.state !== 'play') return; AudioSys.play('click');
     if (it.kind === 'npc') { this.player.vx = this.player.vz = 0; Dialog.open(it.ref.id); return; }
     const s = it.ref;
-    if (s.id === 'waystone') this.openTravelMap();
+    if (s.id === 'waystone') { if (!Save.has('travel', s.ref.id)) s.ref.activate(); else this.openTravelMap(s.ref.id); }
     else if (s.act) s.act();
   },
   showHint() {
@@ -12080,7 +12931,7 @@ const Cloud = {
   queueProfile() { if (this.active()) this.profileDue = performance.now() + 2500; },
   profileRow() {
     const S = Profile.settings, settings = {};
-    for (const k of ['music', 'sfx', 'shake', 'weather', 'helm', 'muted', 'nav']) settings[k] = S[k];
+    for (const k of SYNC_SETTINGS) if (S[k] !== undefined) settings[k] = S[k];
     return { user_id: Auth.user.id, display_name: (S.displayName || Auth.user.name || '').slice(0, 40), language: I18N.lang, settings, keybindings: Keys.serialize(), updated_at: new Date(S.updated || Date.now()).toISOString() };
   },
   async pushProfile() {
@@ -12094,7 +12945,7 @@ const Cloud = {
     const cloudT = Date.parse(row.updated_at) || 0, localT = Profile.settings.updated || 0;
     if (localT > cloudT + 1000) { await this.pushProfile(); return; }
     const S = Profile.settings;
-    if (row.settings && typeof row.settings === 'object') for (const k of ['music', 'sfx', 'shake', 'weather', 'helm', 'muted', 'nav']) if (k in row.settings) S[k] = row.settings[k];
+    if (row.settings && typeof row.settings === 'object') for (const k of SYNC_SETTINGS) if (k in row.settings) S[k] = row.settings[k];
     if (row.keybindings && typeof row.keybindings === 'object') { S.keys = row.keybindings; Keys.load(row.keybindings); Keys.refreshDom(); }
     if (row.display_name) S.displayName = row.display_name;
     S.updated = cloudT;
@@ -12322,16 +13173,22 @@ const SyncUI = {
     SlotUI.refresh(); Game.refreshTitle && Game.refreshTitle();
   },
 };
-/* ============================== NAVIGATIONSANZEIGE ======================== */
-// Leuchtende Pfeilspur auf dem Boden entlang des kürzesten Wegs zum Ziel der verfolgten Quest
-// (in anderen Regionen: zum passenden Ausgang; in Dungeons ohne Ziel: zum Ausgangsportal)
-// und ein Richtungspfeil am Bildschirmrand, wenn das Ziel außerhalb des Bildes liegt.
-// Ein/aus über die Aktion „Navigationsanzeige“ (Standard: N) oder in den Einstellungen.
+/* ============================== NAVIGATION (HUD) ========================== */
+// Wegweiser zum Ziel der fokussierten Quest (Einstellungen › Anzeige, alles einzeln schaltbar):
+//  · Navigationspfeil: Pfeil am Bildschirmrand (Ziel außerhalb) bzw. Marker über dem Ziel, dazu ein Pfeil am Helden
+//  · Wegführungslinie: leuchtende Pfeilspur auf dem Boden entlang des kürzesten Wegs
+//  · Kompassleiste oben mit Quest-, Waypoint- und Dungeon-Markierungen · Entfernungsanzeige
+// Liegt das Ziel in einer anderen Region, führt alles zum passenden Ausgang; in Dungeons ohne Ziel zum Ausgangsportal.
+// In Dialogen, Zwischensequenzen und Menüs ausgeblendet, im Kampf durchsichtiger.
+const NAV_OPTS = ['navArrow', 'navTrail', 'navCompass', 'navDist', 'navTracker', 'minimap'];
 const Nav = {
-  N: 16, group: null, marks: [], mat: null, dist: null, distW: 0, from: -1, target: null, recalcT: 0, phase: 0, arrow: null, path: [],
+  N: 16, group: null, marks: [], dist: null, distW: 0, from: -1, target: null, recalcT: 0, phase: 0, path: [], alpha: 1, compassEls: null,
   on() { return Profile.settings.nav !== false; },
-  set(v) { Profile.settings.nav = !!v; Profile.saveSettings(); UI.toast(t(v ? 'nav.on' : 'nav.off')); if (!v) this.hide(); AudioSys.play('click'); },
+  opt(k) { return this.on() && Profile.settings[k] !== false; },
+  set(v) { Profile.settings.nav = !!v; Profile.saveSettings(); UI.toast(t(v ? 'nav.on' : 'nav.off')); if (!v) this.hide(); AudioSys.play('click'); UI.renderTracker(); },
+  setOpt(k, v) { Profile.settings[k] = !!v; Profile.saveSettings(); if (k === 'navTracker') UI.renderTracker(); if (k === 'minimap') this.applyMinimap(); },
   toggle() { this.set(!this.on()); },
+  applyMinimap() { const m = $('minimap'); if (m) m.classList.toggle('hidden', Profile.settings.minimap === false); },
   build() {
     const sh = new THREE.Shape(); sh.moveTo(0, 0.42); sh.lineTo(0.34, -0.06); sh.lineTo(0.16, -0.06); sh.lineTo(0.16, -0.36); sh.lineTo(-0.16, -0.36); sh.lineTo(-0.16, -0.06); sh.lineTo(-0.34, -0.06); sh.closePath();
     const geo = new THREE.ShapeGeometry(sh); geo.rotateX(-Math.PI / 2);
@@ -12340,26 +13197,39 @@ const Nav = {
       const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: 0xffd060, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending }));
       m.visible = false; this.group.add(m); this.marks.push(m);
     }
-    this.arrow = $('navArrow');
+    // Pfeil am Helden
+    const ah = new THREE.Shape(); ah.moveTo(0, 0.55); ah.lineTo(0.38, -0.05); ah.lineTo(0.13, 0.02); ah.lineTo(0, -0.25); ah.lineTo(-0.13, 0.02); ah.lineTo(-0.38, -0.05); ah.closePath();
+    const ag = new THREE.ShapeGeometry(ah); ag.rotateX(-Math.PI / 2);
+    this.pArrow = new THREE.Mesh(ag, new THREE.MeshBasicMaterial({ color: 0xffe080, transparent: true, opacity: 0.85, depthWrite: false, blending: THREE.AdditiveBlending })); this.pArrow.visible = false; this.group.add(this.pArrow);
   },
-  hide() { if (this.group) for (const m of this.marks) m.visible = false; if (this.arrow) this.arrow.classList.add('hidden'); this.path = []; },
-  // Ziel in der aktuellen Welt bestimmen
+  hide() {
+    if (this.group) { for (const m of this.marks) m.visible = false; this.pArrow.visible = false; }
+    for (const id of ['navArrow', 'navMark', 'compass']) { const el = $(id); if (el) el.classList.add('hidden'); }
+    this.path = [];
+  },
+  // Ziel in der aktuellen Welt bestimmen (mit Beschriftung)
   findTarget() {
     const w = Game.world, P = Game.player, D = Profile.data; if (!w || !P || !D) return null;
+    const tid = D.tracked && Quests.isActive(D.tracked) ? D.tracked : null, qn = tid ? Quests.q(tid).name : '';
     if (Game.questMarks && Game.questMarks.length) {
       let best = null, bd = Infinity; for (const m of Game.questMarks) { const d = dist2(P.x, P.z, m.x, m.z); if (d < bd) { bd = d; best = m; } }
-      return best ? { x: best.x, z: best.z } : null;
+      return best ? { x: best.x, z: best.z, label: qn, kind: 'quest' } : null;
     }
-    const tid = D.tracked && Quests.isActive(D.tracked) ? D.tracked : null;
     const tg = tid ? Quests.targets(tid) : [];
+    // Kampfziel ohne festen Ort (z. B. „Besiege Feinde rund um …“): nächster passender Gegner im Gebiet
+    const o = tid && Quests.isActive(tid) && !Quests.isReady(tid) ? Quests.cur(tid) : null;
+    if (w.isZone && o && o.t === 'kill' && (!o.region || o.region === Game.region)) {
+      let best = null, bd = 60 * 60; for (const e of Game.enemies) { if (e.dead || e.removed || e.isDummy || e.bossMinion || (o.arch && e.type !== o.arch)) continue; const d = dist2(P.x, P.z, e.x, e.z); if (d < bd) { bd = d; best = e; } }
+      if (best) return { x: best.x, z: best.z, label: qn, kind: 'quest' };
+    }
     if (w.isDungeon) {
       if (!tg.length || !tg.some(x => x.region)) return null;
-      const ex = w.exitPortal || (w.portals && w.portals[0]); return ex ? { x: ex.x, z: ex.z } : null;
+      const ex = w.exitPortal || (w.portals && w.portals[0]); return ex ? { x: ex.x, z: ex.z, label: t('nav.exitDungeon') + (qn ? ' · ' + qn : ''), kind: 'exit' } : null;
     }
     if (w.isZone && tg.length) {
       const dest = tg[0].region; if (!dest || dest === Game.region) return null;
       const next = this.nextRegion(Game.region, dest); const E = next && w.exits[next];
-      return E ? { x: E.x, z: E.z } : null;
+      return E ? { x: E.x, z: E.z, label: t('nav.toRegion', { name: REGIONS[next].short }) + (qn ? ' · ' + qn : ''), kind: 'exit' } : null;
     }
     return null;
   },
@@ -12371,7 +13241,7 @@ const Nav = {
     let c = to; while (prev[c] && prev[c] !== from) c = prev[c];
     return c;
   },
-  // Distanzfeld vom Ziel aus (Kacheln, 8er-Nachbarschaft ohne Eckenschneiden)
+  // Distanzfeld vom Ziel aus (Kacheln, 4er-Nachbarschaft)
   field(w, tx, tz) {
     const W = w.W, H = w.H, N = W * H;
     if (!this.dist || this.distW !== N) { this.dist = new Int32Array(N); this.distW = N; this.q = new Int32Array(N); }
@@ -12404,41 +13274,105 @@ const Nav = {
   },
   update(dt) {
     if (!this.group && window.THREE && R.scene) this.build();
+    this.layout();
     const P = Game.player, w = Game.world;
-    if (!this.on() || !P || !w || Game.state !== 'play' || Game.overlay || Game.paused || (Dialog.open_)) { this.hide(); return; }
+    if (!this.on() || !P || !w || Game.state !== 'play' || Game.overlay || Game.paused || Dialog.open_ || Game.cinematic) { this.hide(); return; }
     if (this.group.parent !== R.scene) R.scene.add(this.group);
+    // im Kampf durchsichtiger
+    const fight = Game.inCombat && Game.inCombat(); this.alpha += ((fight ? 0.35 : 1) - this.alpha) * Math.min(1, dt * 4);
+    for (const id of ['navArrow', 'navMark', 'compass']) { const el = $(id); if (el) el.style.opacity = this.alpha.toFixed(2); }
     this.recalcT -= dt; this.phase += dt;
     if (this.recalcT <= 0) {
       this.recalcT = 0.5; this.target = this.findTarget();
       if (this.target) {
-        const key = Math.floor(this.target.x) * 1000 + Math.floor(this.target.z) + (w === this.lastW ? 0 : 0.5);
+        const key = Math.floor(this.target.x) * 1000 + Math.floor(this.target.z);
         if (key !== this.from || w !== this.lastW) { this.lastW = w; this.from = key; this.ok = this.field(w, this.target.x, this.target.z); }
         this.path = this.ok ? this.trace(w, P.x, P.z) : [];
       } else this.path = [];
     }
+    this.updateCompass(P, w);
     const T = this.target;
-    if (!T) { this.hide(); return; }
-    // Bodenspur: alle 2 Kacheln ein Pfeil, Welle läuft zum Ziel
-    const pts = this.path, step = 2, n = Math.min(this.N, Math.floor(pts.length / step));
+    if (!T) { for (const m of this.marks) m.visible = false; this.pArrow.visible = false; $('navArrow').classList.add('hidden'); $('navMark').classList.add('hidden'); return; }
+    // einmaliger Hinweis: die Hilfen lassen sich in den Einstellungen abschalten
+    const S = Profile.settings;
+    if (!S.navTipSeen && S.tips !== false) { this.tipT = (this.tipT || 0) + dt; if (this.tipT > 5) { S.navTipSeen = true; Profile.saveSettings(); UI.hint(() => t('nav.tipTitle'), () => t('nav.tip')); } }
+    const dTot = Math.round(Math.hypot(T.x - P.x, T.z - P.z)), dTxt = this.opt('navDist') ? t('nav.dist', { n: dTot }) : '';
+    // Bodenspur
+    const pts = this.path, step = 2, n = this.opt('navTrail') ? Math.min(this.N, Math.floor(pts.length / step)) : 0;
     for (let i = 0; i < this.N; i++) {
       const m = this.marks[i];
       if (i >= n) { m.visible = false; continue; }
       const a = pts[i * step + 1] || pts[i * step], b = pts[Math.min(pts.length - 1, i * step + 2)] || a;
       m.visible = true; m.position.set(a.x, 0.07, a.z); m.rotation.y = Math.atan2(b.x - a.x, b.z - a.z) + Math.PI;
       const wave = 0.5 + 0.5 * Math.sin(this.phase * 5 - i * 0.9), fade = Math.min(1, (i + 1) / 2) * (1 - i / (this.N + 2));
-      m.material.opacity = (0.22 + 0.5 * wave) * fade; const sc = 0.85 + 0.25 * wave; m.scale.set(sc, 1, sc);
+      m.material.opacity = (0.22 + 0.5 * wave) * fade * this.alpha; const sc = 0.85 + 0.25 * wave; m.scale.set(sc, 1, sc);
     }
-    // Pfeil am Bildschirmrand
+    const arrowOn = this.opt('navArrow');
+    // Pfeil am Helden, zeigt entlang des Weges
+    if (arrowOn && dTot > 3) {
+      const nx = pts[Math.min(pts.length - 1, 3)] || T, ang = Math.atan2(nx.x - P.x, nx.z - P.z);
+      this.pArrow.visible = true; this.pArrow.position.set(P.x + Math.sin(ang) * 1.45, 0.09, P.z + Math.cos(ang) * 1.45); this.pArrow.rotation.y = ang + Math.PI;
+      this.pArrow.material.opacity = (0.55 + 0.3 * Math.sin(this.phase * 4)) * this.alpha;
+    } else this.pArrow.visible = false;
+    // Bildschirm: Randpfeil (Ziel außerhalb) oder Marker über dem Ziel
     const v = new THREE.Vector3(T.x, 0.6, T.z).project(R.camera), W = innerWidth, H = innerHeight;
     let sx = (v.x * 0.5 + 0.5) * W, sy = (-v.y * 0.5 + 0.5) * H; const behind = v.z > 1;
     if (behind) { sx = W - sx; sy = H - sy; }
-    const mg = 46, inside = !behind && sx > mg && sx < W - mg && sy > mg && sy < H - mg;
-    if (inside) { this.arrow.classList.add('hidden'); return; }
-    const cx = W / 2, cy = H / 2, dx = sx - cx, dy = sy - cy, k = Math.min((W / 2 - mg) / Math.max(1e-3, Math.abs(dx)), (H / 2 - mg) / Math.max(1e-3, Math.abs(dy)));
-    this.arrow.classList.remove('hidden');
-    this.arrow.style.left = (cx + dx * k) + 'px'; this.arrow.style.top = (cy + dy * k) + 'px';
-    this.arrow.firstElementChild.style.transform = `rotate(${Math.atan2(dy, dx) + Math.PI / 2}rad)`;
-    this.arrow.lastElementChild.textContent = t('nav.dist', { n: Math.round(Math.hypot(T.x - P.x, T.z - P.z)) });
+    // Ränder: oben Platz für die Kompassleiste, unten für Leisten und Hotbar
+    const mg = 54, mgT = 74, mgB = Math.min(H * 0.32, 196), inside = !behind && sx > mg && sx < W - mg && sy > mgT && sy < H - mgB;
+    const arrow = $('navArrow'), mark = $('navMark');
+    if (!arrowOn) { arrow.classList.add('hidden'); mark.classList.add('hidden'); return; }
+    if (inside) {
+      arrow.classList.add('hidden');
+      if (dTot > 4) { mark.classList.remove('hidden'); mark.style.left = sx + 'px'; mark.style.top = (sy - 38 + Math.sin(this.phase * 3) * 4) + 'px'; mark.lastElementChild.textContent = [T.label, dTxt].filter(Boolean).join(' · '); mark.classList.toggle('exit', T.kind === 'exit'); }
+      else mark.classList.add('hidden');
+      return;
+    }
+    mark.classList.add('hidden');
+    const cx = W / 2, cy = (mgT + H - mgB) / 2, hy = (H - mgB - mgT) / 2, dx = sx - cx, dy = sy - cy, k = Math.min((W / 2 - mg) / Math.max(1e-3, Math.abs(dx)), hy / Math.max(1e-3, Math.abs(dy)));
+    const ax = cx + dx * k, ay = cy + dy * k;
+    arrow.classList.remove('hidden');
+    arrow.style.left = ax + 'px'; arrow.style.top = ay + 'px';
+    arrow.firstElementChild.style.transform = `rotate(${Math.atan2(dy, dx) + Math.PI / 2}rad)`;
+    arrow.children[1].textContent = dTxt;
+    const nm = arrow.children[2]; nm.textContent = T.label || ''; nm.className = 'navName' + (ax > W - 200 ? ' left' : ax < 200 ? ' right' : '') + (ay < mgT + 60 ? ' below' : '');
+  },
+  // ---------- Kompassleiste ----------
+  // Bildschirm-oben entspricht in der Welt der Richtung (−x, −z) – also Nordwesten (Norden = −z wie auf der Karte).
+  bearing(dx, dz) { return Math.atan2(dx, -dz) * 180 / Math.PI; },
+  // Layout-Klasse für die linke HUD-Spalte (nur von der Einstellung abhängig, damit nichts springt)
+  layout() { const on = this.opt('navCompass'); if (this.cOn !== on) { this.cOn = on; document.body.classList.toggle('compassOn', on); } },
+  updateCompass(P, w) {
+    const el = $('compass'); if (!this.opt('navCompass')) { el.classList.add('hidden'); return; }
+    el.classList.remove('hidden');
+    const strip = $('compassStrip'), Wd = strip.clientWidth || 360, head = this.bearing(-1, -1), span = 100;
+    if (!this.compassEls) {
+      this.compassEls = { letters: [], ticks: [], marks: [] };
+      for (let k = 0; k < 8; k++) { const s = document.createElement('span'); s.className = 'cL' + (k % 2 ? ' minor' : ''); strip.appendChild(s); this.compassEls.letters.push(s); }
+      for (let k = 0; k < 24; k++) { const s = document.createElement('i'); s.className = 'cT'; strip.appendChild(s); this.compassEls.ticks.push(s); }
+      for (let k = 0; k < 8; k++) { const s = document.createElement('b'); s.className = 'cM'; strip.appendChild(s); this.compassEls.marks.push(s); }
+    }
+    const pos = deg => { let r = ((deg - head + 540) % 360) - 180; return Math.abs(r) > span ? null : Wd / 2 + r / span * Wd / 2; };
+    const names = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'].map(k => t('nav.dir.' + k));
+    this.compassEls.letters.forEach((s, k) => { const x = pos(k * 45); s.style.display = x === null ? 'none' : ''; if (x !== null) { s.style.left = x + 'px'; s.textContent = names[k]; } });
+    this.compassEls.ticks.forEach((s, k) => { const x = pos(k * 15 + 7.5); s.style.display = x === null ? 'none' : ''; if (x !== null) s.style.left = x + 'px'; });
+    // Markierungen: Quest-Ziel, Waypoints und Dungeon-Eingänge des Gebiets
+    const list = [];
+    if (this.target) list.push({ x: this.target.x, z: this.target.z, c: this.target.kind === 'exit' ? 'exit' : 'quest', d: true });
+    if (w.isZone) {
+      const F = Profile.settings.mapFilter || {};
+      if (F.w !== 0) for (const ws of w.waystones) list.push({ x: ws.x, z: ws.z, c: Save.has('travel', ws.id) ? 'wp' : 'wpOff' });
+      if (F.d !== 0) for (const en of w.entrances) list.push({ x: en.x, z: en.z, c: 'dg' });
+    }
+    list.sort((a, b) => (b.d ? 1 : 0) - (a.d ? 1 : 0) || dist2(P.x, P.z, a.x, a.z) - dist2(P.x, P.z, b.x, b.z));
+    this.compassEls.marks.forEach((s, k) => {
+      const m = list[k]; if (!m) { s.style.display = 'none'; return; }
+      const dd = Math.hypot(m.x - P.x, m.z - P.z); let x = dd < 1.5 ? Wd / 2 : pos(this.bearing(m.x - P.x, m.z - P.z)), edge = '';
+      // das Ziel bleibt immer sichtbar: liegt es hinter dir, klebt es am Rand der Leiste
+      if (x === null && m.d) { let r = ((this.bearing(m.x - P.x, m.z - P.z) - head + 540) % 360) - 180; edge = r < 0 ? ' edgeL' : ' edgeR'; x = r < 0 ? Wd * 0.14 : Wd * 0.86; }
+      if (x === null) { s.style.display = 'none'; return; }
+      s.style.display = ''; s.style.left = x + 'px'; s.className = 'cM ' + m.c + edge; s.textContent = m.d && this.opt('navDist') ? Math.round(dd) + '' : '';
+    });
   },
 };
 /* ============================== MENÜS: SLOTS · KONTO · EINSTELLUNGS-TABS ======== */
@@ -12561,26 +13495,47 @@ const SyncStatus = {
   },
 };
 
-// Einstellungen: Tabs Allgemein · Steuerung · Konto, Sprache und Navigationsanzeige
+// Einstellungen in sechs Tabs: Allgemein · Steuerung · Grafik · Audio · Anzeige/Navigation · Konto.
+// Grafik-/Audio-Werte und Weltstufe rendert UI.renderSettings(); hier: Tabs, Sprache, Tipps, Ton, Navigationshilfen.
+// Jede Änderung wird sofort lokal gespeichert und (angemeldet) über Cloud.queueProfile() mit Supabase abgeglichen.
+const SET_TABS = [['general', 'setPaneGeneral'], ['controls', 'setPaneControls'], ['graphics', 'setPaneGraphics'], ['audio', 'setPaneAudio'], ['display', 'setPaneDisplay'], ['account', 'setPaneAccount']];
 const SetTabs = {
   tab: 'general',
   render() {
     const T = $('setTabs'); if (!T) return; T.innerHTML = '';
-    for (const id of ['general', 'controls', 'account']) {
+    for (const [id, pane] of SET_TABS) {
       const b = document.createElement('button'); b.className = 'tab' + (this.tab === id ? ' on' : ''); b.dataset.tab = id; b.textContent = t('set.tab.' + id);
       b.onclick = () => { AudioSys.play('click'); this.tab = id; this.render(); }; T.appendChild(b);
+      $(pane).classList.toggle('hidden', this.tab !== id);
     }
-    $('setPaneGeneral').classList.toggle('hidden', this.tab !== 'general');
-    $('setPaneControls').classList.toggle('hidden', this.tab !== 'controls');
-    $('setPaneAccount').classList.toggle('hidden', this.tab !== 'account');
     if (this.tab === 'general') this.general();
     if (this.tab === 'controls') KeyUI.render($('setPaneControls'));
+    if (this.tab === 'audio') this.audio();
+    if (this.tab === 'display') this.display();
     if (this.tab === 'account') AccountUI.renderPane($('setPaneAccount'));
+  },
+  // An/Aus-Schalter in eine segRow
+  onOff(id, cur, fn) {
+    const el = $(id); if (!el) return; el.innerHTML = '';
+    for (const v of [true, false]) {
+      const b = document.createElement('button'); b.className = 'tab' + (cur === v ? ' on' : ''); b.textContent = t(v ? 'set.on' : 'set.off');
+      b.onclick = () => { if (cur === v) return; AudioSys.play('click'); fn(v); this.render(); }; el.appendChild(b);
+    }
   },
   general() {
     LangUI.render($('setLang'));
-    const nav = $('setNav'); if (!nav) return; nav.innerHTML = '';
-    for (const v of [true, false]) { const b = document.createElement('button'); b.className = 'tab' + (Profile.settings.nav === v ? ' on' : ''); b.textContent = t(v ? 'set.on' : 'set.off'); b.onclick = () => { Nav.set(v); this.general(); }; nav.appendChild(b); }
+    this.onOff('setTips', Profile.settings.tips !== false, v => { Profile.settings.tips = v; if (v) { Profile.settings.mapTut = false; Profile.settings.wpTipSeen = false; Profile.settings.navTipSeen = false; } Profile.saveSettings(); });
+  },
+  audio() { this.onOff('setMute', !AudioSys.muted, v => { if (AudioSys.muted === v) Game.toggleMute(); }); },
+  display() {
+    const S = Profile.settings, master = S.nav !== false;
+    this.onOff('setNav', master, v => Nav.set(v));
+    for (const k of NAV_OPTS) {
+      const id = 'set' + k[0].toUpperCase() + k.slice(1); // navArrow → setNavArrow, minimap → setMinimap
+      this.onOff(id, S[k] !== false, v => Nav.setOpt(k, v));
+      // Pfeil/Linie/Kompass/Entfernung hängen am Hauptschalter
+      const row = $(id); if (row) row.classList.toggle('dim', !master && k !== 'navTracker' && k !== 'minimap');
+    }
   },
 };
 Game.boot();
