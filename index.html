@@ -653,6 +653,9 @@ body.touch #hintBox{transform-origin:50% 100%}
 .rbLive.on{color:#fff;text-shadow:0 0 8px rgba(255,207,90,.8)}
 .rbErr{color:#ff9a8a;min-height:18px}
 .kbPlay{margin:8px 0 4px;font-size:18px}
+.camSet{margin:10px 0 8px;padding:6px 0 4px;border-top:1px solid rgba(255,255,255,.08);border-bottom:1px solid rgba(255,255,255,.08)}
+.camSet .kbG{margin:4px 0 2px}
+#btnCamReset{margin:6px 0 4px}
 /* Hochformat: Hotbar in zwei Reihen statt winzig skaliert */
 @media (max-aspect-ratio:1/1){ #slotRow{flex-wrap:wrap;justify-content:center;max-width:330px;row-gap:12px} #slotRow .slotSep{display:none} }
 </style>
@@ -4346,6 +4349,31 @@ I18N.addContent('en', {
   'WEATHER.fog.name': 'Fog',
   'WEATHER.fireflies.name': 'Fireflies',
 });
+/* ============================== SPRACHE: FREIE KAMERA (DREHEN, KIPPEN, EINSTELLUNGEN, TUTORIAL) ============== */
+I18N.add('de', {
+  'keys.act.camRotate': 'Kamera drehen/kippen (halten + Maus)', 'keys.act.camRotL': 'Kamera links herum drehen', 'keys.act.camRotR': 'Kamera rechts herum drehen',
+  'keys.act.camTiltUp': 'Kamera steiler (mehr von oben)', 'keys.act.camTiltDown': 'Kamera flacher', 'keys.act.camReset': 'Ansicht zurücksetzen',
+  'help.camRotate': 'Kamera drehen (halten + Maus ziehen oder Tasten)', 'help.camTilt': 'Kamera kippen', 'help.camReset': 'Ansicht zurücksetzen (Drehung, Neigung, Zoom)',
+  'set.camInvX': 'Horizontal invertieren', 'set.camInvY': 'Vertikal invertieren', 'set.camSmooth': 'Glättung', 'set.camEdge': 'Bildschirmrand-Scrolling',
+  'set.camZoomDef': 'Standard-Zoom', 'set.camRotMode': 'Drehen mit Tasten', 'set.camRotStep': '45°-Schritte', 'set.camRotFree': 'Stufenlos',
+  'set.camOcclude': 'Verdeckende Objekte durchsichtig', 'set.camResetAll': 'Kamera auf Standard zurücksetzen', 'set.camResetDone': 'Kamera-Einstellungen zurückgesetzt.',
+  'cam.tutTitle': 'KAMERA',
+  'cam.tut': '[{k:camPan}] halten + Maus ziehen: umsehen · [{k:camRotate}] halten + ziehen oder [{k:camRotL}] / [{k:camRotR}]: drehen · [{k:camTiltUp}] / [{k:camTiltDown}]: kippen · Mausrad: zoomen · [{k:camCenter}]: zentrieren · [{k:camReset}]: Ansicht zurücksetzen. Die Steuerung dreht mit – [{k:moveUp}] läuft immer vom Bildschirm weg.',
+  'cam.tutTouch': 'Zwei Finger ziehen: umsehen · zwei Finger drehen: Kamera drehen · auseinander/zusammen: zoomen. Weitere Optionen unter Einstellungen › Steuerung › Kamera.',
+  'cam.tutPad': 'Rechter Stick (außerhalb des Kampfes): umsehen – loslassen, und die Kamera kehrt zurück. Drehen und Kippen lassen sich unter Einstellungen › Steuerung auf Gamepad-Tasten legen.',
+});
+I18N.add('en', {
+  'keys.act.camRotate': 'Rotate/tilt camera (hold + mouse)', 'keys.act.camRotL': 'Rotate camera left', 'keys.act.camRotR': 'Rotate camera right',
+  'keys.act.camTiltUp': 'Tilt camera steeper (more top-down)', 'keys.act.camTiltDown': 'Tilt camera flatter', 'keys.act.camReset': 'Reset view',
+  'help.camRotate': 'Rotate camera (hold + drag mouse or keys)', 'help.camTilt': 'Tilt camera', 'help.camReset': 'Reset view (rotation, tilt, zoom)',
+  'set.camInvX': 'Invert horizontal', 'set.camInvY': 'Invert vertical', 'set.camSmooth': 'Smoothing', 'set.camEdge': 'Edge scrolling',
+  'set.camZoomDef': 'Default zoom', 'set.camRotMode': 'Rotate with keys', 'set.camRotStep': '45° steps', 'set.camRotFree': 'Smooth',
+  'set.camOcclude': 'See through obstacles', 'set.camResetAll': 'Reset camera to defaults', 'set.camResetDone': 'Camera settings reset.',
+  'cam.tutTitle': 'CAMERA',
+  'cam.tut': 'Hold [{k:camPan}] + drag the mouse: look around · hold [{k:camRotate}] + drag or [{k:camRotL}] / [{k:camRotR}]: rotate · [{k:camTiltUp}] / [{k:camTiltDown}]: tilt · mouse wheel: zoom · [{k:camCenter}]: center · [{k:camReset}]: reset view. Controls follow the rotation – [{k:moveUp}] always walks away from the screen.',
+  'cam.tutTouch': 'Drag with two fingers: look around · twist two fingers: rotate the camera · pinch: zoom. More options under Settings › Controls › Camera.',
+  'cam.tutPad': 'Right stick (outside combat): look around – let go and the camera returns. Rotating and tilting can be assigned to gamepad buttons under Settings › Controls.',
+});
 /* ============================== SPRACHE: KERN (Slots, Steuerung, Konto, Navigation) ============== */
 I18N.add('de', {
   'slots.menu': 'Spielstände',
@@ -4777,7 +4805,7 @@ I18N.add('de', {
   // ---- Einstellungen ----
   'set.hudScale': 'HUD-Größe', 'set.default': 'Standard', 'set.resetDefault': 'Auf Standard zurücksetzen',
   'set.sprintMode': 'Sprinten', 'set.sprintHold': 'Halten', 'set.sprintToggle': 'Umschalten',
-  'set.camAuto': 'Kamera automatisch zentrieren', 'set.camSens': 'Schwenk-Empfindlichkeit', 'set.camZoom': 'Kamera-Zoom',
+  'set.camAuto': 'Automatisch zentrieren (beim Loslassen und Bewegen)', 'set.camSens': 'Schwenk-Empfindlichkeit', 'set.camZoom': 'Kamera-Zoom',
   // ---- Springen & Sprinten ----
   'jump.dodged': 'Übersprungen!', 'jump.fell': 'Abgestürzt!',
   'jump.tutTitle': 'SPRINGEN & SPRINTEN',
@@ -4811,7 +4839,7 @@ I18N.add('en', {
   'help.padRecenter': 'Release the stick',
   'set.hudScale': 'HUD size', 'set.default': 'Default', 'set.resetDefault': 'Reset to default',
   'set.sprintMode': 'Sprint', 'set.sprintHold': 'Hold', 'set.sprintToggle': 'Toggle',
-  'set.camAuto': 'Auto-center camera', 'set.camSens': 'Pan sensitivity', 'set.camZoom': 'Camera zoom',
+  'set.camAuto': 'Auto-center (on release and when moving)', 'set.camSens': 'Pan sensitivity', 'set.camZoom': 'Camera zoom',
   'jump.dodged': 'Jumped over!', 'jump.fell': 'Fell!',
   'jump.tutTitle': 'JUMPING & SPRINTING',
   'jump.tut': '[{k:jump}] jump · [{k:sprint}] sprint (stamina ring next to your hero). Sprint-jumps go further. You can only cross pits and chasms by jumping – fall in and you lose some health and return to the last safe spot.',
@@ -5307,17 +5335,22 @@ const Input = {
   pressed(code) { if (this.down.has(code)) { this.down.delete(code); return true; } return false; },
   tpressed(k) { if (this.tdown.has(k)) { this.tdown.delete(k); return true; } return false; },
   endFrame() { this.down.clear(); this.tdown.clear(); },
-  // Bewegungsvektor in Weltkoordinaten (Kamera ist um 45° gedreht)
+  // Bildschirmrichtung → Weltrichtung passend zur aktuellen Kameradrehung (Standard: Kamera um 45° gedreht)
+  screenToWorldDir(sx, sy) {
+    if (typeof CamCtl !== 'undefined') return CamCtl.worldDir(sx, sy);
+    const S = Math.SQRT1_2; return { x: (sx - sy) * S, z: (-sx - sy) * S };
+  },
+  // Bewegungsvektor in Weltkoordinaten („oben“ = vom Bildschirm weg, egal wie die Kamera gedreht ist)
   moveVec() {
     let sx = Keys.value('moveRight') - Keys.value('moveLeft'), sy = Keys.value('moveUp') - Keys.value('moveDown');
     if (this.joy.active) { sx = this.joy.x; sy = -this.joy.y; }
     const l = Math.hypot(sx, sy); if (l < 0.15) return { x: 0, z: 0, l: 0 };
     const n = Math.min(1, l) / l; sx *= n; sy *= n;
-    const S = Math.SQRT1_2;
-    return { x: (sx - sy) * S, z: (-sx - sy) * S, l: Math.min(1, l) };
+    const d = this.screenToWorldDir(sx, sy);
+    return { x: d.x, z: d.z, l: Math.min(1, l) };
   },
   // Zielrichtung des rechten Sticks in Weltkoordinaten (oder null)
-  padAimVec() { const a = this.pad.aim; if (!a.mag) return null; const S = Math.SQRT1_2, sx = a.x, sy = -a.y; return { x: (sx - sy) * S, z: (-sx - sy) * S }; },
+  padAimVec() { const a = this.pad.aim; if (!a.mag) return null; return this.screenToWorldDir(a.x, -a.y); },
   // ohne Maus (Gamepad, Pfeiltasten-Spiel ohne Mausbewegung) zielt das Spiel automatisch
   autoAim() { return this.touch || this.lastDevice === 'pad' || performance.now() - this.mouse.movedT > 8000; },
   attackHeld() { return Keys.held('attack') || this.tb.attack; },
@@ -5344,6 +5377,7 @@ const KEY_ACTIONS = [
   ['art1', 'items'], ['art2', 'items'], ['art3', 'items'], ['potion', 'items'],
   ['interact', 'world'], ['hint', 'world'], ['nav', 'world'],
   ['camPan', 'camera'], ['camUp', 'camera'], ['camDown', 'camera'], ['camLeft', 'camera'], ['camRight', 'camera'], ['camCenter', 'camera'], ['camZoomIn', 'camera'], ['camZoomOut', 'camera'],
+  ['camRotate', 'camera'], ['camRotL', 'camera'], ['camRotR', 'camera'], ['camTiltUp', 'camera'], ['camTiltDown', 'camera'], ['camReset', 'camera'],
   ['inventory', 'menu'], ['spellbook', 'menu'], ['questlog', 'menu'], ['map', 'menu'], ['pause', 'menu'],
 ].map(([id, group]) => ({ id, group }));
 const KEY_IDS = KEY_ACTIONS.map(a => a.id);
@@ -5358,6 +5392,7 @@ const KEY_PRESETS = {
     art1: ['KeyQ', null], art2: ['KeyE', null], art3: ['KeyR', null], potion: ['KeyH', null],
     interact: ['KeyE', null], hint: ['KeyT', null], nav: ['KeyN', null],
     camPan: ['Mouse1', null], camUp: ['Numpad8', null], camDown: ['Numpad2', null], camLeft: ['Numpad4', null], camRight: ['Numpad6', null], camCenter: ['Numpad5', 'KeyZ'], camZoomIn: ['WheelUp', 'Equal'], camZoomOut: ['WheelDown', 'Minus'],
+    camRotate: ['Ctrl+Mouse1', null], camRotL: ['Numpad7', 'Comma'], camRotR: ['Numpad9', 'Period'], camTiltUp: ['PageUp', 'Numpad3'], camTiltDown: ['PageDown', 'Numpad1'], camReset: ['Numpad0', 'Shift+KeyZ'],
     inventory: ['KeyI', null], spellbook: ['KeyK', null], questlog: ['KeyJ', null], map: ['KeyM', null], pause: ['Escape', 'KeyP'] },
   arrows: { moveUp: ['ArrowUp', null], moveDown: ['ArrowDown', null], moveLeft: ['ArrowLeft', null], moveRight: ['ArrowRight', null], jump: ['Space', null], sprint: ['ShiftLeft', null],
     attack: ['KeyX', 'Mouse0'], special: ['KeyC', null], ranged: ['KeyZ', 'Mouse2'], dodge: ['KeyV', null],
@@ -5365,6 +5400,7 @@ const KEY_PRESETS = {
     art1: ['KeyA', null], art2: ['KeyS', null], art3: ['KeyD', null], potion: ['KeyF', null],
     interact: ['KeyE', 'Enter'], hint: ['KeyT', null], nav: ['KeyN', null],
     camPan: ['Mouse1', null], camUp: ['PageUp', null], camDown: ['PageDown', null], camLeft: ['Home', null], camRight: ['End', null], camCenter: ['Insert', null], camZoomIn: ['WheelUp', 'Equal'], camZoomOut: ['WheelDown', 'Minus'],
+    camRotate: ['Ctrl+Mouse1', null], camRotL: ['Numpad7', 'Comma'], camRotR: ['Numpad9', 'Period'], camTiltUp: ['Numpad3', null], camTiltDown: ['Numpad1', null], camReset: ['Numpad0', null],
     inventory: ['KeyI', null], spellbook: ['KeyK', null], questlog: ['KeyJ', null], map: ['KeyM', null], pause: ['Escape', 'KeyP'] },
 };
 // Standardbelegung bis Version 1 (für die Migration: unveränderte alte Standards werden zu neuen Standards)
@@ -5378,6 +5414,7 @@ const PAD_V1 = { map: 'Pad10' };
 const PAD_DEFAULT = { moveUp: 'PadLY-', moveDown: 'PadLY+', moveLeft: 'PadLX-', moveRight: 'PadLX+', jump: 'Pad0', sprint: 'Pad10', attack: 'Pad7', special: 'Pad5', ranged: 'Pad6', dodge: 'Pad1',
   spell1: 'Pad12', spell2: 'Pad15', spell3: 'Pad13', spell4: 'Pad14', art1: 'Pad4', art2: 'Pad2', art3: 'Pad11', potion: 'Pad3',
   interact: 'Pad0', hint: null, nav: null, camPan: null, camUp: null, camDown: null, camLeft: null, camRight: null, camCenter: null, camZoomIn: null, camZoomOut: null,
+  camRotate: null, camRotL: null, camRotR: null, camTiltUp: null, camTiltDown: null, camReset: null,
   inventory: 'Pad8', spellbook: null, questlog: null, map: null, pause: 'Pad9' };
 const PAD_NAMES = ['A', 'B', 'X', 'Y', 'LB', 'RB', 'LT', 'RT', 'Back', 'Start', 'LS', 'RS', 'D↑', 'D↓', 'D←', 'D→', 'Home'];
 // Modifikator-Token ↔ physische Taste (rechte Tasten werden in Input auf die linken abgebildet)
@@ -5417,14 +5454,14 @@ const Keys = {
       const v1 = !(o.v >= 2), old = KEY_PRESETS_V1[preset] || {}, custom = new Set(), added = [];
       for (const id of KEY_IDS) {
         const s = o.kb[id];
-        if (!Array.isArray(s)) { if (v1) added.push(id); continue; }
+        if (!Array.isArray(s)) { added.push(id); continue; } // neue Aktion (in diesem Spielstand noch nicht vorhanden)
         const sv = [0, 1].map(i => ok(s[i]) && !String(s[i]).startsWith('Pad') ? ok(s[i]) : null);
         if (v1 && old[id] && sv[0] === old[id][0] && sv[1] === old[id][1]) { added.push(id); continue; } // alter Standard → neuer Standard
         this.map[id] = sv; for (const c of sv) if (c) custom.add(c);
       }
       // neue/umgestellte Standards dürfen eigene Belegungen nicht überschreiben
-      if (v1) for (const id of added) { this.map[id] = this.map[id].map(c => c && custom.has(c) ? null : c); for (const c of this.map[id]) if (c) custom.add(c); }
-      if (v1) this.migrated = added.filter(id => !(o.kb[id]) && this.map[id].some(Boolean));
+      for (const id of added) { this.map[id] = this.map[id].map(c => c && custom.has(c) ? null : c); for (const c of this.map[id]) if (c) custom.add(c); }
+      this.migrated = added.filter(id => !(o.kb[id]) && this.map[id].some(Boolean));
     }
     if (o && o.pad) {
       const v1 = !(o.v >= 2), used = new Set();
@@ -5537,7 +5574,8 @@ const Keys = {
       Mouse0: t(short ? 'key.mouse0s' : 'key.mouse0'), Mouse1: t(short ? 'key.mouse1s' : 'key.mouse1'), Mouse2: t(short ? 'key.mouse2s' : 'key.mouse2'), Mouse3: short ? 'M4' : t('key.mouse3'), Mouse4: short ? 'M5' : t('key.mouse4'),
       WheelUp: short ? '⇡' : t('key.wheelUp'), WheelDown: short ? '⇣' : t('key.wheelDown'), NumpadAdd: 'Num +', NumpadSubtract: 'Num −', NumpadMultiply: 'Num ×', NumpadDivide: 'Num ÷', NumpadDecimal: 'Num ,' };
     if (S[code]) return S[code];
-    return lay ? lay.toUpperCase() : code.replace(/^(Key|Digit)/, '');
+    // Satzzeichen: Beschriftung aus dem Tastaturlayout, sonst US-Zeichen als Ersatz
+    return lay ? lay.toUpperCase() : ({ Comma: ',', Period: '.', Slash: '/', Semicolon: ';', Quote: "'", BracketLeft: '[', BracketRight: ']', Backslash: '\\', Backquote: '`', Minus: '-', Equal: '=', IntlBackslash: '<' }[code] || code.replace(/^(Key|Digit)/, ''));
   },
   usePad() { return Input.lastDevice === 'pad' && this.padOn; },
   label(a, short) {
@@ -5569,6 +5607,9 @@ const Keys = {
     row(pad ? t('key.rightStick') : [L('camPan'), ['camUp', 'camLeft', 'camDown', 'camRight'].map(a => this.label(a)).join(' ')].join(' · '), t('help.camera'));
     row(pad ? t('help.padRecenter') : L('camCenter'), t('help.camCenter'));
     row(pad ? '—' : [L('camZoomIn'), L('camZoomOut')].join(' / '), t('help.camZoom'));
+    row([L('camRotate'), [this.label('camRotL'), this.label('camRotR')].join(' / ')].filter(x => x && x !== '—').join(' · ') || '—', t('help.camRotate'));
+    row([this.label('camTiltUp'), this.label('camTiltDown')].join(' / '), t('help.camTilt'));
+    row(L('camReset'), t('help.camReset'));
   },
   // ---------- Belegen, Konflikte, Tauschen ----------
   holders(code, padCol) {
@@ -5679,6 +5720,29 @@ Keys.load(null); // Standardbelegung, bis Keys.init() die gespeicherte lädt
 // Aufnahme: alle gedrückten Tasten werden live angezeigt; gespeichert wird, sobald alle losgelassen sind. Esc bricht ab.
 const KeyUI = {
   el: null, cap: null, capT: 0,
+  // Kamera-Einstellungen (lokal + Cloud-Profil): Auto-Zentrieren, Empfindlichkeit, Invertierung, Glättung, Rand-Scrolling,
+  // Standard-Zoom, Drehschritte, Verdeckung; „Auf Standard zurücksetzen“ setzt alle Kamerawerte und die Ansicht zurück
+  renderCamera(E) {
+    const S = Profile.settings, box = document.createElement('div'); box.className = 'camSet';
+    const row = (lbl, id, cls = 'segRow') => `<span>${escapeHtml(t(lbl))}</span><div class="${cls}" id="${id}"></div>`;
+    box.innerHTML = `<div class="kbG">${escapeHtml(t('keys.group.camera'))}</div><div class="setGrid kbPlay">`
+      + row('set.camAuto', 'setCamAuto') + row('set.camSens', 'setCamSens', 'setSlider') + row('set.camInvX', 'setCamInvX') + row('set.camInvY', 'setCamInvY')
+      + row('set.camSmooth', 'setCamSmooth', 'setSlider') + row('set.camEdge', 'setCamEdge') + row('set.camZoomDef', 'setCamZoom', 'setSlider')
+      + row('set.camRotMode', 'setCamRot') + row('set.camOcclude', 'setCamOcc') + '</div>';
+    const rb = document.createElement('button'); rb.className = 'btn small'; rb.id = 'btnCamReset'; rb.textContent = t('set.camResetAll');
+    rb.onclick = () => { AudioSys.play('click'); CamCtl.resetSettings(); UI.toast(t('set.camResetDone'), '#9fd0ff'); this.render(); };
+    box.appendChild(rb); E.appendChild(box);
+    const save = () => { Profile.saveSettings(); this.render(); }, onOff = (id, v, set) => UI.tabs($(id), [[1, t('set.on')], [0, t('set.off')]], v ? 1 : 0, k => { set(!!+k); save(); });
+    onOff('setCamAuto', S.camAuto !== false, v => { S.camAuto = v; });
+    onOff('setCamInvX', !!S.camInvX, v => { S.camInvX = v; });
+    onOff('setCamInvY', !!S.camInvY, v => { S.camInvY = v; });
+    onOff('setCamEdge', !!S.camEdge, v => { S.camEdge = v; });
+    onOff('setCamOcc', S.camOcclude !== false, v => { S.camOcclude = v; });
+    UI.tabs($('setCamRot'), [[1, t('set.camRotStep')], [0, t('set.camRotFree')]], S.camRotSnap === false ? 0 : 1, k => { S.camRotSnap = !!+k; save(); });
+    SetTabs.slider('setCamSens', 40, 250, 10, Math.round((+S.camSens || 1) * 100), v => v + ' %', v => { S.camSens = v / 100; }, () => { S.camSens = 1; });
+    SetTabs.slider('setCamSmooth', 0, 100, 5, Math.round((S.camSmooth == null ? 0.5 : +S.camSmooth) * 100), v => v + ' %', v => { S.camSmooth = v / 100; }, () => { S.camSmooth = 0.5; });
+    SetTabs.slider('setCamZoom', Math.round(CAM_ZMIN * 100), Math.round(CAM_ZMAX * 100), 5, Math.round(clamp(+S.camZoom || 1, CAM_ZMIN, CAM_ZMAX) * 100), v => v + ' %', v => { S.camZoom = v / 100; CamCtl.applySettings(); }, () => { S.camZoom = 1; CamCtl.applySettings(); });
+  },
   render(el) {
     this.el = el || this.el; if (!this.el) return; Keys.ui = this;
     const E = this.el, conf = Keys.conflicts(); E.innerHTML = '';
@@ -5692,13 +5756,10 @@ const KeyUI = {
     E.append(top, st);
     // Spielgefühl: Sprint halten/umschalten, Kamera automatisch zentrieren, Schwenk-Empfindlichkeit, Zoom
     const S = Profile.settings, gp = document.createElement('div'); gp.className = 'setGrid kbPlay';
-    gp.innerHTML = `<span>${escapeHtml(t('set.sprintMode'))}</span><div class="segRow" id="setSprint"></div><span>${escapeHtml(t('set.camAuto'))}</span><div class="segRow" id="setCamAuto"></div>`
-      + `<span>${escapeHtml(t('set.camSens'))}</span><div class="setSlider" id="setCamSens"></div><span>${escapeHtml(t('set.camZoom'))}</span><div class="setSlider" id="setCamZoom"></div>`;
+    gp.innerHTML = `<span>${escapeHtml(t('set.sprintMode'))}</span><div class="segRow" id="setSprint"></div>`;
     E.appendChild(gp);
     UI.tabs($('setSprint'), [['hold', t('set.sprintHold')], ['toggle', t('set.sprintToggle')]], S.sprintToggle ? 'toggle' : 'hold', k => { S.sprintToggle = k === 'toggle'; Profile.saveSettings(); this.render(); });
-    UI.tabs($('setCamAuto'), [[1, t('set.on')], [0, t('set.off')]], S.camAuto === false ? 0 : 1, k => { S.camAuto = !!+k; Profile.saveSettings(); this.render(); });
-    SetTabs.slider('setCamSens', 40, 250, 10, Math.round((+S.camSens || 1) * 100), v => v + ' %', v => { S.camSens = v / 100; }, () => { S.camSens = 1; });
-    SetTabs.slider('setCamZoom', Math.round(CAM_ZMIN * 100), Math.round(CAM_ZMAX * 100), 5, Math.round(CamCtl.zoomT * 100), v => v + ' %', v => { CamCtl.zoomT = v / 100; S.camZoom = v / 100; }, () => { CamCtl.zoomT = 1; S.camZoom = 1; });
+    this.renderCamera(E);
     const tbl = document.createElement('div'); tbl.className = 'kbTable';
     const head = ['keys.colAction', 'keys.colPrimary', 'keys.colSecondary', 'keys.colPad'].map(k => `<div class="kbH">${escapeHtml(t(k))}</div>`).join('');
     tbl.innerHTML = head;
@@ -5902,7 +5963,7 @@ const R = {
   box(w, h, d) { const k = w + ',' + h + ',' + d; let g = this.geo.get(k); if (!g) { g = new THREE.BoxGeometry(w, h, d); this.geo.set(k, g); } return g; },
   mat(color, emissive = 0, ei = 1) {
     const k = color + '|' + emissive + '|' + ei; let m = this.mats.get(k);
-    if (!m) { m = new THREE.MeshLambertMaterial({ color }); if (emissive) { m.emissive = new THREE.Color(emissive); m.emissiveIntensity = ei; } this.mats.set(k, m); }
+    if (!m) { m = new THREE.MeshLambertMaterial({ color }); if (emissive) { m.emissive = new THREE.Color(emissive); m.emissiveIntensity = ei; } else if (typeof Occlude !== 'undefined') Occlude.patch(m); this.mats.set(k, m); }
     return m;
   },
   glow(color, opacity = 1) {
@@ -5913,16 +5974,19 @@ const R = {
   // Kamera folgt sanft; Einführungs-Zoom bei Szenenwechsel; Screen-Shake wird addiert
   updateCamera(dt, tx, tz, snap) {
     // Kamera-Schwenk/Zoom des Spielers (CamCtl) gilt nur im Spiel, nicht auf dem Titelbildschirm/im Creator
-    const C = typeof CamCtl !== 'undefined' && CamCtl.applies() ? CamCtl : null; if (C) { tx += C.off.x; tz += C.off.z; }
-    const k = snap ? 1 : 1 - Math.exp(-dt * 6.5);
+    const C = typeof CamCtl !== 'undefined' && CamCtl.applies() ? CamCtl : null; if (C) { tx += C.off.x + C.frame.x; tz += C.off.z + C.frame.z; }
+    const k = snap ? 1 : 1 - Math.exp(-dt * 6.5 * (C ? C.rate() : 1));
     this.camTarget.x += (tx - this.camTarget.x) * k; this.camTarget.z += (tz - this.camTarget.z) * k;
     this.introZoom += (1 - this.introZoom) * (1 - Math.exp(-dt * 1.6));
-    const sh = Shake.offset(dt), d = this.camDist * this.introZoom * (C ? C.zoom : 1), o = this.isoDir;
+    // Blickrichtung: im Spiel aus Drehung/Neigung der freien Kamera, sonst die feste Schrägansicht
+    const sh = Shake.offset(dt), d = this.camDist * this.introZoom * (C ? C.zoomEff : 1), o = C ? C.offsetDir(this.camOff || (this.camOff = new THREE.Vector3())) : this.isoDir;
     this.camera.position.set(this.camTarget.x + o.x * d + sh.x, o.y * d + sh.y, this.camTarget.z + o.z * d + sh.z);
     this.camera.lookAt(this.camTarget.x + sh.x * 0.4, 0.4, this.camTarget.z + sh.z * 0.4);
     const sd = Sky.sunDir; this.sun.position.set(this.camTarget.x + sd.x * 30, sd.y * 30, this.camTarget.z + sd.z * 30);
     this.sun.target.position.set(this.camTarget.x, 0, this.camTarget.z);
     Sky.follow(this.camera.position);
+    this.reticle.rotation.y = Math.PI / 4 - (C ? C.yaw : 0);
+    if (typeof Occlude !== 'undefined') Occlude.sync(dt, C);
   },
   screenToGround(sx, sy, out) {
     this.ndc.set((sx / innerWidth) * 2 - 1, -(sy / innerHeight) * 2 + 1);
@@ -6039,7 +6103,8 @@ function pivot(parent, x = 0, y = 0, z = 0) { const g = new THREE.Group(); g.pos
 // Sammelt statische Boxen und baut daraus InstancedMeshes. Mit chunk > 0 entstehen Kacheln mit eigener
 // Bounding-Sphere, sodass Frustum-Culling (auch im Schatten-Pass) für große Zonen greift.
 class Batch {
-  constructor() { this.d = []; }
+  // extra(x, y, z) → [a, b, c, d] oder null: zusätzliches Attribut je Instanz (aWall, für das dynamische Absenken von Wänden)
+  constructor() { this.d = []; this.extra = null; }
   add(x, y, z, w, h, d, color, rot = 0) { this.d.push(x, y, z, w, h, d, color, rot); }
   get size() { return this.d.length / 8; }
   build(material, cast = true, receive = true, chunk = 0) {
@@ -6059,7 +6124,12 @@ class Batch {
     return root;
   }
   mesh(material, cast, receive, list, ox, oz, sphere) {
-    const geo = sphere ? R.unitBox.clone() : R.unitBox; if (sphere) geo.boundingSphere = sphere;
+    const own = !!(sphere || this.extra), geo = own ? R.unitBox.clone() : R.unitBox; if (sphere) geo.boundingSphere = sphere;
+    if (this.extra) {
+      const a = new Float32Array(list.length * 4);
+      list.forEach((i, j) => { const o = i * 8, v = this.extra(this.d[o], this.d[o + 1], this.d[o + 2]); if (v) a.set(v, j * 4); });
+      geo.setAttribute('aWall', new THREE.InstancedBufferAttribute(a, 4));
+    }
     const mesh = new THREE.InstancedMesh(geo, material, list.length);
     const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), p = new THREE.Vector3(), s = new THREE.Vector3(), c = new THREE.Color(), up = new THREE.Vector3(0, 1, 0);
     list.forEach((i, j) => {
@@ -6068,7 +6138,7 @@ class Batch {
     });
     mesh.position.set(ox, 0, oz);
     mesh.instanceMatrix.needsUpdate = true; if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
-    mesh.castShadow = cast; mesh.receiveShadow = receive; mesh.frustumCulled = !!sphere; mesh.userData.ownGeo = !!sphere;
+    mesh.castShadow = cast; mesh.receiveShadow = receive; mesh.frustumCulled = !!sphere; mesh.userData.ownGeo = own;
     return mesh;
   }
 }
@@ -7383,6 +7453,9 @@ function worldMats() {
   WMAT.window = new THREE.MeshBasicMaterial({ color: 0x3a3028 });
   WMAT.cloud = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.35, depthWrite: false, fog: false });
   WMAT.spikeGlow = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
+  // Dungeon-Varianten mit dynamisch abgesenkten Wänden (Kameraseite) + Ausblenden verdeckender Objekte
+  WMAT.lambertCut = new THREE.MeshLambertMaterial({ color: 0xffffff }); WMAT.basicCut = new THREE.MeshBasicMaterial({ color: 0xffffff });
+  if (typeof Occlude !== 'undefined') { for (const k of ['lambert', 'basic', 'foliage', 'window']) Occlude.patch(WMAT[k]); Occlude.patch(WMAT.lambertCut, true); Occlude.patch(WMAT.basicCut, true); }
   return WMAT;
 }
 
@@ -7398,7 +7471,7 @@ class World {
     this.flow = new Int16Array(W * H); this.flowFrom = -1; this.flowT = 0; this.queue = new Int32Array(W * H);
     this.rooms = []; this.doors = []; this.torches = []; this.chests = []; this.breakables = []; this.breakAt = new Map();
     this.traps = []; this.puzzles = []; this.portals = []; this.stations = []; this.updaters = []; this.secrets = []; this.entrances = []; this.waystones = [];
-    this.npcs = []; this.emitters = []; this.group = new THREE.Group(); this.time = 0; this.lavaTiles = [];
+    this.npcs = []; this.emitters = []; this.group = new THREE.Group(); this.time = 0; this.lavaTiles = []; this.wallH = new Map(); this.wallTorches = [];
     this.bSolid = new Batch(); this.bGlow = new Batch(); this.bFoliage = new Batch(); this.bGrass = new Batch(); this.bWindow = new Batch();
     worldMats();
   }
@@ -7536,8 +7609,10 @@ class World {
           if (r() < 0.12 && (B.deco === 'meadow' || B.deco === 'duskwood' || B.deco === 'toxic')) this.bFoliage.add(cx, -0.8 - r(), cz, 0.15, 1.4 + r() * 1.5, 0.15, 0x3f6a2a);
           continue;
         }
+        // Früher fest niedrig auf der Kameraseite; jetzt volle Höhe, die Absenkung folgt der Kameradrehung im Shader (Occlude).
+        // Zufallsfolge bleibt wie bisher (Höhenvariation und Wanddetails nur für die früher hohen Wände).
         const low = this.tile(x - 1, y) || this.tile(x, y - 1) || this.tile(x - 1, y - 1);
-        const h = low ? 0.5 : 2.4 + (r() < 0.2 ? 0.4 : 0);
+        const h = low ? 2.4 : 2.4 + (r() < 0.2 ? 0.4 : 0); this.wallH.set(i, h);
         so.add(cx, h / 2, cz, 1, h, 1, jitter(pick(B.wall), 0.08, r));
         so.add(cx, h + 0.06, cz, 1.04, 0.12, 1.04, jitter(pick(B.wallTop), 0.1, r));
         if (!low) this.wallDetail(cx, cz, h, so, gl, r);
@@ -7546,7 +7621,12 @@ class World {
     if (!out) this.decorate(so, gl, rng);
     if (out) this.clouds(rng);
     const CH = out ? 24 : 0, add = (mesh) => { if (mesh) this.group.add(mesh); return mesh; };
-    add(fl.build(M.lambert, false, true, CH)); add(so.build(M.lambert, true, true, CH)); add(gl.build(M.basic, false, false, CH));
+    add(fl.build(M.lambert, false, true, CH));
+    if (!out && typeof Occlude !== 'undefined') {
+      so.extra = gl.extra = (x, y, z) => Occlude.wallInfo(this, x, z);
+      const sm = add(so.build(M.lambertCut, true, true, CH)); if (sm) sm.traverse(o => { if (o.isInstancedMesh) o.customDepthMaterial = Occlude.depthCut(); });
+      add(gl.build(M.basicCut, false, false, CH));
+    } else { add(so.build(M.lambert, true, true, CH)); add(gl.build(M.basic, false, false, CH)); }
     add(this.bFoliage.build(M.foliage, true, true, CH)); add(this.bGrass.build(M.grass, false, true, CH)); add(this.bWindow.build(M.window, false, false, CH));
     add(lava.build(M.lava, false, false, CH)); add(water.build(M.water, false, true, CH));
   }
@@ -7605,6 +7685,7 @@ class World {
   }
   addTorch(x, z, yaw, color, y = 1.45) {
     const t = Models.torch(color); t.g.position.set(x, y, z); t.g.rotation.y = yaw; this.group.add(t.g);
+    this.wallTorches.push({ g: t.g, nx: Math.sin(yaw), nz: Math.cos(yaw) }); // an der Wand: mit ihr ausblenden, wenn sie abgesenkt ist
     this.torches.push({ x: x + Math.sin(yaw) * 0.2, y: y + 0.35, z: z + Math.cos(yaw) * 0.2, color, seed: Math.random() * 10, flame: t.flame, i: 1.25, dist: 10 });
   }
   addBrazier(x, z, color) {
@@ -11483,7 +11564,8 @@ const Save = {
 };
 // Einstellungen, die mit dem Cloud-Profil (Supabase, Spalte settings) abgeglichen werden
 const SYNC_SETTINGS = ['quality', 'music', 'sfx', 'shake', 'weather', 'helm', 'muted', 'nav', 'navArrow', 'navTrail', 'navCompass', 'navDist', 'navTracker', 'minimap', 'tips', 'mapFilter', 'mapTut', 'wpTipSeen', 'navTipSeen',
-  'hudScale', 'camSens', 'camZoom', 'camAuto', 'sprintToggle', 'jumpTipSeen'];
+  'hudScale', 'camSens', 'camZoom', 'camAuto', 'sprintToggle', 'jumpTipSeen',
+  'camInvX', 'camInvY', 'camSmooth', 'camEdge', 'camRotSnap', 'camOcclude', 'camYaw', 'camPitch', 'camTipSeen'];
 const Profile = {
   data: null, canSave: true, dirty: false, mem: {}, slot: 1, owner: 'guest', rec: null, _store: undefined,
   settings: {
@@ -11493,6 +11575,7 @@ const Profile = {
     tips: true, mapFilter: null, mapTut: false, wpTipSeen: false, navTipSeen: false,
     // HUD-Größe · Kamera (Empfindlichkeit, Zoom, automatisch zentrieren) · Sprint halten/umschalten · Sprung-Tutorial
     hudScale: 1, camSens: 1, camZoom: 1, camAuto: true, sprintToggle: false, jumpTipSeen: false,
+    camInvX: false, camInvY: false, camSmooth: 0.5, camEdge: false, camRotSnap: true, camOcclude: true, camYaw: 0, camPitch: 44.3, camTipSeen: false,
   },
   storage() {
     if (this._store !== undefined) return this._store;
@@ -11795,7 +11878,8 @@ const UI = {
   },
   drawMapLayer(ctx, size, scale, cx, cz, full) {
     const w = Game.world, P = Game.player; this.refreshMapCanvas();
-    ctx.clearRect(0, 0, size, size); ctx.save(); ctx.translate(size / 2, size / 2); ctx.rotate(Math.PI / 4); ctx.scale(scale, scale); ctx.translate(-cx, -cz);
+    const rot = typeof CamCtl !== 'undefined' ? CamCtl.mapRot() : Math.PI / 4; // „oben“ = Blickrichtung der Kamera
+    ctx.clearRect(0, 0, size, size); ctx.save(); ctx.translate(size / 2, size / 2); ctx.rotate(rot); ctx.scale(scale, scale); ctx.translate(-cx, -cz);
     ctx.imageSmoothingEnabled = false; ctx.drawImage(this.mapCv, 0, 0);
     const dot = (x, z, r, col) => { ctx.fillStyle = col; ctx.fillRect(x - r, z - r, r * 2, r * 2); };
     const vis = (x, z) => w.explored[w.i(clamp(Math.floor(x), 0, w.W - 1), clamp(Math.floor(z), 0, w.H - 1))];
@@ -11809,12 +11893,14 @@ const UI = {
     if (w.exits) for (const k in w.exits) { const E = w.exits[k]; dot(E.x, E.z, 1.3, Game.regionOpen(k) ? '#ffffff' : '#ff5a8a'); }
     for (const e of Game.enemies) if (!e.dead && !e.isDummy && vis(e.x, e.z) && (e.active || full || e.named)) dot(e.x, e.z, e.isBoss || e.named ? 1.3 : 0.55, e.isBoss || e.named ? '#ff2a2a' : '#ff5a4a');
     if (Game.escort) dot(Game.escort.x, Game.escort.z, 1.0, '#7dff6a');
-    const tg = Game.questMarks || []; ctx.fillStyle = '#ffd060'; for (const m of tg) { ctx.save(); ctx.translate(m.x, m.z); ctx.rotate(-Math.PI / 4); ctx.beginPath(); for (let k = 0; k < 10; k++) { const a = k / 10 * TAU - Math.PI / 2, r = (k % 2 ? 0.8 : 2) * (full ? 1 : 0.8); ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r); } ctx.closePath(); ctx.fill(); ctx.restore(); }
+    const tg = Game.questMarks || []; ctx.fillStyle = '#ffd060'; for (const m of tg) { ctx.save(); ctx.translate(m.x, m.z); ctx.rotate(-rot); ctx.beginPath(); for (let k = 0; k < 10; k++) { const a = k / 10 * TAU - Math.PI / 2, r = (k % 2 ? 0.8 : 2) * (full ? 1 : 0.8); ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r); } ctx.closePath(); ctx.fill(); ctx.restore(); }
     if (!w.isZone && w.bossRoom && w.bossRoom.visited === false && full) { const b = w.bossRoom; ctx.strokeStyle = 'rgba(255,60,40,.5)'; ctx.lineWidth = 0.6; ctx.strokeRect(b.x, b.y, b.w, b.h); }
     ctx.save(); ctx.translate(P.x, P.z); ctx.rotate(-P.yaw); ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.moveTo(0, 1.6); ctx.lineTo(-1, -1); ctx.lineTo(1, -1); ctx.closePath(); ctx.fill(); ctx.restore();
     ctx.restore();
     // Kompass zum Questziel außerhalb des Ausschnitts
-    if (!full && tg.length) { const m = tg[0], dx = m.x - P.x, dz = m.z - P.z, d = Math.hypot(dx, dz); if (d * scale > size * 0.42) { const a = Math.atan2(dz, dx) + Math.PI / 4, r = size * 0.44; ctx.fillStyle = '#ffd060'; ctx.save(); ctx.translate(size / 2 + Math.cos(a) * r, size / 2 + Math.sin(a) * r); ctx.rotate(a); ctx.beginPath(); ctx.moveTo(7, 0); ctx.lineTo(-5, -5); ctx.lineTo(-5, 5); ctx.closePath(); ctx.fill(); ctx.restore(); } }
+    if (!full && tg.length) { const m = tg[0], dx = m.x - P.x, dz = m.z - P.z, d = Math.hypot(dx, dz); if (d * scale > size * 0.42) { const a = Math.atan2(dz, dx) + rot, r = size * 0.44; ctx.fillStyle = '#ffd060'; ctx.save(); ctx.translate(size / 2 + Math.cos(a) * r, size / 2 + Math.sin(a) * r); ctx.rotate(a); ctx.beginPath(); ctx.moveTo(7, 0); ctx.lineTo(-5, -5); ctx.lineTo(-5, 5); ctx.closePath(); ctx.fill(); ctx.restore(); } }
+    // Nordmarke am Rand (die Minimap dreht sich mit der Kamera)
+    if (!full) { const nx = Math.sin(rot), nz = -Math.cos(rot), r = size * 0.44; ctx.save(); ctx.font = 'bold 11px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.beginPath(); ctx.arc(size / 2 + nx * r, size / 2 + nz * r, 7, 0, TAU); ctx.fill(); ctx.fillStyle = '#ff8a6a'; ctx.fillText(t('nav.dir.N'), size / 2 + nx * r, size / 2 + nz * r + 0.5); ctx.restore(); }
   },
   drawMinimap() { if (!Game.world || !Game.player || !this.mapCv) return; this.drawMapLayer(this.mm, 176, Game.world.isZone ? 2.2 : 3, Game.player.x, Game.player.z, false); },
   /* ---------------- Tooltip & Kontextmenü ---------------- */
@@ -13010,7 +13096,7 @@ const Game = {
   applySettings() {
     const S = Profile.settings; R.applyQuality(S.quality); AudioSys.setMuted(!!S.muted); AudioSys.setVolumes(S.music, S.sfx); Shake.enabled = S.shake !== false; Weather.enabled = S.weather !== false; this.updateMuteLabels();
     Nav.applyMinimap(); if (Profile.data) UI.renderTracker(); if (!S.nav || S.navCompass === false) Nav.hide();
-    HudScale.apply(); CamCtl.zoomT = clamp(+S.camZoom || 1, CAM_ZMIN, CAM_ZMAX);
+    HudScale.apply(); CamCtl.applySettings();
     if (this.overlay === 'map') WorldMap.relang();
     if (UI.els && UI.els.hud && !$('scrSettings').classList.contains('hidden')) UI.renderSettings();
   },
@@ -13146,7 +13232,7 @@ const Game = {
     UI.update(realDt);
     this.weatherT -= realDt; if (this.weatherT <= 0 && w.isZone) this.rollWeather();
     this.autosaveT -= realDt; if (this.autosaveT <= 0) { this.autosaveT = 30; this.saveNow(); }
-    Nav.update(realDt); JumpTut.update(realDt);
+    Nav.update(realDt); JumpTut.update(realDt); CamTut.update(realDt);
     this.autoQuality(realDt);
   },
   // Automatische Qualitätsanpassung: bleibt die Bildrate in den ersten Sekunden deutlich unter 30, eine Stufe herunter
@@ -13949,32 +14035,82 @@ const LangUI = {
     Profile.settings.lang = l; Profile.saveSettings(); I18N.setLang(l); document.title = t('game.fullTitle'); AudioSys.play('click');
   },
 };
-/* ============================== KAMERA-SCHWENK & ZOOM ===================== */
+/* ============================== FREIE KAMERA: SCHWENK, DREHUNG, NEIGUNG, ZOOM ===================== */
 // Umsehen, ohne die Figur zu bewegen:
-//  · Taste halten + Maus ziehen (Standard: mittlere Maustaste) – die Welt „klebt“ am Mauszeiger
-//  · Kamera-Tasten (links/rechts/oben/unten), rechter Stick am Gamepad (außerhalb des Kampfes; im Kampf zielt er)
-//  · Touch: zwei Finger ziehen = schwenken, auseinander/zusammen = Zoom
-//  · Zoom: Mausrad / Tasten / Pinch in sanften Grenzen (wird gespeichert)
-// Der Schwenk bleibt innerhalb von CAM_RANGE Kacheln um die Figur und innerhalb der Welt. Beim Loslassen fährt die
-// Kamera sanft zurück (Einstellung „Kamera automatisch zentrieren“), sonst per „Kamera zentrieren“. In Dialogen und
-// Zwischensequenzen gesperrt (zurück zur Figur), im Kampf und bei Bosskämpfen kehrt sie nach dem Loslassen immer zurück.
-const CAM_RANGE = 13, CAM_ZMIN = 0.7, CAM_ZMAX = 1.45;
+//  · Schwenken: Taste halten + Maus ziehen (Standard: mittlere Maustaste), Kamera-Tasten, rechter Stick (außerhalb des Kampfes),
+//    optional Bildschirmrand-Scrolling; Touch: zwei Finger ziehen
+//  · Drehen/Kippen: Taste halten + Maus ziehen (Standard: Strg + mittlere Maustaste), Dreh-/Kipp-Tasten (45°-Schritte oder
+//    stufenlos), Touch: Drehgeste mit zwei Fingern
+//  · Zoom: Mausrad / Tasten / Pinch, sanft in Grenzen; „Standard-Zoom“ ist eine Einstellung
+// Bewegung, Zielen (Gamepad/Touch), Minimap und Kompass richten sich nach der aktuellen Drehung (CamCtl.az).
+// Der Schwenk bleibt innerhalb von CAM_RANGE Kacheln um die Figur und innerhalb der Welt. „Automatisch zentrieren“ holt die
+// Kamera zurück, sobald man den Schwenk loslässt oder sich bewegt. In Dialogen und Zwischensequenzen ist alles gesperrt;
+// bei Bosskämpfen fährt sie zurück und erweitert den Sichtbereich, damit Boss und Angriffe im Bild bleiben.
+const CAM_RANGE = 13, CAM_ZMIN = 0.7, CAM_ZMAX = 1.45, CAM_BOSS_ZMAX = 1.4;
+const CAM_AZ0 = Math.PI / 4, CAM_EL0 = Math.atan2(1.38, Math.SQRT2), CAM_ELMIN = 36 * Math.PI / 180, CAM_ELMAX = 60 * Math.PI / 180;
+const CAM_STEP = Math.PI / 4, CAM_ROT_SPEED = 1.6, CAM_TILT_SPEED = 0.55, CAM_EDGE = 12;
+// Standardwerte der Kamera-Einstellungen (für „Auf Standard zurücksetzen“)
+const CAM_DEFAULTS = { camSens: 1, camInvX: false, camInvY: false, camSmooth: 0.5, camEdge: false, camAuto: true, camZoom: 1, camRotSnap: true, camOcclude: true, camYaw: 0, camPitch: Math.round(CAM_EL0 * 1800 / Math.PI) / 10 };
+const wrapAngle = a => { a = (a + Math.PI) % (Math.PI * 2); if (a < 0) a += Math.PI * 2; return a - Math.PI; };
 const CamCtl = {
-  off: { x: 0, z: 0 }, tgt: { x: 0, z: 0 }, zoom: 1, zoomT: 1, panning: false, padPan: false, idleT: 0, boss: false, touch: null, mPrev: null, saveT: 0, shadowZ: 1,
+  off: { x: 0, z: 0 }, tgt: { x: 0, z: 0 }, frame: { x: 0, z: 0 }, zoom: 1, zoomT: 1, zoomEff: 1, yaw: 0, yawT: 0, el: CAM_EL0, elT: CAM_EL0,
+  panning: false, padPan: false, idleT: 0, boss: false, touch: null, mPrev: null, rPrev: null, saveT: 0, shadowZ: 1, mouseOut: false, zoomDef: 1, viewSaved: null,
   ax: { rx: 1, rz: 0, dx: 0, dz: 1, sx: 0.05, sy: 0.07 },
-  sens() { return clamp(+Profile.settings.camSens || 1, 0.4, 2.5); },
-  auto() { return Profile.settings.camAuto !== false; },
+  // ---------- Einstellungen ----------
+  S() { return Profile.settings || {}; },
+  sens() { return clamp(+this.S().camSens || 1, 0.4, 2.5); },
+  auto() { return this.S().camAuto !== false; },
+  invX() { return this.S().camInvX ? -1 : 1; },
+  invY() { return this.S().camInvY ? -1 : 1; },
+  // Glättung 0 … 1 → Geschwindigkeitsfaktor der Nachführung (0,5 = bisheriges Verhalten)
+  rate() { const s = clamp(this.S().camSmooth == null ? 0.5 : +this.S().camSmooth, 0, 1); return Math.pow(2, (0.5 - s) * 2.4); },
+  edge() { return !!this.S().camEdge; },
+  snap() { return this.S().camRotSnap !== false; },
+  occlude() { return this.S().camOcclude !== false; },
+  // ---------- Richtungen ----------
+  get az() { return CAM_AZ0 + this.yaw; },
+  // Bildschirmrichtung (rechts = +sx, oben = +sy) → Weltrichtung (x, z) für die aktuelle Drehung
+  worldDir(sx, sy) { const a = this.az, s = Math.sin(a), c = Math.cos(a); return { x: sx * s - sy * c, z: -sx * c - sy * s }; },
+  // Blickrichtung der Kamera auf dem Boden (von der Kamera zur Figur)
+  viewDir() { const a = this.az; return { x: -Math.cos(a), z: -Math.sin(a) }; },
+  // Drehung der Minimap, damit „oben“ der Blickrichtung entspricht
+  mapRot() { return Math.PI / 2 - this.az; },
+  // Kamera-Versatz (Einheitsvektor von der Figur zur Kamera)
+  offsetDir(out) { const a = this.az, c = Math.cos(this.el); return out.set(Math.cos(a) * c, Math.sin(this.el), Math.sin(a) * c); },
   init() {
-    this.zoom = this.zoomT = clamp(+Profile.settings.camZoom || 1, CAM_ZMIN, CAM_ZMAX);
+    this.applySettings(true);
     const v = $('view'); if (!v) return;
-    const st = ts => { const a = ts[0], b = ts[1]; return { x: (a.clientX + b.clientX) / 2, y: (a.clientY + b.clientY) / 2, d: Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) || 1 }; };
-    v.addEventListener('touchstart', e => { if (e.touches.length === 2) this.touch = st(e.touches); }, { passive: true });
-    v.addEventListener('touchmove', e => {
-      if (e.touches.length !== 2 || !this.touch || this.locked()) return; e.preventDefault();
-      const n = st(e.touches), o = this.touch; this.grab(n.x - o.x, n.y - o.y); this.zoomT = clamp(this.zoomT * o.d / n.d, CAM_ZMIN, CAM_ZMAX); this.saveT = 1; this.touch = n; this.panning = true; this.idleT = 0;
-    }, { passive: false });
-    const end = e => { if (e.touches.length < 2) this.touch = null; };
-    v.addEventListener('touchend', end); v.addEventListener('touchcancel', end);
+    // Zwei Finger: schwenken (Mittelpunkt), zoomen (Abstand), drehen (Winkel)
+    const st = ts => { const a = ts[0], b = ts[1]; return { x: (a.clientX + b.clientX) / 2, y: (a.clientY + b.clientY) / 2, d: Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) || 1, a: Math.atan2(b.clientY - a.clientY, b.clientX - a.clientX) }; };
+    try {
+      v.addEventListener('touchstart', e => { if (e.touches.length === 2) this.touch = st(e.touches); }, { passive: true });
+      v.addEventListener('touchmove', e => {
+        if (e.touches.length !== 2 || !this.touch || this.locked()) return; e.preventDefault();
+        const n = st(e.touches), o = this.touch; this.grab((n.x - o.x) * this.invX(), (n.y - o.y) * this.invY());
+        this.zoomT = clamp(this.zoomT * o.d / n.d, CAM_ZMIN, CAM_ZMAX);
+        // Drehgeste erst ab ~7° Verdrehung, damit Zoomen/Schwenken nicht versehentlich dreht
+        let da = n.a - o.a; if (da > Math.PI) da -= Math.PI * 2; if (da < -Math.PI) da += Math.PI * 2; if (Math.abs(da) > 0.6) da = 0;
+        n.tw = (o.tw || 0) + da; n.rot = o.rot;
+        if (!n.rot && Math.abs(n.tw) > 0.12) { n.rot = true; this.yawT -= n.tw * this.invX(); } else if (n.rot) this.yawT -= da * this.invX();
+        this.saveT = 1; this.touch = n; this.panning = true; this.idleT = 0;
+      }, { passive: false });
+      const end = e => { if (e.touches.length < 2) this.touch = null; };
+      v.addEventListener('touchend', end); v.addEventListener('touchcancel', end);
+      // Bildschirmrand-Scrolling nur, solange der Mauszeiger im Fenster ist
+      document.addEventListener('mouseout', e => { if (!e.relatedTarget) this.mouseOut = true; });
+      addEventListener('mousemove', () => { this.mouseOut = false; });
+      addEventListener('blur', () => { this.mouseOut = true; });
+    } catch (e) { /* Touch-/Maus-Ereignisse nicht verfügbar */ }
+  },
+  // Übernimmt gespeicherte Werte (Start, Cloud-Profil, Zurücksetzen); laufender Mausrad-Zoom bleibt, solange der Standard gleich ist
+  applySettings(force) {
+    const S = this.S(), def = clamp(+S.camZoom || 1, CAM_ZMIN, CAM_ZMAX);
+    if (force || def !== this.zoomDef) { this.zoomDef = def; this.zoomT = def; if (force) this.zoom = this.zoomEff = def; }
+    const yaw = (+S.camYaw || 0) * Math.PI / 180, el = clamp((S.camPitch == null ? CAM_DEFAULTS.camPitch : +S.camPitch) * Math.PI / 180, CAM_ELMIN, CAM_ELMAX), key = yaw.toFixed(3) + '|' + el.toFixed(3);
+    if (force || key !== this.viewSaved) {
+      this.viewSaved = key; this.yawT = this.yaw + wrapAngle(yaw - this.yaw); this.elT = el;
+      if (force) { this.yaw = this.yawT; this.el = el; }
+    }
   },
   locked() { return Game.state !== 'play' || !!Game.cinematic || (typeof Dialog !== 'undefined' && Dialog.open_) || !!Game.overlay || Game.paused; },
   // Bildschirmachsen in Weltrichtungen (aus der aktuellen Kamera, unabhängig vom Schwenk)
@@ -13986,54 +14122,109 @@ const CamCtl = {
   },
   // Welt um (dx, dy) Bildschirmpixel mitziehen
   grab(dx, dy) { const A = this.ax; this.tgt.x -= A.rx * dx * A.sx + A.dx * dy * A.sy; this.tgt.z -= A.rz * dx * A.sx + A.dz * dy * A.sy; this.clampTgt(); this.off.x = this.tgt.x; this.off.z = this.tgt.z; },
+  // Schwenk in Bildschirmrichtung (mx rechts, my unten) mit Tempo in Kacheln/s
+  panBy(mx, my, sp) { const A = this.ax; this.tgt.x += (A.rx * mx + A.dx * my) * sp; this.tgt.z += (A.rz * mx + A.dz * my) * sp; this.clampTgt(); },
   clampTgt() {
     const T = this.tgt, P = Game.player, w = Game.world, lim = CAM_RANGE * this.zoom, l = Math.hypot(T.x, T.z);
     if (l > lim) { T.x *= lim / l; T.z *= lim / l; }
     if (P && w) { T.x = clamp(P.x + T.x, 1, w.W - 1) - P.x; T.z = clamp(P.z + T.z, 1, w.H - 1) - P.z; }
   },
   center() { this.tgt.x = 0; this.tgt.z = 0; this.panning = false; },
-  reset() { this.off.x = this.off.z = this.tgt.x = this.tgt.z = 0; this.panning = false; this.mPrev = null; },
+  // Ansicht zurücksetzen: Schwenk, Drehung (auf kürzestem Weg), Neigung und Zoom auf Standard
+  resetView() { this.center(); this.yawT = this.yaw - wrapAngle(this.yaw); this.elT = CAM_EL0; this.zoomT = this.zoomDef; this.saveT = 0.6; },
+  reset() { this.off.x = this.off.z = this.tgt.x = this.tgt.z = this.frame.x = this.frame.z = 0; this.panning = false; this.mPrev = this.rPrev = null; },
+  // Drehen um 45°-Schritte (auf das Raster einrasten) bzw. stufenlos
+  rotStep(dir) { const k = Math.round(this.yawT / CAM_STEP); this.yawT = (k + dir) * CAM_STEP; },
+  bossEnt() { const b = typeof UI !== 'undefined' ? UI.boss : null; return b && !b.dead && !b.removed && Game.player && dist2(b.x, b.z, Game.player.x, Game.player.z) < 26 * 26 ? b : null; },
   update(dt) {
     const P = Game.player; this.padPan = false; if (!P || !Game.world) return;
     this.axes();
-    const lock = this.locked(), fight = Game.inCombat && Game.inCombat(), boss = !!(UI.boss && !UI.boss.dead);
+    const lock = this.locked(), fight = Game.inCombat && Game.inCombat(), bossE = this.bossEnt(), boss = !!bossE, sens = this.sens(), ix = this.invX(), iy = this.invY();
     if (boss && !this.boss) this.center(); this.boss = boss;
-    let active = false;
-    if (lock) { if (Game.state === 'dialog' || Game.cinematic || (typeof Dialog !== 'undefined' && Dialog.open_)) this.center(); this.mPrev = null; }
+    let active = false, turned = false;
+    if (lock) { if (Game.state === 'dialog' || Game.cinematic || (typeof Dialog !== 'undefined' && Dialog.open_)) this.center(); this.mPrev = this.rPrev = null; }
     else {
-      // Taste halten + Maus ziehen
+      const m = { x: Input.mouse.x, y: Input.mouse.y };
+      // Drehen/Kippen: Taste halten + Maus ziehen (waagerecht dreht, senkrecht kippt)
+      if (Keys.held('camRotate')) {
+        if (this.rPrev) { const dx = m.x - this.rPrev.x, dy = m.y - this.rPrev.y; if (dx || dy) { this.yawT -= dx * 0.0065 * sens * ix; this.elT = clamp(this.elT + dy * 0.0042 * sens * iy, CAM_ELMIN, CAM_ELMAX); turned = true; } }
+        this.rPrev = m;
+      } else this.rPrev = null;
+      // Schwenken: Taste halten + Maus ziehen – die Welt „klebt“ am Mauszeiger
       if (Keys.held('camPan')) {
-        const m = { x: Input.mouse.x, y: Input.mouse.y };
-        if (this.mPrev) { const dx = (m.x - this.mPrev.x) * this.sens(), dy = (m.y - this.mPrev.y) * this.sens(); if (dx || dy) this.grab(dx, dy); }
+        if (this.mPrev) { const dx = (m.x - this.mPrev.x) * sens * ix, dy = (m.y - this.mPrev.y) * sens * iy; if (dx || dy) this.grab(dx, dy); }
         this.mPrev = m; active = true;
       } else this.mPrev = null;
       // Kamera-Tasten
-      const kx = Keys.value('camRight') - Keys.value('camLeft'), ky = Keys.value('camDown') - Keys.value('camUp');
+      const kx = (Keys.value('camRight') - Keys.value('camLeft')) * ix, ky = (Keys.value('camDown') - Keys.value('camUp')) * iy;
       // Gamepad: rechter Stick schwenkt, solange nicht gekämpft oder gezielt wird
       let sx = 0, sy = 0; const a = Input.pad.aim;
-      if (a.mag && !fight && !Keys.held('attack') && !Keys.held('ranged')) { sx = a.x * a.mag; sy = a.y * a.mag; this.padPan = true; }
-      const mx = kx + sx, my = ky + sy;
-      if (Math.abs(mx) + Math.abs(my) > 0.05) {
-        const A = this.ax, sp = 15 * this.sens() * this.zoom * dt;
-        this.tgt.x += (A.rx * mx + A.dx * my) * sp; this.tgt.z += (A.rz * mx + A.dz * my) * sp; this.clampTgt(); active = true;
+      if (a.mag && !fight && !Keys.held('attack') && !Keys.held('ranged')) { sx = a.x * a.mag * ix; sy = a.y * a.mag * iy; this.padPan = true; }
+      // Bildschirmrand-Scrolling (nur Maus, Zeiger im Fenster, nicht über Menüs)
+      let ex = 0, ey = 0;
+      if (this.edge() && !Input.touch && Input.lastDevice !== 'pad' && !this.mouseOut && performance.now() - Input.mouse.movedT < 60000) {
+        if (m.x <= CAM_EDGE) ex = -1; else if (m.x >= innerWidth - 1 - CAM_EDGE) ex = 1;
+        if (m.y <= CAM_EDGE) ey = -1; else if (m.y >= innerHeight - 1 - CAM_EDGE) ey = 1;
+        ex *= ix; ey *= iy;
       }
+      const mx = kx + sx + ex, my = ky + sy + ey;
+      if (Math.abs(mx) + Math.abs(my) > 0.05) { this.panBy(mx, my, 15 * sens * this.zoom * dt); active = true; }
       if (this.touch) active = true;
+      // Drehen per Taste: 45°-Schritte oder stufenlos
+      if (this.snap()) { if (Keys.pressed('camRotL')) { this.rotStep(-ix); turned = true; } if (Keys.pressed('camRotR')) { this.rotStep(ix); turned = true; } }
+      else { const r = (Keys.held('camRotR') ? 1 : 0) - (Keys.held('camRotL') ? 1 : 0); if (r) { this.yawT += r * ix * CAM_ROT_SPEED * dt; turned = true; } }
+      // Kippen per Taste (steiler = mehr von oben)
+      if (this.snap()) {
+        if (Keys.pressed('camTiltUp')) { this.elT = clamp(this.elT + 0.09 * iy, CAM_ELMIN, CAM_ELMAX); turned = true; }
+        if (Keys.pressed('camTiltDown')) { this.elT = clamp(this.elT - 0.09 * iy, CAM_ELMIN, CAM_ELMAX); turned = true; }
+      } else { const r = (Keys.held('camTiltUp') ? 1 : 0) - (Keys.held('camTiltDown') ? 1 : 0); if (r) { this.elT = clamp(this.elT + r * iy * CAM_TILT_SPEED * dt, CAM_ELMIN, CAM_ELMAX); turned = true; } }
       if (Keys.pressed('camCenter')) this.center();
-      if (Keys.pressed('camZoomIn')) { this.zoomT = clamp(this.zoomT / 1.12, CAM_ZMIN, CAM_ZMAX); this.saveT = 1; }
-      if (Keys.pressed('camZoomOut')) { this.zoomT = clamp(this.zoomT * 1.12, CAM_ZMIN, CAM_ZMAX); this.saveT = 1; }
+      if (Keys.pressed('camReset')) this.resetView();
+      if (Keys.pressed('camZoomIn')) { this.zoomT = clamp(this.zoomT / 1.12, CAM_ZMIN, CAM_ZMAX); }
+      if (Keys.pressed('camZoomOut')) { this.zoomT = clamp(this.zoomT * 1.12, CAM_ZMIN, CAM_ZMAX); }
+      if (turned) this.saveT = 1;
     }
+    // Automatisch zentrieren: nach dem Loslassen (kurz warten) oder sobald sich die Figur bewegt; im Kampf/bei Bossen immer
+    const moving = Math.hypot(P.mvx || 0, P.mvz || 0) > 0.15;
     if (active) { this.panning = true; this.idleT = 0; }
-    else if (this.panning) { this.idleT += dt; if (this.idleT > 0.3 && (this.auto() || fight || boss)) this.center(); }
-    // weiche Bewegung, Grenzen auch während die Figur läuft
+    else if (this.panning) { this.idleT += dt; if ((this.idleT > 0.3 && (this.auto() || fight || boss)) || (moving && this.auto())) this.center(); }
+    // Bosskampf: Mitte leicht zum Boss verschieben und herauszoomen, damit Boss und Angriffe sichtbar bleiben
+    let fx = 0, fz = 0, need = 1;
+    if (bossE && !lock) { const dx = bossE.x - P.x, dz = bossE.z - P.z, d = Math.hypot(dx, dz), bias = clamp((d - 4) / 20, 0, 0.35); fx = dx * bias; fz = dz * bias; need = clamp(0.82 + d / 24, 1, CAM_BOSS_ZMAX); }
+    // weiche Bewegung (Glättung einstellbar), Grenzen auch während die Figur läuft
     this.clampTgt();
-    const k = 1 - Math.exp(-dt * (active ? 14 : 6)); this.off.x += (this.tgt.x - this.off.x) * k; this.off.z += (this.tgt.z - this.off.z) * k;
-    this.zoom += (this.zoomT - this.zoom) * (1 - Math.exp(-dt * 8));
-    // Schattenbereich wächst mit dem Zoom
-    if (Math.abs(this.zoom - this.shadowZ) > 0.04) { this.shadowZ = this.zoom; const sc = R.sun.shadow.camera, e = 24 * Math.max(1, this.zoom); sc.left = -e; sc.right = e; sc.top = e; sc.bottom = -e; sc.updateProjectionMatrix(); }
-    if (this.saveT > 0 && (this.saveT -= dt) <= 0) { Profile.settings.camZoom = +this.zoomT.toFixed(2); Profile.saveSettings(); }
+    const q = this.rate(), k = 1 - Math.exp(-dt * (active ? 14 : 6) * q);
+    this.off.x += (this.tgt.x - this.off.x) * k; this.off.z += (this.tgt.z - this.off.z) * k;
+    const kf = 1 - Math.exp(-dt * 2.5 * q); this.frame.x += (fx - this.frame.x) * kf; this.frame.z += (fz - this.frame.z) * kf;
+    this.zoom += (this.zoomT - this.zoom) * (1 - Math.exp(-dt * 8 * q));
+    const zt = Math.max(this.zoom, need); this.zoomEff += (zt - this.zoomEff) * (1 - Math.exp(-dt * 3 * q));
+    const kr = 1 - Math.exp(-dt * 9 * q); this.yaw += (this.yawT - this.yaw) * kr; this.el += (this.elT - this.el) * kr;
+    if (Math.abs(this.yawT - this.yaw) < 1e-4) this.yaw = this.yawT;
+    // Schattenbereich wächst mit Zoom und flacherem Blick
+    const sz = this.zoomEff * (1 + Math.max(0, CAM_EL0 - this.el) * 0.9);
+    if (Math.abs(sz - this.shadowZ) > 0.04) { this.shadowZ = sz; const sc = R.sun.shadow.camera, e = 24 * Math.max(1, sz); sc.left = -e; sc.right = e; sc.top = e; sc.bottom = -e; sc.updateProjectionMatrix(); }
+    // Drehung/Neigung werden (verzögert) gespeichert, damit die Ansicht beim nächsten Start gleich ist
+    if (this.saveT > 0 && (this.saveT -= dt) <= 0) {
+      const S = Profile.settings; S.camYaw = Math.round(wrapAngle(this.yawT) * 1800 / Math.PI) / 10; S.camPitch = Math.round(this.elT * 1800 / Math.PI) / 10;
+      this.viewSaved = (S.camYaw * Math.PI / 180).toFixed(3) + '|' + (S.camPitch * Math.PI / 180).toFixed(3); Profile.saveSettings();
+    }
   },
-  // Wird vom Renderer genutzt: im Spiel Versatz/Zoom, sonst neutral
+  // Alle Kamera-Einstellungen auf Standard (Einstellungsmenü)
+  resetSettings() { const S = Profile.settings; Object.assign(S, CAM_DEFAULTS); this.zoomDef = -1; this.viewSaved = null; this.applySettings(); this.center(); Profile.saveSettings(); },
+  // Wird vom Renderer genutzt: im Spiel Versatz/Zoom/Drehung, sonst neutral
   applies() { return !!(Game.player && Game.world && Game.state !== 'title' && Game.state !== 'creator'); },
+};
+
+/* ---------- Tutorial: Kamerasteuerung mit den aktuell belegten Tasten ---------- */
+const CamTut = {
+  t: 0,
+  text() { return t(Input.touch ? 'cam.tutTouch' : Input.lastDevice === 'pad' ? 'cam.tutPad' : 'cam.tut'); },
+  update(dt) {
+    const S = Profile.settings; if (S.tips === false || S.camTipSeen || !Game.player || Game.state !== 'play' || Game.cinematic || Game.overlay || Game.paused) return;
+    if (typeof Dialog !== 'undefined' && Dialog.open_) return;
+    this.t += dt; if (this.t < 45 || (!S.jumpTipSeen && this.t < 90)) return;
+    S.camTipSeen = true; Profile.saveSettings(); UI.hint(() => t('cam.tutTitle'), () => this.text());
+  },
 };
 /* ============================== CLOUD (Supabase) ======================== */
 // Cloud-Spielstände und Profil in Supabase. Verbindung über die offizielle Clerk-Supabase-Integration:
@@ -14963,14 +15154,16 @@ const Nav = {
     const nm = arrow.children[2]; nm.textContent = T.label || ''; nm.className = 'navName' + (ax > W - 200 ? ' left' : ax < 200 ? ' right' : '') + (ay < mgT + 60 ? ' below' : '');
   },
   // ---------- Kompassleiste ----------
-  // Bildschirm-oben entspricht in der Welt der Richtung (−x, −z) – also Nordwesten (Norden = −z wie auf der Karte).
+  // Bildschirm-oben entspricht ohne Drehung der Weltrichtung (−x, −z) – also Nordwesten (Norden = −z wie auf der Karte); mit Drehung CamCtl.worldDir(0, 1).
   bearing(dx, dz) { return Math.atan2(dx, -dz) * 180 / Math.PI; },
   // Layout-Klasse für die linke HUD-Spalte (nur von der Einstellung abhängig, damit nichts springt)
   layout() { const on = this.opt('navCompass'); if (this.cOn !== on) { this.cOn = on; document.body.classList.toggle('compassOn', on); } },
   updateCompass(P, w) {
     const el = $('compass'); if (!this.opt('navCompass')) { el.classList.add('hidden'); return; }
     el.classList.remove('hidden');
-    const strip = $('compassStrip'), Wd = strip.clientWidth || 360, head = this.bearing(-1, -1), span = 100;
+    // Leistenmitte = Blickrichtung der Kamera (folgt der Drehung)
+    const up = typeof CamCtl !== 'undefined' ? CamCtl.worldDir(0, 1) : { x: -1, z: -1 };
+    const strip = $('compassStrip'), Wd = strip.clientWidth || 360, head = this.bearing(up.x, up.z), span = 100;
     if (!this.compassEls) {
       this.compassEls = { letters: [], ticks: [], marks: [] };
       for (let k = 0; k < 8; k++) { const s = document.createElement('span'); s.className = 'cL' + (k % 2 ? ' minor' : ''); strip.appendChild(s); this.compassEls.letters.push(s); }
@@ -14998,6 +15191,124 @@ const Nav = {
       if (x === null) { s.style.display = 'none'; return; }
       s.style.display = ''; s.style.left = x + 'px'; s.className = 'cM ' + m.c + edge; s.textContent = m.d && this.opt('navDist') ? Math.round(dd) + '' : '';
     });
+  },
+};
+/* ============================== SICHT AUF DIE FIGUR: WÄNDE ABSENKEN, VERDECKUNG AUSBLENDEN ===================== */
+// 1) Dungeon-Wände auf der Kameraseite werden im Vertex-Shader abgesenkt (wie bisher die festen niedrigen Wände, aber passend
+//    zur aktuellen Drehung): Jede Wand-Instanz kennt ihre Boden-Nachbarn (Attribut aWall); liegt Boden „hinter“ der Wand in
+//    Blickrichtung, wird sie stufenlos auf 0,5 Kacheln gestaucht. Schattenwurf folgt über ein eigenes Tiefenmaterial.
+// 2) Alles, was zwischen Kamera und Figur liegt (Wände, Bäume, Gebäude, Requisiten), wird in einem weichen Kegel um die Figur
+//    per Dithering ausgeblendet – ohne Sortierprobleme und unabhängig vom Batching. Abschaltbar (Einstellung).
+const Occlude = {
+  u: null, str: 0, depth: null,
+  uniforms() {
+    if (!this.u) this.u = {
+      uOccP: { value: new THREE.Vector3(0, -100, 0) }, uOccC: { value: new THREE.Vector3(0, 50, 0) }, uOccR: { value: new THREE.Vector2(1.7, 0) },
+      uCutV: { value: new THREE.Vector2(-Math.SQRT1_2, -Math.SQRT1_2) }, uCutOn: { value: 1 },
+    };
+    return this.u;
+  },
+  // Wand absenken (nur Instanzen mit aWall.w = 1): x = Achsen-Maske O1 W2 S4 N8, y = Diagonal-Maske SO1 NO2 SW4 NW8, z = Wandhöhe
+  CUT: `
+#ifdef OCC_CUT
+#ifdef USE_INSTANCING
+  if (aWall.w > 0.5) {
+    float occAm = aWall.x, occDm = aWall.y, occBest = -1.0; vec2 occV = uCutV;
+    if (mod(occAm, 2.0) > 0.5) occBest = max(occBest, occV.x);
+    if (mod(floor(occAm / 2.0), 2.0) > 0.5) occBest = max(occBest, -occV.x);
+    if (mod(floor(occAm / 4.0), 2.0) > 0.5) occBest = max(occBest, occV.y);
+    if (mod(floor(occAm / 8.0), 2.0) > 0.5) occBest = max(occBest, -occV.y);
+    if (mod(occDm, 2.0) > 0.5) occBest = max(occBest, (occV.x + occV.y) * 0.7071);
+    if (mod(floor(occDm / 2.0), 2.0) > 0.5) occBest = max(occBest, (occV.x - occV.y) * 0.7071);
+    if (mod(floor(occDm / 4.0), 2.0) > 0.5) occBest = max(occBest, (occV.y - occV.x) * 0.7071);
+    if (mod(floor(occDm / 8.0), 2.0) > 0.5) occBest = max(occBest, (-occV.x - occV.y) * 0.7071);
+    float occLow = smoothstep(0.3, 0.6, occBest) * uCutOn;
+    float occWy = (instanceMatrix * vec4(transformed, 1.0)).y;
+    float occSy = instanceMatrix[1][1];
+    if (occLow > 0.0 && occWy > 0.0 && abs(occSy) > 0.0001) {
+      float occH = max(aWall.z, 0.6);
+      float occNy = aWall.w > 1.5 ? -0.03 : (occWy <= occH ? occWy * (0.5 / occH) : 0.5 + (occWy - occH)); // Anbauten (w = 2) verschwinden im Boden
+      transformed.y = (mix(occWy, occNy, occLow) - instanceMatrix[3][1]) / occSy;
+    }
+  }
+#endif
+#endif
+`,
+  WORLD: `
+  {
+    vec4 occW4 = vec4(transformed, 1.0);
+#ifdef USE_INSTANCING
+    occW4 = instanceMatrix * occW4;
+#endif
+    vOccW = (modelMatrix * occW4).xyz;
+  }
+`,
+  // Kegel von der Kamera zur Figur: Fragmente davor (mind. 0,9 Einheiten vor der Figur, über Knöchelhöhe) werden gedithert verworfen
+  FADE: `
+#ifdef OCC_FADE
+  if (uOccR.y > 0.001 && vOccW.y > 0.3) {
+    vec3 occD = uOccP - uOccC; float occL = length(occD); vec3 occF = vOccW - uOccC; float occT = dot(occF, occD) / max(occL * occL, 0.0001);
+    if (occT > 0.0 && occT * occL < occL - 0.9) {
+      float occR = uOccR.x * occT, occDist = length(occF - occD * occT);
+      float occK = (1.0 - smoothstep(occR * 0.45, occR, occDist)) * uOccR.y;
+      float occN = fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715))));
+      if (occN < occK) discard;
+    }
+  }
+#endif
+`,
+  inject(sh, cut, fade) {
+    const U = this.uniforms(); Object.assign(sh.uniforms, U);
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\n' + (fade ? 'varying vec3 vOccW;\n' : '') + (cut ? 'attribute vec4 aWall;\nuniform vec2 uCutV;\nuniform float uCutOn;\n' : ''))
+      .replace('#include <project_vertex>', (cut ? this.CUT : '') + (fade ? this.WORLD : '') + '#include <project_vertex>');
+    if (fade) sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vOccW;\nuniform vec3 uOccP;\nuniform vec3 uOccC;\nuniform vec2 uOccR;\n')
+      .replace('#include <clipping_planes_fragment>', '#include <clipping_planes_fragment>\n' + this.FADE);
+  },
+  // Material erweitern (bestehende onBeforeCompile-Anpassungen wie Wind bleiben erhalten)
+  patch(mat, cut) {
+    if (!mat || (mat.userData && mat.userData.occ)) return mat;
+    try {
+      mat.userData.occ = true;
+      const prev = mat.onBeforeCompile, prevKey = mat.customProgramCacheKey;
+      mat.defines = Object.assign({}, mat.defines || {}, { OCC_FADE: 1 }, cut ? { OCC_CUT: 1 } : {});
+      mat.onBeforeCompile = (sh, r) => { if (prev) prev.call(mat, sh, r); Occlude.inject(sh, !!cut, true); };
+      const base = prevKey && prevKey !== THREE.Material.prototype.customProgramCacheKey ? prevKey.call(mat) : '';
+      mat.customProgramCacheKey = () => base + '|occ' + (cut ? 'Cut' : '');
+    } catch (e) { /* Material bleibt unverändert */ }
+    return mat;
+  },
+  // Tiefenmaterial für den Schattenwurf abgesenkter Wände
+  depthCut() {
+    if (this.depth) return this.depth;
+    const m = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking });
+    m.defines = { OCC_CUT: 1 };
+    m.onBeforeCompile = sh => Occlude.inject(sh, true, false);
+    m.customProgramCacheKey = () => 'occDepthCut';
+    return (this.depth = m);
+  },
+  // Wand-Info einer Instanz (Batch.extra): Instanzen auf Wandkacheln eines Dungeons (w = 1) und Wanddekoration, die knapp vor
+  // der Wandfläche auf der Nachbarkachel sitzt (Bilder, Ranken, Leuchten; w = 2 → wird mit der Wand ausgeblendet)
+  wallInfo(w, x, z) {
+    const wall = (tx, tz) => w.inb(tx, tz) && w.tiles[w.i(tx, tz)] === 0 && w.wallH && w.wallH.has(w.i(tx, tz));
+    let tx = Math.floor(x), tz = Math.floor(z), kind = 1;
+    if (!wall(tx, tz)) {
+      const e = 0.07, c = [[Math.floor(x - e), tz], [Math.floor(x + e), tz], [tx, Math.floor(z - e)], [tx, Math.floor(z + e)]].find(([a, b]) => (a !== tx || b !== tz) && wall(a, b));
+      if (!c) return null; tx = c[0]; tz = c[1]; kind = 2;
+    }
+    const f = (dx, dz) => w.tile(tx + dx, tz + dz) ? 1 : 0;
+    const am = f(1, 0) + f(-1, 0) * 2 + f(0, 1) * 4 + f(0, -1) * 8, dm = f(1, 1) + f(1, -1) * 2 + f(-1, 1) * 4 + f(-1, -1) * 8;
+    return [am, dm, w.wallH.get(w.i(tx, tz)), kind];
+  },
+  // Pro Bild: Kamera, Figur, Stärke, Blickrichtung; Wandfackeln an abgesenkten Wänden ausblenden
+  sync(dt, C) {
+    const U = this.uniforms(), P = Game.player;
+    U.uOccC.value.copy(R.camera.position);
+    const on = !!(C && P && !P.dead && C.occlude() && (Game.state === 'play' || Game.state === 'dialog'));
+    if (P) U.uOccP.value.set(P.x, (P.y || 0) + 1.0, P.z);
+    this.str += ((on ? 0.82 : 0) - this.str) * (dt > 0 ? 1 - Math.exp(-dt * 8) : 1);
+    U.uOccR.value.set(1.7, this.str < 0.01 ? 0 : this.str);
+    const v = C ? C.viewDir() : { x: -Math.SQRT1_2, z: -Math.SQRT1_2 }; U.uCutV.value.set(v.x, v.z);
+    const w = Game.world; if (w && w.wallTorches) for (const tq of w.wallTorches) tq.g.visible = tq.nx * v.x + tq.nz * v.z < 0.45;
   },
 };
 /* ============================== MENÜS: SLOTS · KONTO · EINSTELLUNGS-TABS ======== */
@@ -15149,7 +15460,7 @@ const SetTabs = {
   },
   general() {
     LangUI.render($('setLang'));
-    this.onOff('setTips', Profile.settings.tips !== false, v => { Profile.settings.tips = v; if (v) { Profile.settings.mapTut = false; Profile.settings.wpTipSeen = false; Profile.settings.navTipSeen = false; } Profile.saveSettings(); });
+    this.onOff('setTips', Profile.settings.tips !== false, v => { Profile.settings.tips = v; if (v) { Profile.settings.mapTut = false; Profile.settings.wpTipSeen = false; Profile.settings.navTipSeen = false; Profile.settings.jumpTipSeen = false; Profile.settings.camTipSeen = false; CamTut.t = 0; } Profile.saveSettings(); });
   },
   audio() { this.onOff('setMute', !AudioSys.muted, v => { if (AudioSys.muted === v) Game.toggleMute(); }); },
   // Schieberegler mit Prozentanzeige und „Standard“-Knopf (Live-Vorschau)

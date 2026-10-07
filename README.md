@@ -97,7 +97,9 @@ gedrückten Tasten live angezeigt; gespeichert wird beim Loslassen, Esc bricht a
 - **Tastaturlayouts:** Erkennung über `event.code`, Beschriftung über die Keyboard-API bzw. aus den tatsächlich gedrückten
   Tasten gelernt (QWERTZ, AZERTY, QWERTY).
 - **Migration:** Belegungen der Vorversion bleiben erhalten; unveränderte alte Standards werden zu den neuen Standards.
-- Spielgefühl in derselben Ansicht: Sprinten halten oder umschalten, Kamera automatisch zentrieren, Schwenk-Empfindlichkeit, Kamera-Zoom.
+- Spielgefühl in derselben Ansicht: Sprinten halten oder umschalten sowie der Block **Kamera** (siehe unten).
+- **Migration:** Fehlen in einem gespeicherten Profil neue Aktionen (z. B. Kamera drehen), bekommen sie ihre Standardtaste nur,
+  wenn diese nicht schon eigenständig belegt ist; eine Meldung nennt die neuen Tasten.
 
 | Aktion | Standard | Gamepad |
 |---|---|---|
@@ -115,6 +117,8 @@ gedrückten Tasten live angezeigt; gespeichert wird beim Loslassen, Esc bricht a
 | Interagieren | E | A |
 | Kamera schwenken | mittlere Maustaste halten + ziehen · Num 8/4/2/6 | rechter Stick (außerhalb des Kampfes) |
 | Kamera zentrieren · Zoom | Num 5 / Z · Mausrad / + − | Stick loslassen |
+| Kamera drehen / kippen | Strg + mittlere Maustaste ziehen · Num 7 / Num 9 bzw. , / . · Bild ↑ / Bild ↓ (Num 3 / Num 1) | frei belegbar |
+| Ansicht zurücksetzen (Drehung, Neigung, Zoom) | Num 0 / Shift + Z | frei belegbar |
 | Inventar · Zauber & Talente · Quest-Log · Weltkarte | I · K · J · M | Back · – · – · – (LB/RB wechseln die Menüs) |
 | Rätsel-Hinweis | T | – |
 | Navigationsanzeige ein/aus | N | – |
@@ -122,13 +126,29 @@ gedrückten Tasten live angezeigt; gespeichert wird beim Loslassen, Esc bricht a
 
 Mit dem Gamepad lassen sich auch alle Menüs bedienen: Steuerkreuz bewegt den Fokus, A bestätigt, B geht zurück.
 Esc öffnet immer das Pausemenü. Auf Touch-Geräten gibt es einen virtuellen Joystick und Aktionstasten (inkl. SPRUNG und
-SPRINT); zwei Finger schwenken die Kamera, auseinander/zusammen zoomt.
+SPRINT); zwei Finger schwenken die Kamera, auseinander/zusammen zoomt, Verdrehen der zwei Finger dreht die Kamera.
 
-## Kamera, HUD-Größe
+## Freie Kamera, HUD-Größe
 
-- **Kamera-Schwenk:** Umsehen, ohne die Figur zu bewegen – begrenzt auf 13 Kacheln um die Figur und die Welt. Beim
-  Loslassen fährt die Kamera sanft zurück (abschaltbar), im Kampf und bei Bosskämpfen immer; in Dialogen und
-  Zwischensequenzen ist der Schwenk gesperrt. Zoom 70–145 %, wird gespeichert.
+- **Schwenken:** Umsehen, ohne die Figur zu bewegen – begrenzt auf 13 Kacheln um die Figur und die Welt; mit Maus (halten +
+  ziehen), Tasten, rechtem Stick, zwei Fingern oder optional am Bildschirmrand.
+- **Drehen und Kippen:** Strg + mittlere Maustaste ziehen (waagerecht dreht, senkrecht kippt), Tasten in 45°-Schritten oder
+  stufenlos (≈ 90°/s), Drehgeste auf Touch. Neigung 36°–60° (Standard 44°). Drehung und Neigung werden gespeichert.
+- **Steuerung dreht mit:** W/Stick „oben“ läuft immer vom Bildschirm weg, D nach rechts; Maus- und Stick-Zielen,
+  Minimap (mit Nordmarke), Kompassleiste und Navigationspfeil (am Bildschirmrand verankert) folgen der Drehung.
+- **Sicht auf die Figur:** Dungeon-Wände auf der Kameraseite werden passend zur Drehung abgesenkt (wie bisher die
+  vorderen Wände, samt Wanddeko, Fackeln und Schattenwurf). Was sonst zwischen Kamera und Figur steht – Wände, Bäume,
+  Gebäude, Requisiten – wird in einem weichen Bereich um die Figur durchsichtig (abschaltbar).
+- **Zoom:** Mausrad, + / −, Pinch; 70–145 %, sanft; „Standard-Zoom“ ist eine Einstellung, „Ansicht zurücksetzen“ kehrt
+  zu ihm zurück.
+- **Komfort:** „Kamera zentrieren“ fährt sanft zur Figur zurück; „Automatisch zentrieren“ holt die Kamera beim Loslassen
+  und sobald man läuft zurück (abschaltbar). In Dialogen und Zwischensequenzen ist alles gesperrt; bei Bosskämpfen fährt
+  die Kamera zurück, rahmt Boss und Figur ein und zoomt bis 140 % heraus.
+- **Einstellungen › Steuerung › Kamera:** Automatisch zentrieren, Schwenk-Empfindlichkeit (40–250 %), horizontal/vertikal
+  invertieren, Glättung (0–100 %), Bildschirmrand-Scrolling, Standard-Zoom, Drehen mit Tasten (45°-Schritte/stufenlos),
+  verdeckende Objekte durchsichtig und „Kamera auf Standard zurücksetzen“ – lokal und im Cloud-Profil gespeichert.
+- Ein einmaliges Tutorial erklärt die Kamera mit den aktuell belegten Tasten (Tastatur, Gamepad oder Touch); die Hilfe
+  (Pausemenü) listet alle Kamera-Tasten.
 - **HUD-Größe (Einstellungen › Anzeige):** 50–200 % mit Live-Vorschau und „Standard“-Knopf. Skaliert werden Leisten,
   Hotbar, Minikarte, Quest-Tracker, Kompass, Navigationsanzeige, Boss-Leiste, Schadenszahlen, Tooltips und Meldungen;
   alles bleibt an seinem Rand verankert, Vergrößerungen werden auf den verfügbaren Platz begrenzt (im Hochformat bricht
