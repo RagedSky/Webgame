@@ -4418,7 +4418,7 @@ I18N.add('de', {
   'boss2.story.orin1': 'Orins Körper zerfällt zu Sternenstaub. Doch der Nexus verstummt nicht – tief unter dem Thron pocht etwas.',
   'boss2.story.orin2': 'Ein Auge, so groß wie ein Tor, zuckt hinter geschlossenem Lid.',
   'boss2.story.orin3': 'Das ist nicht vorbei, Sternenkind. Komm zu mir, wenn du bereit bist. Und werde stärker – viel stärker.',
-  'boss2.story.toastM19': 'Neue Weltstufen frei. Sprich mit Seraphine am Pfad des Nexus.',
+  'boss2.story.toastM19': 'Neue Weltstufen frei. Sprich mit Seraphine am {place}.',
   'boss2.story.wake1': 'Das Lid hebt sich. Licht und Leere strömen zugleich aus dem Auge.',
   'boss2.story.wake2': '„Wer stört den Plan? Ich habe diese Welt vermessen, bevor eure Sterne brannten.“',
   'boss2.story.end1': 'Seraphiels Flügel zersplittern wie Glas. Die Lanzen erlöschen eine nach der anderen.',
@@ -4466,7 +4466,7 @@ I18N.add('en', {
   'boss2.story.orin1': 'Orin\'s body crumbles into stardust. Yet the Nexus does not fall silent – deep beneath the throne, something throbs.',
   'boss2.story.orin2': 'An eye as large as a gate twitches behind a closed lid.',
   'boss2.story.orin3': 'This is not over, Starchild. Come to me when you are ready. And grow stronger – much stronger.',
-  'boss2.story.toastM19': 'New world tiers unlocked. Talk to Seraphine on the Nexus trail.',
+  'boss2.story.toastM19': 'New world tiers unlocked. Talk to Seraphine at the {place}.',
   'boss2.story.wake1': 'The lid lifts. Light and void pour from the eye at once.',
   'boss2.story.wake2': '“Who disturbs the plan? I measured this world before your stars ever burned.”',
   'boss2.story.end1': 'Seraphiel\'s wings shatter like glass. The lances go out one by one.',
@@ -16051,8 +16051,10 @@ const Boss2Story = {
   orinDown() {
     const D = Profile.data; if (!D || D.flags.orinDownSeen) return;
     D.flags.orinDown = true; D.flags.orinDownSeen = true; D.maxTier = Math.max(D.maxTier || 0, 2); Profile.save(true);
+    // Geschichte schon weiter (z. B. /quest completeall) oder Abspann läuft: keine Zwischensequenz, die den Abspann verdeckt
+    if (Quests.isDone('m20') || Game.state === 'credits') return;
     UI.toast(t('game.toast.newTiers'), '#ffd060');
-    Dialog.story([['n', () => t('boss2.story.orin1')], ['n', () => t('boss2.story.orin2')], ['seraphine', () => t('boss2.story.orin3')]], () => { Dialog.close(); UI.toast(t('boss2.story.toastM19'), '#ffd27a'); }, 'seraphine');
+    Dialog.story([['n', () => t('boss2.story.orin1')], ['n', () => t('boss2.story.orin2')], ['seraphine', () => t('boss2.story.orin3')]], () => { Dialog.close(); UI.toast(t('boss2.story.toastM19', { place: REGIONS.nexus.pois.trail.name }), '#ffd27a'); }, 'seraphine');
   },
   // Seraphiel erwacht beim ersten Treffer
   awaken(b) {
@@ -16650,7 +16652,7 @@ const Boss2UI = {
     const css = document.createElement('style');
     css.textContent = '#bossBar .bbar{position:relative}#bossEnrage{position:absolute;top:-3px;bottom:-3px;left:30%;width:3px;background:#ff3a22;box-shadow:0 0 6px #ff3a22;display:none;z-index:3}'
       + '#bossBar.v2 #bossEnrage{display:block}#bossBar.enraged .bbar{box-shadow:0 0 14px #ff3a22,0 0 2px #ff3a22 inset;animation:b2pulse .8s infinite alternate}#bossBar.enraged #bossFill{background:linear-gradient(90deg,#ff3a22,#ff8a3a)}'
-      + '@keyframes b2pulse{from{filter:brightness(1)}to{filter:brightness(1.35)}}#bossStatus{display:flex;gap:4px;justify-content:center;margin-top:3px;min-height:16px;font-size:13px}#bossStatus span{background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.25);border-radius:3px;padding:0 4px}';
+      + '@keyframes b2pulse{from{filter:brightness(1)}to{filter:brightness(1.35)}}#bossStatus{display:flex;gap:4px;justify-content:center;margin-top:3px;min-height:16px;font-size:13px}#bossStatus span{background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.25);border-radius:3px;padding:0 4px}#bossBar.v2 #bossName small{margin-left:8px}';
     document.head.appendChild(css);
     const bar = document.querySelector('#bossBar .bbar'); if (bar && !document.getElementById('bossEnrage')) { const m = document.createElement('div'); m.id = 'bossEnrage'; bar.appendChild(m); }
     const bb = document.getElementById('bossBar'); if (bb && !document.getElementById('bossStatus')) { const s = document.createElement('div'); s.id = 'bossStatus'; bb.appendChild(s); }
