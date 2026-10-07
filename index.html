@@ -1728,7 +1728,7 @@ const WORLD_TIERS = [
   { name: 'Heroisch',  lvl: 10, hp: 1.15, dmg: 1.1, elite: 0.12, loot: 0.6 },
   { name: 'Albtraum',  lvl: 20, hp: 1.3,  dmg: 1.2, elite: 0.2,  loot: 1.2 },
 ];
-const MAX_LEVEL = 40;
+const MAX_LEVEL = 100; // Stufen 40–100: Endspiel mit den neuen Bossen (x_boss0_data.js)
 const xpNeed = lvl => Math.round(150 + 70 * lvl + 2 * lvl * lvl);
 const powerMult = p => 1 + (p - 1) * 0.13;
 const enemyScaleHp = l => 1 + 0.27 * (l - 1);
@@ -4377,6 +4377,151 @@ I18N.addContent('en', {
   'WEATHER.stars.name': 'Stardust',
   'WEATHER.fog.name': 'Fog',
   'WEATHER.fireflies.name': 'Fireflies',
+});
+// Neue Bosse (Stufe 40–100): Arenen, Revanche, Story, Lebensleiste, Unikate
+I18N.add('de', {
+  'arena.lock.level': 'Ab Stufe {n}',
+  'arena.lock.vespera': 'Besiege zuerst Lady Vespera im Ornate Mansion',
+  'arena.lock.seals': 'Sieben Siegel halten das Herz verschlossen ({n}/{max} gebrochen)',
+  'arena.sealed': '{name} ist versiegelt',
+  'arena.rematchTitle': 'BOSS ERNEUT BEKÄMPFEN',
+  'arena.rematchText': '{boss} wurde bereits besiegt. Wähle die Schwierigkeit des Rückkampfs.',
+  'arena.rankInfo': 'Jeder Rang: +30 % Leben, +12 % Schaden, bessere Beute und mehr Erfahrung. Höhere Ränge schaltest du durch Siege frei.',
+  'arena.rank0': 'Normal',
+  'arena.rankN': 'Rang {n}',
+  'arena.rankNext': 'Rang {n} (neu)',
+  'arena.rankShort': 'Rang {n}',
+  'arena.cancel': 'Abbrechen',
+  'arena.checkpoint': 'Checkpoint erreicht – ein Neuversuch beginnt hier.',
+  'arena.wavesSkipped': 'Checkpoint: Der Herrscher erwartet dich bereits.',
+  'arena.retry': 'Arena erneut versuchen',
+  'arena.retryCheckpoint': 'Am Checkpoint erneut versuchen',
+  'boss2.enraged.title': 'RASEREI',
+  'boss2.enraged.sub': '{name} gerät in Wut!',
+  'boss2.meleeImmune': 'Immun gegen Nahkampf',
+  'boss2.fizzle': 'Verpufft!',
+  'boss2.twins.fall': '{name} fällt',
+  'boss2.twins.rage': '{name} rast vor Wut!',
+  'boss2.sum.bone': 'Knochendiener',
+  'boss2.sum.wraith': 'Überlegener Geist',
+  'boss2.sum.echo': 'Erhabenes Leerenecho',
+  'boss2.u.zofen': 'Zofenschwur!',
+  'boss2.bar.dormant': 'Ruhend – der erste Treffer weckt sie',
+  'boss2.bar.enraged': 'Raserei',
+  'boss2.bar.phase': 'Phase {n}/{max}',
+  'boss2.seraphiel.awake': 'Das Auge öffnet sich',
+  'boss2.seraphiel.phase2': 'DIE REALITÄT BRICHT',
+  'boss2.seraphiel.reality': 'ZERBROCHENE REALITÄT',
+  'boss2.seraphiel.realitySub': 'Weiche den Lanzen im richtigen Moment aus!',
+  'boss2.seraphiel.meleeImmune': 'Seraphiel ist jetzt immun gegen Nahkampf – nutze Fernkampf und Zauber!',
+  'boss2.seraphiel.blink': 'Seraphiel teleportiert sich!',
+  'boss2.story.orin1': 'Orins Körper zerfällt zu Sternenstaub. Doch der Nexus verstummt nicht – tief unter dem Thron pocht etwas.',
+  'boss2.story.orin2': 'Ein Auge, so groß wie ein Tor, zuckt hinter geschlossenem Lid.',
+  'boss2.story.orin3': 'Das ist nicht vorbei, Sternenkind. Komm zu mir, wenn du bereit bist. Und werde stärker – viel stärker.',
+  'boss2.story.toastM19': 'Neue Weltstufen frei. Sprich mit Seraphine am Pfad des Nexus.',
+  'boss2.story.wake1': 'Das Lid hebt sich. Licht und Leere strömen zugleich aus dem Auge.',
+  'boss2.story.wake2': '„Wer stört den Plan? Ich habe diese Welt vermessen, bevor eure Sterne brannten.“',
+  'boss2.story.end1': 'Seraphiels Flügel zersplittern wie Glas. Die Lanzen erlöschen eine nach der anderen.',
+  'boss2.story.end2': '„Der Plan … war … vollkommen …“ – dann schließt sich das Auge für immer.',
+  'boss2.story.end3': 'Es ist vollbracht. Der letzte Schatten ist fort.',
+  'boss2.epilogue1': 'Nach Orins Fall erwachte Seraphiel, die Architektin des Nexus, von der Leere verdorben. Sieben Wächter fielen, sieben Siegel brachen – und im Herz des Nexus schloss sich ihr Auge für immer.',
+  'boss2.epilogue2': 'Die Sternenwächter erzählen seitdem von einer Heldin, einem Helden, der stärker wurde als die Sterne selbst.',
+});
+I18N.add('en', {
+  'arena.lock.level': 'From level {n}',
+  'arena.lock.vespera': 'Defeat Lady Vespera in the Ornate Mansion first',
+  'arena.lock.seals': 'Seven seals keep the heart closed ({n}/{max} broken)',
+  'arena.sealed': '{name} is sealed',
+  'arena.rematchTitle': 'FIGHT THE BOSS AGAIN',
+  'arena.rematchText': '{boss} has already been defeated. Choose the difficulty of the rematch.',
+  'arena.rankInfo': 'Each rank: +30% health, +12% damage, better loot and more experience. Victories unlock higher ranks.',
+  'arena.rank0': 'Normal',
+  'arena.rankN': 'Rank {n}',
+  'arena.rankNext': 'Rank {n} (new)',
+  'arena.rankShort': 'Rank {n}',
+  'arena.cancel': 'Cancel',
+  'arena.checkpoint': 'Checkpoint reached – a retry starts here.',
+  'arena.wavesSkipped': 'Checkpoint: the ruler is already waiting for you.',
+  'arena.retry': 'Retry the arena',
+  'arena.retryCheckpoint': 'Retry at the checkpoint',
+  'boss2.enraged.title': 'ENRAGED',
+  'boss2.enraged.sub': '{name} flies into a rage!',
+  'boss2.meleeImmune': 'Immune to melee',
+  'boss2.fizzle': 'Fizzled!',
+  'boss2.twins.fall': '{name} falls',
+  'boss2.twins.rage': '{name} is furious!',
+  'boss2.sum.bone': 'Bone Minion',
+  'boss2.sum.wraith': 'Superior Wraith',
+  'boss2.sum.echo': 'Supreme Void Echo',
+  'boss2.u.zofen': 'Maid\'s Oath!',
+  'boss2.bar.dormant': 'Dormant – the first hit wakes her',
+  'boss2.bar.enraged': 'Enraged',
+  'boss2.bar.phase': 'Phase {n}/{max}',
+  'boss2.seraphiel.awake': 'The eye opens',
+  'boss2.seraphiel.phase2': 'REALITY CRACKS',
+  'boss2.seraphiel.reality': 'SHATTERED REALITY',
+  'boss2.seraphiel.realitySub': 'Dodge the lances at the right moment!',
+  'boss2.seraphiel.meleeImmune': 'Seraphiel is now immune to melee – use ranged attacks and spells!',
+  'boss2.seraphiel.blink': 'Seraphiel teleports!',
+  'boss2.story.orin1': 'Orin\'s body crumbles into stardust. Yet the Nexus does not fall silent – deep beneath the throne, something throbs.',
+  'boss2.story.orin2': 'An eye as large as a gate twitches behind a closed lid.',
+  'boss2.story.orin3': 'This is not over, Starchild. Come to me when you are ready. And grow stronger – much stronger.',
+  'boss2.story.toastM19': 'New world tiers unlocked. Talk to Seraphine on the Nexus trail.',
+  'boss2.story.wake1': 'The lid lifts. Light and void pour from the eye at once.',
+  'boss2.story.wake2': '“Who disturbs the plan? I measured this world before your stars ever burned.”',
+  'boss2.story.end1': 'Seraphiel\'s wings shatter like glass. The lances go out one by one.',
+  'boss2.story.end2': '“The plan … was … perfect …” – then the eye closes forever.',
+  'boss2.story.end3': 'It is done. The last shadow is gone.',
+  'boss2.epilogue1': 'After Orin\'s fall, Seraphiel – the architect of the Nexus, corrupted by the void – awoke. Seven guardians fell, seven seals broke, and in the heart of the Nexus her eye closed forever.',
+  'boss2.epilogue2': 'Ever since, the star guardians tell of a hero who grew stronger than the stars themselves.',
+});
+I18N.addContent('en', {
+  'BOSSES.bramblefang.name': 'Bramblefang Alpha', 'BOSSES.bramblefang.title': 'Pack Leader of the Bramble Den',
+  'BOSSES.hollowwarden.name': 'Hollow Warden', 'BOSSES.hollowwarden.title': 'Keeper of the Hollow Fields',
+  'BOSSES.twinmaids.name': 'Twin Maids', 'BOSSES.twinmaids.title': 'Ottilie & Rosalind, Servants of the Mansion',
+  'BOSSES.thenightmaw.name': 'The Nightmaw', 'BOSSES.thenightmaw.title': 'Mother of All Maws',
+  'BOSSES.grandskeleton.name': 'The Grand Skeleton', 'BOSSES.grandskeleton.title': 'King beneath the Bone Throne',
+  'BOSSES.phantom.name': 'Parasitic Phantom', 'BOSSES.phantom.title': 'Heart of the Parasitic Expanse',
+  'BOSSES.xylar.name': 'Xylar the Crystal Colossus', 'BOSSES.xylar.title': 'Guardian of the Shattered Peaks',
+  'BOSSES.voidking.name': 'The Voidwoken King', 'BOSSES.voidking.title': 'Ruler of the Void Throne',
+  'BOSSES.seraphiel.name': 'Seraphiel, the Corrupted Architect', 'BOSSES.seraphiel.title': 'Builder of the Nexus',
+  'DUNGEONS.brambleden.name': 'Bramble Den', 'DUNGEONS.hollowfields.name': 'The Hollow Fields', 'DUNGEONS.hiddensalon.name': 'Hidden Parlor',
+  'DUNGEONS.nightlair.name': 'Lair of the Night', 'DUNGEONS.bonethrone.name': 'The Bone Throne', 'DUNGEONS.parasiteheart.name': 'Parasite Heart',
+  'DUNGEONS.crystalsummit.name': 'Crystal Summit', 'DUNGEONS.voidthrone.name': 'Throne of the Void', 'DUNGEONS.nexusheart.name': 'Heart of the Nexus',
+  'REGIONS.duskwood.pois.brambleden.name': 'Bramble Den', 'REGIONS.duskwood.pois.hollowfields.name': 'The Hollow Fields', 'REGIONS.ehbergten.pois.hiddensalon.name': 'Hidden Parlor',
+  'REGIONS.nightmaw.pois.nightlair.name': 'Lair of the Night', 'REGIONS.undead.pois.bonethrone.name': 'The Bone Throne', 'REGIONS.toxic.pois.parasiteheart.name': 'Parasite Heart',
+  'REGIONS.aelen.pois.crystalsummit.name': 'Crystal Summit', 'REGIONS.void.pois.voidthrone.name': 'Throne of the Void', 'REGIONS.nexus.pois.nexusheart.name': 'Heart of the Nexus',
+  'UNIQUES.zofenschwur.name': 'Maid\'s Oath', 'UNIQUES.zofenschwur.desc': 'After a dodge roll, your next hit deals +60% damage.', 'UNIQUES.zofenschwur.src': 'Twin Maids',
+  'UNIQUES.kolossspalter.name': 'Colossus Splitter', 'UNIQUES.kolossspalter.desc': 'Every third hit discharges a crystal bolt (arcane damage around the target).', 'UNIQUES.kolossspalter.src': 'Xylar the Crystal Colossus',
+  'UNIQUES.leerenkrone.name': 'Void Crown', 'UNIQUES.leerenkrone.desc': '+15% damage against bosses, 10% less damage from bosses.', 'UNIQUES.leerenkrone.src': 'The Voidwoken King',
+  'UNIQUES.architektenlanze.name': 'Lance of the Architect', 'UNIQUES.architektenlanze.desc': 'Arcane spells deal +30% damage and have a 15% chance to hit twice.', 'UNIQUES.architektenlanze.src': 'Seraphiel, the Corrupted Architect',
+  'QUESTS.m19.act': 'Epilogue', 'QUESTS.m19.name': 'The Sleeping Eye',
+  'QUESTS.m19.desc': 'Orin has fallen – but in the heart of the Nexus, Seraphiel, the corrupted architect, stirs. Seven seals keep her asleep.',
+  'QUESTS.m19.offer.0.1': 'Do you feel it? The Nexus is still breathing. Beneath the throne Orin sat on sleeps its builder: Seraphiel.',
+  'QUESTS.m19.offer.1.1': 'She measured the stars before we were guardians. The void corrupted her. Orin\'s fall is waking her.',
+  'QUESTS.m19.offer.2.1': 'Seven guardians carry her seals – in the forests, the fields, the crypts, on the peaks. Only when they fall will her heart open.',
+  'QUESTS.m19.offer.3.1': 'They are stronger than anything you have faced. Grow stronger – from level 40 you can stand against them.',
+  'QUESTS.m19.obj.0.text': 'Break the seven seals (defeat their guardians)',
+  'QUESTS.m19.done.0.1': 'All seven seals are broken. The heart of the Nexus stands open.',
+  'QUESTS.m19.done.1.1': 'She will wake the moment you touch her. Prepare yourself.',
+  'QUESTS.m20.act': 'Epilogue', 'QUESTS.m20.name': 'The Corrupted Architect',
+  'QUESTS.m20.desc': 'Enter the heart of the Nexus and face Seraphiel.',
+  'QUESTS.m20.offer.0.1': 'She is the last shadow over this world. Her lances follow you – dodge at the right moment and they fizzle out.',
+  'QUESTS.m20.offer.1.1': 'Arcane magic hurts her most. Go, Starchild.',
+  'QUESTS.m20.obj.0.text': 'Defeat Seraphiel, the Corrupted Architect',
+  'QUESTS.m20.done.0.1': 'Her eye has closed – forever.',
+  'QUESTS.m20.done.1.1': 'The Nexus is silent. For the first time in aeons the sky is truly free.',
+  'QUESTS.n1.name': 'Tracks in the Dust',
+  'QUESTS.n1.desc': 'Brann has found enormous paw prints, bigger than the Nightmaw\'s. Thin out the packs in the wasteland that are fleeing from something.',
+  'QUESTS.n1.offer.0.1': 'Have you seen the tracks? Bigger than anything the Nightmaw ever left behind.',
+  'QUESTS.n1.offer.1.1': 'The packs are fleeing west. Drive them back, then we\'ll see what they are afraid of.',
+  'QUESTS.n1.obj.0.text': 'Defeat enemies in Nightmaw\'s Den',
+  'QUESTS.n1.done.0.1': 'Good. Do you hear that? The howling comes from the northeast – from a maw no map knows.',
+  'QUESTS.n2.name': 'The Howl from the Deep',
+  'QUESTS.n2.desc': 'Follow the howling to the Lair of the Night in the northeast and report back to Brann.',
+  'QUESTS.n2.offer.0.1': 'Follow the howling. If you find the maw, come back – I have a key from the old watch that might open it.',
+  'QUESTS.n2.obj.0.text': 'Find the Lair of the Night',
+  'QUESTS.n2.done.0.1': 'A maw so deep no light returns. Take the watch key – and be careful. What lives there is the ancestor of all maws.',
 });
 /* ============================== SPRACHE: FREIE KAMERA (DREHEN, KIPPEN, EINSTELLUNGEN, TUTORIAL) ============== */
 I18N.add('de', {
@@ -10102,7 +10247,7 @@ const ZoneGen = {
     const R0 = REGIONS[id], W = R0.W, H = R0.H, rng = new RNG(strHash('zone:' + id)), seed = strHash(id) % 997, M = this.MARGIN, N = W * H;
     const L = { id, W, H, tiles: new Uint8Array(N), path: new Uint8Array(N), bridge: new Uint8Array(N), keep: new Uint8Array(N), poi: {}, exits: {}, segs: [], sites: [], secret: null };
     const I = (x, y) => y * W + x, inb = (x, y) => x >= 0 && y >= 0 && x < W && y < H;
-    for (const k in R0.pois) { const P = R0.pois[k]; L.poi[k] = Object.assign({ id: k }, P, { x: P.x + 0.5, z: P.y + 0.5 }); }
+    for (const k in R0.pois) { const P = R0.pois[k]; if (P.arena) continue; L.poi[k] = Object.assign({ id: k }, P, { x: P.x + 0.5, z: P.y + 0.5 }); }
     for (const k in R0.exits) L.exits[k] = this.exitPoint(R0, k);
     const pt = n => n.startsWith('exit:') ? L.exits[n.slice(5)] : L.poi[n];
     for (const [a, b] of R0.paths) {
@@ -10164,6 +10309,7 @@ const ZoneGen = {
     for (let i = 0; i < N; i++) if (L.tiles[i] === 2) { const x = i % W, y = (i / W) | 0; if (!DIRS4.some(([dx, dy]) => inb(x + dx, y + dy) && seen[I(x + dx, y + dy)])) L.tiles[i] = 0; }
     L.start = start;
     JumpGen.zone(L, R0, rng, start); // optionale Sprungpassagen (Abgrund/Teich mit Plattformen und Schatzinsel)
+    ArenaZone.layout(L, R0); // Eingänge der Boss-Arenen (Stufe 40+) zuletzt einfügen – ohne Zufall, ändert die übrige Zone nicht
     this.cache[id] = L; return L;
   },
   // Freier Platz für einen Waypoint nahe des Ortes (links unten vom Zentrum, nicht auf Gebäuden, Wegen, Rätseln oder NPC-Plätzen)
@@ -10187,7 +10333,7 @@ const ZoneGen = {
       const P = L.poi[k], f = POI_BUILD[id + ':' + k]; if (f) f(S, P, w);
       if (P.safe) S.keep(P.x, P.z, P.r * 0.8);
       if (P.travel) { const sp = this.waystoneSpot(w, L, P); w.tiles[w.i(sp.x, sp.z)] = 1; w.waystones.push(new Waystone(w, sp.x + 0.5, sp.z + 0.5, id + ':' + k, P.name)); S.keep(sp.x + 0.5, sp.z + 0.5, 2); }
-      if (P.dungeon) { const e = new Entrance(w, P.x, P.z, P.dungeon, 0); w.entrances.push(e); S.keep(P.x, P.z + 2, 3); }
+      if (P.dungeon && !P.arena) { const e = new Entrance(w, P.x, P.z, P.dungeon, 0); w.entrances.push(e); S.keep(P.x, P.z + 2, 3); }
     }
     w.npcTile.forEach(i => { w.block[i] = 0; });
     // Ausgänge: Auslöser, Ankunftspunkt und Barriere, solange die Nachbarregion gesperrt ist
@@ -10228,6 +10374,7 @@ const ZoneGen = {
     }
     // Glühwürmchen in Wald und Wiese (nachts)
     if (B.deco === 'meadow' || B.deco === 'duskwood') w.updaters.push(dt => { const p = Game.player; if (p && R.nightF > 0.5 && Math.random() < dt * 6) Particles.spawn(p.x + rand(-14, 14), rand(0.4, 2), p.z + rand(-14, 14), rand(-0.3, 0.3), rand(-0.1, 0.2), rand(-0.3, 0.3), rand(2, 3.5), 0.07, pick([0xfff27a, 0xd8ff6a]), 0, 0.2); return true; });
+    ArenaZone.build(w, L); // Arena-Eingänge (gesperrt/verborgen je nach Freischaltung)
     w.build(rng);
     w.spawn = { x: L.start.x, z: L.start.z + 3 };
     return w;
@@ -10269,7 +10416,7 @@ const ZoneGen = {
 const DungeonGen = {
   CELL: 26, GW: 6, GH: 6,
   generate(id, tier) {
-    const D = DUNGEONS[id]; if (D.arena) return this.arena(id, tier);
+    const D = DUNGEONS[id]; if (D.arena2) return ArenaGen.generate(id, tier); if (D.arena) return this.arena(id, tier);
     // Admin-Befehl /seed set: optionaler Versatz Profile.data.dngSeed ändert die Grundrisse (0/fehlend = feste Grundrisse)
     const so = Profile.data && Profile.data.dngSeed, rng = new RNG(strHash('dng:' + id + (so ? ':' + so : ''))), B = THEMES[D.theme], { CELL, GW, GH } = this;
     const world = new World(GW * CELL, GH * CELL, B, 'dungeon'); world.dungeon = id; world.def = D; world.isDungeon = true;
@@ -10719,8 +10866,11 @@ const Projectiles = {
         }
         // Geschosse fliegen auf Hüfthöhe: wer hoch genug springt, lässt sie unter sich durch
         if (!dead && (p.faction === 'enemy' || p.faction === 'trap') && P && !P.dead && hitSeg(P.x, P.z, P.radius) && p.y > (P.y || 0) - 0.15 && p.y < (P.y || 0) + 1.7) {
-          if (P.rolling > 0 || P.phaseT > 0) { if (!p.dodged) { p.dodged = true; DmgNum.spawn(P.x, 1.8, P.z, t('combat.dodged'), 'info'); } }
-          else { P.hurt(p.dmg, ox, oz, { source: p.owner, status: p.status, high: true }); dead = true; this.impact(p, false); }
+          if (P.rolling > 0 || P.phaseT > 0) {
+            if (p.fizzle) { dead = true; DmgNum.spawn(P.x, 1.8, P.z, t('boss2.fizzle'), 'info'); Particles.burst(p.x, p.y, p.z, { n: 14, colors: [p.color, 0xffffff], speed: 4 }); AudioSys.play('block'); } // z. B. Seraphiels Lanzen: Rolle im Trefferfenster lässt sie verpuffen
+            else if (!p.dodged) { p.dodged = true; DmgNum.spawn(P.x, 1.8, P.z, t('combat.dodged'), 'info'); }
+          }
+          else { P.hurt(p.dmg, ox, oz, { source: p.owner, status: p.status, high: true, multi: p.multi }); dead = true; this.impact(p, false); }
         }
         if (!dead && p.faction === 'enemy') for (const a of Game.allies) if (!a.dead && a.hurt && hitSeg(a.x, a.z, a.radius)) { a.hurt(p.dmg); dead = true; this.impact(p, false); break; }
       }
@@ -10877,7 +11027,8 @@ class Player extends Actor {
     // Sprunghöhe: Bodenangriffe (Druckwellen, Fallen, Flächen) werden übersprungen, hoch in der Luft trifft auch kein Nahkampf
     if (!o.dot && ((o.ground && this.y > 0.45) || (!o.trap && !o.high && o.source && this.y > 1.25))) { if (!o.quiet) DmgNum.spawn(this.x, 1.9 + this.y, this.z, t('jump.dodged'), 'info'); return; }
     if (this.shieldT > 0 || this.phaseT > 0) { if (!o.dot) { DmgNum.spawn(this.x, 1.9, this.z, this.phaseT > 0 ? t('combat.dodged') : t('player.blocked'), 'info'); AudioSys.play('block'); } return; }
-    if (!o.dot && (this.rolling > 0 || this.invT > 0)) { if (this.rolling > 0) DmgNum.spawn(this.x, 1.9, this.z, t('combat.dodged'), 'info'); return; }
+    // o.multi: Serien-Treffer (z. B. 5 Tritte) ignorieren die kurze Nach-Treffer-Unverwundbarkeit, nicht aber die Rolle
+    if (!o.dot && (this.rolling > 0 || (this.invT > 0 && !o.multi))) { if (this.rolling > 0) DmgNum.spawn(this.x, 1.9, this.z, t('combat.dodged'), 'info'); return; }
     if (!o.dot && !o.trap && this.dodge && Math.random() < this.dodge) { DmgNum.spawn(this.x, 1.9, this.z, t('combat.dodged'), 'info'); return; }
     let red = o.dot ? 0 : this.armorRed; if (this.hp < this.maxHp * 0.3) red = Math.min(0.8, red + this.tal('lowHpRed'));
     let dmg = Math.max(1, amount * (1 - red) * Game.tierDmg);
@@ -14815,6 +14966,1719 @@ const LangUI = {
     Profile.settings.lang = l; Profile.saveSettings(); I18N.setLang(l); document.title = t('game.fullTitle'); AudioSys.play('click');
   },
 };
+
+/* ============================ NEUE BOSS-MODELLE ============================ */
+// Neue Boss-Modelle (Stufe 40–100). Models.boss2(id, variant) liefert dieselbe Struktur wie Models.boss(kind).
+// Zusatzfelder je Boss in m.extra (siehe Kopf jeder Bau-Funktion). extra.idle(time, dt) bewegt nur Zierteile
+// (Flügel, Ranken, Umhang, Splitter, Waffenhalter) – nie Arme, Beine oder body.rotation.x.
+const BMOD = (() => {
+  // fester Zufall je Modell (gleiches Aussehen bei jedem Aufbau)
+  const seeded = s => () => (s = s * 16807 % 2147483647) / 2147483647;
+  // eigenes Material, damit die KI Farbe/Helligkeit ändern kann, ohne andere Teile mitzufärben
+  const own = mesh => { mesh.material = mesh.material.clone(); return mesh; };
+  // Effektteile (Aura, Splitter, Nebel) blinken bei Treffern nicht
+  const fx = obj => { obj.traverse(o => { if (o.isMesh) o.userData.noFlash = true; }); return obj; };
+  const G = op => (op == null ? { glow: true } : { glow: true, opacity: op });
+  const E = (em, ei = 1) => ({ emissive: em, ei });
+  // gedrehter Halter: Teile darin werden lokal entlang +y gebaut
+  const rot = (par, x, y, z, rx = 0, ry = 0, rz = 0) => { const p = pivot(par, x, y, z); p.rotation.set(rx, ry, rz); return p; };
+  // Kristallspitze: Schaft, um 45° gedrehte Spitze, optional Leuchtstreifen
+  const spire = (par, x, y, z, w, h, c, rx, rz, o = {}) => {
+    const p = rot(par, x, y, z, rx, 0, rz);
+    part(p, w, h, w, c, 0, h / 2, 0, o.mat || {});
+    part(p, w * 0.64, w * 0.9, w * 0.64, o.tip || shade(c, 1.25), 0, h + w * 0.28, 0, Object.assign({ ry: 0.785 }, o.tipMat || {}));
+    if (o.strip) part(p, w * 0.22, h * 0.78, 0.02, o.strip, 0, h * 0.48, w / 2 + 0.012, { glow: true });
+    return p;
+  };
+  // Waffenhalter, der das Armschwingen beim Gehen ausgleicht (lange Klingen bleiben über dem Boden)
+  const steadyGrip = (wpn, arm, base) => {
+    const g = pivot(wpn, 0, 0, 0), a0 = arm.rotation.x; g.rotation.x = base;
+    return { g, tick() { const d = arm.rotation.x - a0; g.rotation.x = base - Math.max(-0.7, Math.min(0.7, d)); } };
+  };
+  // Lid mit Oberkante im Ursprung: scale.y = 1 geschlossen, 0.1 offen (zieht sich nach oben zurück)
+  const lidGeo = new Map();
+  const lid = (par, w, h, d, c, x, y, z) => {
+    const k = w + ',' + h + ',' + d; let geo = lidGeo.get(k);
+    if (!geo) { geo = new THREE.BoxGeometry(w, h, d); geo.translate(0, -h / 2, 0); lidGeo.set(k, geo); }
+    const g = new THREE.Mesh(geo, R.mat(c)); g.position.set(x, y, z); g.castShadow = true; g.receiveShadow = true; par.add(g);
+    return g;
+  };
+
+  return {
+    /* ---- 1 · Dornfang-Alpha: Dornenwolf (Vierbeiner) · extra: jaw, tail, spines (+spineGlow), core ---- */
+    bramblefang(m, root) {
+      const furG = 0x3f5433, furD = 0x24301e, furB = 0x4e3c27, furBD = 0x32281b, furL = 0x707a56, vine = 0x6e3f1c, vineD = 0x42270f, thorn = 0xe6d6aa, amber = 0xffb02a, ember = 0xff7a1a, moss = 0x7c9c3a, berry = 0xb0203a, claw = 0xe8dcc0;
+      m.quad = true;
+      const body = m.body = pivot(root, 0, 1.25, 0); m.torso = body;
+      part(body, 1.1, 0.95, 2.1, furG, 0, 0, -0.15);
+      part(body, 1.4, 1.2, 1.1, furG, 0, 0.18, 0.7);
+      part(body, 1.15, 1.0, 0.8, furG, 0, 0.02, -1.0);
+      part(body, 0.5, 0.06, 2.2, furD, 0, 0.5, -0.4);
+      part(body, 1.55, 0.42, 0.75, furB, 0, 0.72, 0.8);
+      part(body, 1.3, 0.42, 0.3, furB, 0, 0.5, 1.3);
+      part(body, 0.9, 0.22, 1.6, furL, 0, -0.5, -0.1);
+      for (const s of [-1, 1]) for (const [z, hw] of [[0.75, 0.72], [0.0, 0.57], [-0.95, 0.6]]) part(body, 0.1, 0.42, 0.5, furBD, s * hw, -0.4, z);
+      // Dornenranken um den Leib, mit Dornen und Beeren
+      part(body, 1.48, 1.28, 0.16, vine, 0, 0.18, 0.42, { rx: 0.15 });
+      part(body, 1.2, 1.02, 0.16, vineD, 0, 0, -0.4, { rx: 0.25 });
+      part(body, 1.22, 1.06, 0.16, vine, 0, 0.02, -0.95, { rx: -0.2 });
+      for (const s of [-1, 1]) {
+        for (const [x, y, z, rz] of [[0.77, 0.3, 0.42, 1.1], [0.77, -0.15, 0.48, 1.6], [0.63, -0.1, -0.4, 1.2], [0.63, 0.3, -0.38, 0.8], [0.64, 0.25, -0.95, 1.0]]) part(body, 0.07, 0.26, 0.07, thorn, s * x, y, z, { rz: -s * rz });
+        part(body, 0.1, 0.1, 0.1, berry, s * 0.76, 0.05, 0.36); part(body, 0.09, 0.09, 0.09, berry, s * 0.62, 0.4, -0.95);
+      }
+      part(body, 0.55, 0.07, 0.7, moss, -0.2, 0.51, -0.3); part(body, 0.4, 0.07, 0.45, moss, 0.28, 0.54, -1.05); part(body, 0.5, 0.07, 0.35, moss, 0.3, 0.94, 0.75);
+      // Glut in Brust und Kehle, von Ranken gerahmt
+      m.extra.core = own(part(body, 0.5, 0.46, 0.1, ember, 0, -0.12, 1.28, G()));
+      part(body, 0.7, 0.09, 0.1, vineD, 0, 0.15, 1.3); part(body, 0.7, 0.09, 0.1, vineD, 0, -0.38, 1.3);
+      // Dornen auf dem Rücken (Spitzen leuchten, Material gemeinsam in extra.spineGlow)
+      const sp = m.extra.spines = pivot(body, 0, 0, 0), spG = m.extra.spineGlow = R.glow(amber).clone();
+      for (const [z, y, h] of [[0.85, 0.9, 0.5], [0.5, 0.8, 0.62], [0.15, 0.62, 0.55], [-0.25, 0.5, 0.5], [-0.62, 0.52, 0.44], [-0.98, 0.52, 0.38], [-1.3, 0.5, 0.3]]) {
+        const p = rot(sp, 0, y - 0.04, z, -0.5); part(p, 0.18, h, 0.18, vineD, 0, h / 2, 0); part(p, 0.1, 0.2, 0.1, amber, 0, h + 0.08, 0, G()).material = spG;
+      }
+      for (const s of [-1, 1]) for (const [z, y] of [[0.55, 0.76], [0.1, 0.5], [-0.5, 0.46]]) { const p = rot(sp, s * 0.4, y - 0.04, z, -0.45, 0, -s * 0.5); part(p, 0.1, 0.36, 0.1, thorn, 0, 0.18, 0); }
+      // Wolfskopf mit langer Schnauze und Dornengeweih
+      const h = m.head = pivot(body, 0, 0.56, 1.32);
+      part(h, 0.78, 0.66, 0.72, furG, 0, 0.1, 0.22);
+      part(h, 0.86, 0.14, 0.2, furD, 0, 0.36, 0.5);
+      part(h, 0.44, 0.32, 0.72, furL, 0, -0.06, 0.88);
+      part(h, 0.28, 0.06, 0.6, furD, 0, 0.12, 0.86);
+      part(h, 0.2, 0.14, 0.1, 0x161010, 0, 0.06, 1.25);
+      for (const s of [-1, 1]) {
+        part(h, 0.16, 0.08, 0.04, amber, s * 0.22, 0.24, 0.585, G());
+        part(h, 0.14, 0.34, 0.36, furB, s * 0.44, -0.06, 0.18);
+        part(h, 0.22, 0.42, 0.12, furD, s * 0.26, 0.62, 0.0, { rz: -s * 0.2 }); part(h, 0.1, 0.22, 0.02, furB, s * 0.26, 0.6, 0.065, { rz: -s * 0.2 });
+        part(h, 0.05, 0.15, 0.05, claw, s * 0.17, -0.27, 1.12);
+        const hp = rot(h, s * 0.3, 0.42, -0.1, -0.4, 0, -s * 0.6);
+        part(hp, 0.12, 0.72, 0.12, vine, 0, 0.36, 0); part(hp, 0.08, 0.36, 0.08, vineD, s * 0.12, 0.5, 0, { rz: -s * 0.8 });
+        part(hp, 0.07, 0.16, 0.07, amber, 0, 0.78, 0, G()).material = spG;
+      }
+      const jaw = m.extra.jaw = pivot(h, 0, -0.2, 0.55);
+      part(jaw, 0.3, 0.14, 0.66, furD, 0, -0.07, 0.32);
+      part(jaw, 0.24, 0.04, 0.5, ember, 0, 0.02, 0.3, G());
+      for (const s of [-1, 1]) part(jaw, 0.05, 0.12, 0.05, claw, s * 0.11, 0.06, 0.58);
+      // Beine: vorn links, vorn rechts, hinten links, hinten rechts
+      for (const [x, z, back] of [[-0.5, 0.82, 0], [0.5, 0.82, 0], [-0.48, -1.05, 1], [0.48, -1.05, 1]]) {
+        const l = pivot(body, x, -0.32, z);
+        if (back) part(l, 0.48, 0.7, 0.72, furG, 0, -0.1, -0.02); else part(l, 0.42, 0.62, 0.48, furB, 0, -0.16, 0);
+        part(l, 0.3, 0.46, 0.32, furBD, 0, -0.6, back ? -0.06 : 0.02);
+        part(l, 0.42, 0.18, 0.54, furD, 0, -0.84, 0.1);
+        part(l, 0.36, 0.12, 0.4, vine, 0, -0.42, 0, { rx: 0.35 }); part(l, 0.06, 0.2, 0.06, thorn, x > 0 ? 0.2 : -0.2, -0.4, 0.05, { rz: x > 0 ? -1.2 : 1.2 });
+        for (let k = 0; k < 3; k++) part(l, 0.06, 0.07, 0.12, claw, (k - 1) * 0.13, -0.88, 0.42);
+        m.legs.push(l);
+      }
+      const tail = m.extra.tail = pivot(body, 0, 0.25, -1.38); tail.rotation.x = 0.35;
+      part(tail, 0.42, 0.42, 0.6, furG, 0, 0, -0.28); part(tail, 0.36, 0.36, 0.5, furB, 0, 0.02, -0.78); part(tail, 0.26, 0.28, 0.42, furL, 0, 0.04, -1.2);
+      part(tail, 0.46, 0.12, 0.14, vine, 0, 0, -0.55, { rx: 0.4 });
+      for (let k = 0; k < 2; k++) part(tail, 0.05, 0.22, 0.05, thorn, 0, 0.24, -0.85 - k * 0.3, { rx: -0.6 });
+      m.extra.height = 2.9;
+      return 1.5;
+    },
+    /* ---- 2 · Hohler Wächter: Vogelscheuchen-Baumritter · extra: core, cape, crow ---- */
+    hollowwarden(m, root) {
+      const wood = 0x5e4a34, woodD = 0x3e3022, woodL = 0x7a6242, rust = 0x7e4a2a, rustD = 0x4a3a32, rustL = 0xa0643a, straw = 0xd8b45a, strawD = 0xb08a3a, cloth = 0x4e3e2a, char = 0x140c08, fire = 0xff8a1a, fireL = 0xffd060;
+      const r = seeded(7), strawAt = (par, x, y, z, rz, rx, L = 0.38) => part(par, 0.07, L, 0.07, r() < 0.5 ? straw : strawD, x, y, z, { rz, rx });
+      const body = m.body = pivot(root, 0, 1.65, 0);
+      for (const s of [-1, 1]) {
+        const l = pivot(body, s * 0.5, -0.3, 0);
+        part(l, 0.55, 0.75, 0.55, wood, 0, -0.32, 0);
+        part(l, 0.6, 0.32, 0.26, rust, 0, -0.76, 0.2);
+        part(l, 0.5, 0.68, 0.5, woodD, 0, -1.0, 0);
+        part(l, 0.72, 0.3, 0.86, rustD, 0, -1.2, 0.1);
+        for (const x of [-0.2, 0.2]) part(l, 0.14, 0.12, 0.3, woodD, x, -1.29, 0.62);
+        strawAt(l, s * 0.3, -0.62, 0.08, -s * 0.9, 0.2);
+        m.legs.push(l);
+      }
+      const t = m.torso = pivot(body, 0, 0, 0);
+      part(t, 1.4, 0.5, 0.85, wood, 0, 0.05, 0);
+      part(t, 1.5, 0.16, 0.95, 0x3a2a1a, 0, 0.3, 0);
+      part(t, 1.7, 1.45, 0.35, woodD, 0, 1.05, -0.32);
+      for (const s of [-1, 1]) part(t, 0.4, 1.45, 0.95, wood, s * 0.68, 1.05, 0);
+      part(t, 1.85, 0.42, 1.0, woodL, 0, 1.86, 0);
+      part(t, 1.0, 0.26, 0.42, wood, 0, 0.42, 0.27);
+      part(t, 1.0, 1.15, 0.06, char, 0, 1.05, -0.12);
+      // hohle Brust mit Kürbisfeuer
+      m.extra.core = own(part(t, 0.7, 0.72, 0.42, fire, 0, 1.02, 0.04, G()));
+      fx(part(t, 0.38, 0.5, 0.3, fireL, 0, 1.0, 0.12, G()));
+      fx(part(t, 0.16, 0.42, 0.16, fireL, -0.14, 1.5, 0.06, G())); fx(part(t, 0.14, 0.3, 0.14, fire, 0.18, 1.46, 0.1, G()));
+      part(t, 1.04, 0.1, 0.12, woodD, 0, 0.8, 0.44, { rz: 0.06 }); part(t, 1.04, 0.1, 0.12, woodD, 0, 1.17, 0.44, { rz: -0.08 }); part(t, 1.04, 0.11, 0.12, rustD, 0, 1.52, 0.44);
+      part(t, 0.12, 0.95, 0.12, wood, 0.3, 1.15, 0.46, { rz: 0.15 });
+      part(t, 0.55, 0.62, 0.12, rust, -0.6, 1.45, 0.5, { rz: 0.12 });
+      part(t, 0.06, 0.06, 0.03, rustL, -0.75, 1.62, 0.57); part(t, 0.06, 0.06, 0.03, rustL, -0.48, 1.3, 0.57);
+      for (const [x, y, z, rz, rx] of [[-0.45, 0.5, 0.48, 0.7, 0.4], [0.5, 0.55, 0.48, -0.8, 0.4], [0.05, 0.36, 0.5, 0.1, 0.9], [-0.32, 2.05, 0.3, 0.5, 0.5], [0.3, 2.06, 0.32, -0.5, 0.5], [0.95, 1.65, 0.3, -1.2, 0.2], [-0.95, 1.7, 0.3, 1.2, 0.2], [0.75, 0.3, 0.45, -1.0, 0.5], [-0.75, 0.32, 0.4, 1.1, 0.4]]) strawAt(t, x, y, z, rz, rx);
+      for (const s of [-1, 1]) {
+        part(t, 0.86, 0.36, 1.02, rust, s * 1.05, 2.0, 0, { rz: -s * 0.28 });
+        part(t, 0.9, 0.08, 1.06, rustL, s * 1.07, 1.84, 0, { rz: -s * 0.28 });
+        const bp = rot(t, s * 0.55, 1.95, -0.38, -0.35, 0, -s * 0.45);
+        part(bp, 0.14, 1.0, 0.14, woodD, 0, 0.5, 0); part(bp, 0.09, 0.45, 0.09, woodD, s * 0.13, 0.72, 0, { rz: -s * 0.8 });
+      }
+      // Sackleinen-Umhang
+      const cape = m.extra.cape = pivot(t, 0, 1.92, -0.54);
+      part(cape, 1.5, 1.25, 0.06, cloth, 0, -0.62, 0);
+      for (let k = 0; k < 5; k++) { const L = 0.3 + r() * 0.35; part(cape, 0.27, L, 0.06, shade(cloth, 0.82), -0.6 + k * 0.3, -1.24 - L / 2 + 0.02, 0); }
+      // Krähe auf der linken Schulter
+      const crow = pivot(t, -1.12, 2.17, 0.05);
+      part(crow, 0.2, 0.2, 0.34, 0x141418, 0, 0.1, 0); part(crow, 0.12, 0.04, 0.22, 0x141418, 0, 0.08, -0.24, { rx: -0.3 });
+      const ch = m.extra.crow = pivot(crow, 0, 0.24, 0.14);
+      part(ch, 0.15, 0.14, 0.15, 0x1a1a20, 0, 0, 0); part(ch, 0.05, 0.05, 0.13, 0xd8a030, 0, -0.01, 0.13); part(ch, 0.035, 0.035, 0.02, 0xff5a20, -0.05, 0.02, 0.07, G());
+      // Kopf: rostiger Topfhelm mit Glutschlitz, Zweiggeweih
+      const h = m.head = pivot(t, 0, 2.02, 0.05);
+      part(h, 0.42, 0.2, 0.42, straw, 0, 0.05, 0);
+      for (const [x, z, rz, rx] of [[-0.22, 0.15, 0.9, 0.3], [0.24, 0.12, -0.9, 0.3], [0, 0.24, 0, 0.9]]) strawAt(h, x, 0.08, z, rz, rx, 0.3);
+      part(h, 0.78, 0.78, 0.78, rust, 0, 0.55, 0);
+      part(h, 0.83, 0.1, 0.83, rustD, 0, 0.92, 0); part(h, 0.83, 0.1, 0.83, rustD, 0, 0.2, 0);
+      part(h, 0.6, 0.11, 0.03, char, 0, 0.6, 0.39); part(h, 0.5, 0.05, 0.02, fireL, 0, 0.6, 0.405, G());
+      part(h, 0.09, 0.45, 0.05, rustL, 0, 0.45, 0.41);
+      for (const x of [-0.24, -0.15, 0.15, 0.24]) part(h, 0.05, 0.05, 0.02, fire, x, 0.34, 0.395, G());
+      part(h, 0.24, 0.18, 0.02, rustL, 0.22, 0.78, 0.393);
+      for (const s of [-1, 1]) { const ap = rot(h, s * 0.27, 0.95, -0.05, -0.15, 0, -s * 0.5); part(ap, 0.1, 0.55, 0.1, woodD, 0, 0.27, 0); part(ap, 0.07, 0.28, 0.07, woodD, s * 0.1, 0.4, 0, { rz: -s * 0.8 }); }
+      // schwere Arme mit Keulenhänden
+      for (const s of [-1, 1]) {
+        const a = pivot(t, s * 1.12, 1.7, 0);
+        part(a, 0.5, 0.9, 0.5, wood, 0, -0.38, 0);
+        part(a, 0.58, 0.2, 0.58, rust, 0, -0.86, 0);
+        part(a, 0.6, 0.8, 0.6, woodD, 0, -1.25, 0);
+        strawAt(a, s * 0.32, -1.66, 0.1, -s * 1.0, 0.2); strawAt(a, -s * 0.3, -1.68, -0.05, s * 1.1, -0.2);
+        part(a, 1.0, 0.95, 1.0, wood, 0, -2.1, 0.05);
+        part(a, 1.06, 0.2, 1.06, rust, 0, -1.84, 0.05);
+        for (const [x, y, z, w, d] of [[-0.25, -2.2, 0.6, 0.09, 0.32], [0.25, -2.25, 0.6, 0.09, 0.32], [s * 0.6, -2.15, 0.05, 0.32, 0.09], [0, -2.0, -0.5, 0.09, 0.3]]) part(a, w, 0.09, d, rustL, x, y, z);
+        part(a, 0.06, 0.45, 0.02, fire, -0.15, -2.28, 0.56, { glow: true, rz: 0.3 }); part(a, 0.06, 0.3, 0.02, fire, 0.22, -2.05, 0.56, { glow: true, rz: -0.5 });
+        for (const x of [-0.26, 0.26]) part(a, 0.22, 0.2, 0.22, woodD, x, -2.6, 0.22);
+        m.arms.push(a);
+      }
+      m.extra.idle = time => {
+        cape.rotation.x = 0.06 + Math.sin(time * 1.5) * 0.05;
+        const c = Math.sin(time * 0.8); ch.rotation.y = c > 0.55 ? 0.6 : c < -0.6 ? -0.5 : 0; ch.rotation.x = Math.sin(time * 5.3) > 0.97 ? 0.4 : 0;
+      };
+      m.extra.height = 5.0;
+      return 1.6;
+    },
+
+    /* ---- 3 · Zwillingszofen (variant 'a' Messer/karmesin, 'b' Hackbeil/türkis) · extra: weapon, core, pony ---- */
+    twinmaid(m, root, v) {
+      const B = v === 'b', acc = B ? 0x169c9c : 0xb81c34, accG = B ? 0x5afff0 : 0xff4a5a, dress = 0x16141c, dressL = 0x2a2430, white = 0xf2eee8, whiteS = 0xd2ccc4, skin = 0xf4ece4, hair = B ? 0x2c2228 : 0x1a1216, crack = 0x6a5a5e, steel = 0xdadee6, steelD = 0x7a808a;
+      const side = B ? 1 : -1, sc = pivot(root, 0, 0, 0); sc.scale.setScalar(1.1);
+      const body = m.body = pivot(sc, 0, 1.0, 0);
+      for (const s of [-1, 1]) { const l = pivot(body, s * 0.11, -0.05, 0); part(l, 0.11, 0.85, 0.11, 0x0e0e12, 0, -0.45, 0); part(l, 0.14, 0.1, 0.22, 0x08080a, 0, -0.9, 0.04); m.legs.push(l); }
+      const t = m.torso = pivot(body, 0, 0, 0);
+      // langes Kleid mit Rüschensaum und Schürze
+      part(t, 0.38, 0.08, 0.28, acc, 0, 0.03, 0);
+      part(t, 0.5, 0.24, 0.4, dress, 0, -0.1, 0); part(t, 0.6, 0.24, 0.5, dressL, 0, -0.32, 0); part(t, 0.7, 0.24, 0.6, dress, 0, -0.54, 0); part(t, 0.8, 0.22, 0.68, dressL, 0, -0.75, 0);
+      part(t, 0.81, 0.04, 0.69, acc, 0, -0.65, 0); part(t, 0.84, 0.07, 0.72, white, 0, -0.86, 0);
+      part(t, 0.34, 0.24, 0.03, white, 0, -0.1, 0.215); part(t, 0.38, 0.24, 0.03, white, 0, -0.32, 0.265); part(t, 0.42, 0.24, 0.03, white, 0, -0.54, 0.315); part(t, 0.46, 0.2, 0.03, white, 0, -0.74, 0.355); part(t, 0.5, 0.05, 0.04, whiteS, 0, -0.83, 0.36);
+      part(t, 0.36, 0.16, 0.1, white, 0, 0.03, -0.18); for (const s of [-1, 1]) part(t, 0.1, 0.3, 0.03, white, s * 0.08, -0.14, -0.27, { rz: s * 0.15 });
+      part(t, 0.36, 0.5, 0.24, dress, 0, 0.32, 0); part(t, 0.24, 0.3, 0.02, white, 0, 0.3, 0.125);
+      for (const s of [-1, 1]) { part(t, 0.06, 0.04, 0.26, white, s * 0.12, 0.575, 0); part(t, 0.17, 0.15, 0.18, dressL, s * 0.24, 0.52, 0); }
+      part(t, 0.24, 0.07, 0.22, white, 0, 0.6, 0); part(t, 0.12, 0.06, 0.04, acc, 0, 0.555, 0.13);
+      m.extra.core = own(part(t, 0.08, 0.08, 0.03, accG, 0, 0.47, 0.14, G()));
+      if (!B) for (const s of [-1, 1]) { const kp = rot(t, s * 0.27, -0.02, 0.06, 0, 0, s * 0.3); part(kp, 0.04, 0.13, 0.04, acc, 0, 0.07, 0); part(kp, 0.06, 0.03, 0.06, steelD, 0, 0, 0); }
+      fx(part(t, 0.94, 0.1, 0.8, accG, 0, -0.92, 0, G(0.28)));
+      // Porzellangesicht mit Rissen, Häubchen, seitlicher Zopf (gespiegelt bei den Zwillingen)
+      const h = m.head = pivot(t, 0, 0.62, 0);
+      part(h, 0.09, 0.08, 0.09, skin, 0, 0, 0);
+      part(h, 0.32, 0.32, 0.3, skin, 0, 0.2, 0);
+      for (const s of [-1, 1]) { part(h, 0.08, 0.07, 0.01, 0x241a22, s * 0.075, 0.2, 0.152); part(h, 0.045, 0.045, 0.01, accG, s * 0.075, 0.2, 0.158, G()); part(h, 0.05, 0.025, 0.01, 0xf0a0a8, s * 0.1, 0.13, 0.152); }
+      part(h, 0.07, 0.016, 0.01, 0x6a2a34, 0, 0.1, 0.152);
+      for (const [x, y, hh, rz] of [[0.06, 0.29, 0.12, 0.4], [0.1, 0.21, 0.09, -0.3], [0.025, 0.33, 0.06, -0.6]]) part(h, 0.014, hh, 0.01, crack, -side * x, y, 0.154, { rz: -side * rz });
+      part(h, 0.36, 0.1, 0.34, hair, 0, 0.38, -0.01); part(h, 0.36, 0.38, 0.08, hair, 0, 0.2, -0.17);
+      for (const s of [-1, 1]) part(h, 0.05, 0.28, 0.3, hair, s * 0.18, 0.24, -0.01);
+      part(h, 0.34, 0.07, 0.05, hair, 0, 0.32, 0.16);
+      const pony = m.extra.pony = pivot(h, side * 0.22, 0.36, -0.1);
+      part(pony, 0.1, 0.46, 0.1, hair, 0, -0.24, 0); part(pony, 0.13, 0.06, 0.13, acc, 0, -0.02, 0);
+      part(h, 0.42, 0.08, 0.1, white, 0, 0.42, 0.05);
+      for (let k = 0; k < 5; k++) part(h, 0.08, 0.08, 0.07, k % 2 ? whiteS : white, -0.16 + k * 0.08, 0.49, 0.06);
+      part(h, 0.26, 0.11, 0.06, acc, 0, 0.36, -0.22); part(h, 0.07, 0.07, 0.07, white, 0, 0.36, -0.24);
+      for (const s of [-1, 1]) { const a = pivot(t, s * 0.235, 0.5, 0); part(a, 0.11, 0.42, 0.12, dress, 0, -0.22, 0); part(a, 0.13, 0.06, 0.14, white, 0, -0.44, 0); part(a, 0.09, 0.1, 0.09, skin, 0, -0.52, 0); a.rotation.z = s * 0.08; m.arms.push(a); }
+      const w = m.extra.weapon = pivot(m.arms[1], 0, -0.54, 0.03);
+      let grip = null;
+      if (!B) {
+        // Fächer aus drei Wurfmessern
+        for (let k = 0; k < 3; k++) { const kp = rot(w, 0, 0, 0, 0, 0, (k - 1) * 0.4); part(kp, 0.04, 0.1, 0.04, acc, 0, -0.01, 0); part(kp, 0.09, 0.03, 0.05, accG, 0, -0.07, 0, G()); part(kp, 0.06, 0.38, 0.016, steel, 0, -0.27, 0); part(kp, 0.03, 0.08, 0.017, steel, 0, -0.49, 0); }
+      } else {
+        // großes Hackbeil mit geisterhaft leuchtender Schneide
+        m.arms[1].rotation.x = -0.15; grip = steadyGrip(w, m.arms[1], -0.3); const g = grip.g;
+        part(g, 0.06, 0.3, 0.06, 0x3a2418, 0, -0.03, 0); part(g, 0.08, 0.05, 0.08, steelD, 0, -0.2, 0);
+        part(g, 0.03, 0.72, 0.36, 0x9aa2ac, 0, -0.58, 0.12); part(g, 0.045, 0.72, 0.045, steelD, 0, -0.58, -0.07);
+        part(g, 0.036, 0.7, 0.03, accG, 0, -0.58, 0.31, G()); part(g, 0.04, 0.08, 0.08, 0x101014, 0, -0.32, 0.2);
+      }
+      m.extra.idle = time => { pony.rotation.z = side * 0.12 + Math.sin(time * 2.1) * 0.08; pony.rotation.x = 0.1 + Math.sin(time * 1.7) * 0.06; if (grip) grip.tick(); };
+      m.extra.height = 2.45;
+      return 0.55;
+    },
+
+    /* ---- 4 · Der Urschlund: kolossales Nachtbiest (Vierbeiner) · extra: jaw, tail, spines, core ---- */
+    thenightmaw(m, root) {
+      const fur = 0x1a1620, furD = 0x0f0c14, furL = 0x2c2436, bone = 0xe2d8c0, boneD = 0xb4a68a, red = 0xff2a1a, redL = 0xff7048;
+      const r = seeded(5);
+      m.quad = true;
+      const body = m.body = pivot(root, 0, 1.7, 0); m.torso = body;
+      part(body, 1.9, 1.6, 1.5, fur, 0, 0.3, 0.75);
+      part(body, 1.5, 1.2, 1.3, furD, 0, 0.05, -0.6);
+      part(body, 1.4, 1.1, 0.9, fur, 0, -0.05, -1.55);
+      part(body, 2.0, 0.4, 1.15, furD, 0, 1.0, 0.8);
+      part(body, 1.6, 0.6, 0.4, furD, 0, 0.5, 1.55);
+      for (let k = 0; k < 5; k++) part(body, 0.42, 0.42, 0.42, k % 2 ? furL : furD, (r() - 0.5) * 1.4, 1.12 + r() * 0.1, 0.35 + r() * 0.9, { ry: r(), rz: (r() - 0.5) * 0.5 });
+      // freiliegende Rippen mit rotem Glühen dazwischen
+      for (const s of [-1, 1]) { part(body, 0.03, 0.55, 0.95, red, s * 0.752, 0.02, -0.6, G()); for (let k = 0; k < 3; k++) part(body, 0.08, 0.78, 0.14, boneD, s * 0.78, 0.05, -0.25 - k * 0.32, { rx: 0.25 }); }
+      // Knochenstacheln entlang der Wirbelsäule
+      const sp = m.extra.spines = pivot(body, 0, 0, 0);
+      for (const [z, y, hh] of [[1.25, 1.2, 0.55], [0.9, 1.22, 0.75], [0.52, 1.2, 0.7], [0.1, 0.66, 0.6], [-0.3, 0.66, 0.55], [-0.72, 0.66, 0.48], [-1.12, 0.52, 0.42], [-1.5, 0.5, 0.36], [-1.85, 0.5, 0.3]]) {
+        const p = rot(sp, 0, y - 0.05, z, -0.55); part(p, 0.2, hh, 0.2, bone, 0, hh / 2, 0); part(p, 0.12, 0.2, 0.12, boneD, 0, hh + 0.06, 0);
+        if (hh > 0.5) part(p, 0.26, 0.08, 0.26, red, 0, 0.04, 0, G());
+      }
+      // gewaltiger Schädel mit vier Augen, Knochenhörnern und glühendem Schlund
+      const h = m.head = pivot(body, 0, 0.55, 1.55);
+      part(h, 1.15, 0.9, 1.0, fur, 0, 0.12, 0.3);
+      part(h, 1.25, 0.22, 0.36, furD, 0, 0.5, 0.66);
+      part(h, 0.8, 0.45, 0.8, furL, 0, -0.08, 1.12);
+      part(h, 0.5, 0.1, 0.66, furD, 0, 0.18, 1.08);
+      part(h, 0.3, 0.16, 0.1, 0x060408, 0, 0.06, 1.55);
+      for (const s of [-1, 1]) {
+        part(h, 0.18, 0.08, 0.04, red, s * 0.3, 0.32, 0.81, G()); part(h, 0.1, 0.06, 0.04, redL, s * 0.45, 0.2, 0.8, G());
+        part(h, 0.24, 0.42, 0.14, furD, s * 0.46, 0.72, 0.06, { rz: -s * 0.3 });
+        const hp = rot(h, s * 0.42, 0.5, -0.08, -1.0, 0, -s * 0.35); part(hp, 0.16, 0.8, 0.16, bone, 0, 0.4, 0); part(hp, 0.1, 0.34, 0.1, boneD, 0, 0.9, 0.04, { rx: 0.3 });
+        part(h, 0.08, 0.3, 0.08, bone, s * 0.32, -0.4, 1.42); part(h, 0.06, 0.2, 0.06, bone, s * 0.16, -0.37, 1.48);
+      }
+      m.extra.core = own(part(h, 0.62, 0.2, 0.76, red, 0, -0.39, 1.1, G()));
+      fx(part(h, 0.05, 0.22, 0.05, redL, 0.22, -0.62, 1.6, G()));
+      const jaw = m.extra.jaw = pivot(h, 0, -0.47, 0.6);
+      part(jaw, 0.74, 0.24, 0.95, furD, 0, -0.12, 0.46);
+      for (const s of [-1, 1]) part(jaw, 0.07, 0.2, 0.07, bone, s * 0.27, 0.08, 0.86);
+      part(jaw, 0.5, 0.2, 0.32, fur, 0, -0.3, 0.24);
+      for (const [x, z, back] of [[-0.72, 0.95, 0], [0.72, 0.95, 0], [-0.62, -1.55, 1], [0.62, -1.55, 1]]) {
+        const l = pivot(body, x, back ? -0.45 : -0.35, z);
+        if (!back) { part(l, 0.62, 0.85, 0.72, fur, 0, -0.2, 0); part(l, 0.44, 0.65, 0.48, furD, 0, -0.85, 0.06); part(l, 0.66, 0.22, 0.82, furD, 0, -1.24, 0.16); part(l, 0.1, 0.36, 0.1, bone, 0, -0.42, -0.4, { rx: -1.1 }); }
+        else { part(l, 0.58, 0.85, 0.85, fur, 0, -0.15, -0.05); part(l, 0.38, 0.6, 0.42, furD, 0, -0.8, -0.12); part(l, 0.55, 0.2, 0.7, furD, 0, -1.15, 0.08); }
+        for (let k = 0; k < 3; k++) part(l, 0.08, 0.1, 0.22, bone, (k - 1) * (back ? 0.17 : 0.2), back ? -1.2 : -1.29, back ? 0.48 : 0.62);
+        m.legs.push(l);
+      }
+      const tail = m.extra.tail = pivot(body, 0, 0.2, -1.98); tail.rotation.x = -0.35;
+      part(tail, 0.32, 0.32, 0.6, fur, 0, 0, -0.28); part(tail, 0.24, 0.24, 0.55, furD, 0, 0, -0.82);
+      for (let k = 0; k < 2; k++) part(tail, 0.08, 0.26, 0.08, bone, 0, 0.18, -0.4 - k * 0.42, { rx: -0.6 });
+      part(tail, 0.14, 0.14, 0.45, bone, 0, 0, -1.25);
+      m.extra.height = 3.6;
+      return 1.9;
+    },
+
+    /* ---- 5 · Das Große Skelett: Knochenkönig · extra: core, crown, jaw, cape, weapon ---- */
+    grandskeleton(m, root) {
+      const bone = 0xe6dcc4, boneS = 0xc8bc9c, boneD = 0x9a8e70, socket = 0x14100c, soul = 0x5aff6a, soulL = 0xc0ffb0, rust = 0x7a4a2a, rustG = 0xa8823a, cloth = 0x4a1822, clothD = 0x2a1018, iron = 0x5a5650, ironL = 0x8e887e, teeth = 0xf4ecd8;
+      const r = seeded(3);
+      const body = m.body = pivot(root, 0, 2.25, 0);
+      for (const s of [-1, 1]) {
+        const l = pivot(body, s * 0.42, -0.15, 0);
+        part(l, 0.3, 0.25, 0.3, boneS, 0, 0, 0);
+        part(l, 0.22, 0.95, 0.22, bone, 0, -0.55, 0);
+        part(l, 0.34, 0.26, 0.34, boneS, 0, -1.08, 0.02); part(l, 0.38, 0.32, 0.1, iron, 0, -1.08, 0.2);
+        part(l, 0.2, 0.8, 0.2, bone, 0, -1.55, 0); part(l, 0.07, 0.75, 0.07, boneS, s * 0.1, -1.55, -0.04);
+        part(l, 0.34, 0.12, 0.55, bone, 0, -2.04, 0.12);
+        for (const x of [-0.1, 0.1]) part(l, 0.08, 0.08, 0.15, boneS, x, -2.06, 0.45);
+        m.legs.push(l);
+      }
+      const t = m.torso = pivot(body, 0, 0, 0);
+      part(t, 0.95, 0.35, 0.5, boneS, 0, 0, 0);
+      part(t, 1.05, 0.14, 0.6, rust, 0, 0.18, 0); part(t, 0.2, 0.18, 0.06, rustG, 0, 0.18, 0.32);
+      part(t, 0.55, 1.0, 0.05, cloth, 0, -0.45, 0.28); for (const s of [-1, 1]) part(t, 0.18, 0.3, 0.05, clothD, s * 0.15, -1.05 - (s > 0 ? 0.08 : 0), 0.28);
+      part(t, 0.8, 1.15, 0.05, clothD, 0, -0.5, -0.28);
+      part(t, 0.2, 0.75, 0.2, boneS, 0, 0.55, -0.15);
+      // Brustkorb aus Rippen, darin grünes Seelenfeuer
+      for (const [y, hw] of [[1.75, 0.6], [1.5, 0.62], [1.25, 0.58], [1.0, 0.5]]) {
+        for (const s of [-1, 1]) { part(t, 0.1, 0.1, 0.8, bone, s * hw, y, -0.02); part(t, hw - 0.1, 0.1, 0.1, bone, s * (hw + 0.1) / 2, y - 0.05, 0.38, { rz: s * 0.12 }); }
+        part(t, hw * 2, 0.1, 0.1, boneD, 0, y, -0.42);
+      }
+      part(t, 0.12, 0.88, 0.1, boneS, 0, 1.38, 0.4);
+      m.extra.core = own(part(t, 0.6, 0.65, 0.5, soul, 0, 1.35, 0, G()));
+      fx(part(t, 0.3, 0.5, 0.3, soulL, 0, 1.4, 0.02, G()));
+      fx(part(t, 0.16, 0.42, 0.16, soul, -0.15, 1.88, 0, G(0.85))); fx(part(t, 0.12, 0.34, 0.12, soulL, 0.18, 1.84, -0.05, G(0.85)));
+      part(t, 1.5, 0.14, 0.22, bone, 0, 1.95, 0.02);
+      for (const s of [-1, 1]) {
+        part(t, 0.4, 0.5, 0.08, boneS, s * 0.4, 1.7, -0.45);
+        part(t, 0.62, 0.32, 0.72, iron, s * 0.92, 2.02, 0, { rz: -s * 0.3 }); part(t, 0.66, 0.08, 0.76, rustG, s * 0.94, 1.87, 0, { rz: -s * 0.3 });
+      }
+      // zerfetzter Königsmantel
+      const cape = m.extra.cape = pivot(t, 0, 2.02, -0.48), cape2 = pivot(cape, 0, -1.35, 0);
+      part(cape, 1.6, 0.22, 0.32, clothD, 0, 0.02, 0.1); part(cape, 1.5, 1.35, 0.06, cloth, 0, -0.68, 0);
+      for (let k = 0; k < 5; k++) { const L = 0.35 + r() * 0.55; part(cape2, 0.28, L, 0.06, k % 2 ? clothD : cloth, -0.6 + k * 0.3, -L / 2 + 0.02, 0); }
+      // Schädel mit Augenlichtern und schiefer Rostkrone
+      const h = m.head = pivot(t, 0, 2.08, 0.08);
+      part(h, 0.18, 0.2, 0.18, boneS, 0, 0.05, -0.05);
+      part(h, 0.82, 0.68, 0.78, bone, 0, 0.5, 0);
+      part(h, 0.6, 0.22, 0.5, boneS, 0, 0.12, 0.14);
+      part(h, 0.86, 0.1, 0.12, boneS, 0, 0.62, 0.36);
+      for (const s of [-1, 1]) {
+        part(h, 0.22, 0.2, 0.03, socket, s * 0.18, 0.46, 0.39); part(h, 0.1, 0.08, 0.03, soul, s * 0.18, 0.46, 0.405, G());
+        fx(part(h, 0.05, 0.18, 0.03, soulL, s * 0.22, 0.6, 0.43, G(0.7)));
+        part(h, 0.1, 0.1, 0.3, boneS, s * 0.4, 0.3, 0.15);
+      }
+      part(h, 0.1, 0.12, 0.03, socket, 0, 0.3, 0.39);
+      part(h, 0.44, 0.07, 0.04, teeth, 0, 0.06, 0.38);
+      const jaw = m.extra.jaw = pivot(h, 0, 0.05, 0); jaw.rotation.x = 0.18;
+      part(jaw, 0.56, 0.14, 0.48, boneS, 0, -0.1, 0.15); part(jaw, 0.4, 0.06, 0.04, teeth, 0, -0.01, 0.37);
+      const crown = m.extra.crown = pivot(h, 0, 0.84, 0); crown.rotation.z = 0.12;
+      part(crown, 0.9, 0.16, 0.86, rustG, 0, 0.04, 0);
+      for (const [x, z, hh] of [[-0.3, 0.43, 0.26], [0, 0.43, 0.34], [0.3, 0.43, 0.26], [-0.3, -0.43, 0.24], [0.3, -0.43, 0.24], [-0.45, 0, 0.28], [0.45, 0, 0.28]]) part(crown, z ? 0.1 : 0.06, hh, z ? 0.06 : 0.1, rustG, x, 0.12 + hh / 2, z);
+      part(crown, 0.12, 0.12, 0.04, soul, 0, 0.06, 0.45, G());
+      part(crown, 0.22, 0.1, 0.02, rust, 0.25, 0.02, 0.44); part(crown, 0.02, 0.1, 0.3, rust, -0.46, 0.03, -0.1);
+      // Knochenarme
+      for (const s of [-1, 1]) {
+        const a = pivot(t, s * 0.98, 1.92, 0);
+        part(a, 0.32, 0.32, 0.32, boneS, 0, 0, 0);
+        part(a, 0.18, 0.9, 0.18, bone, 0, -0.55, 0);
+        part(a, 0.26, 0.22, 0.26, boneS, 0, -1.05, 0);
+        for (const x of [-0.055, 0.055]) part(a, 0.08, 0.8, 0.09, bone, x, -1.5, 0);
+        part(a, 0.3, 0.3, 0.3, iron, 0, -1.6, 0);
+        part(a, 0.26, 0.2, 0.16, boneS, 0, -1.98, 0.02);
+        for (let k = 0; k < 3; k++) part(a, 0.05, 0.22, 0.05, bone, (k - 1) * 0.08, -2.18, 0.06);
+        m.arms.push(a);
+      }
+      // gewaltiges Großschwert in der rechten Hand
+      m.arms[1].rotation.x = -0.3;
+      const w = m.extra.weapon = pivot(m.arms[1], 0, -2.0, 0.05), grip = steadyGrip(w, m.arms[1], -1.1), g = grip.g;
+      part(g, 0.2, 0.2, 0.2, rustG, 0, 0.5, 0); part(g, 0.12, 0.65, 0.12, 0x2a1a12, 0, 0.12, 0);
+      part(g, 1.0, 0.16, 0.22, rustG, 0, -0.25, 0); for (const s of [-1, 1]) part(g, 0.12, 0.3, 0.2, rustG, s * 0.5, -0.32, 0);
+      part(g, 0.24, 0.24, 0.14, bone, 0, -0.25, 0.12); part(g, 0.05, 0.05, 0.02, soul, -0.05, -0.22, 0.2, G()); part(g, 0.05, 0.05, 0.02, soul, 0.05, -0.22, 0.2, G());
+      part(g, 0.38, 2.6, 0.08, iron, 0, -1.65, 0);
+      for (const s of [-1, 1]) part(g, 0.05, 2.5, 0.09, ironL, s * 0.18, -1.65, 0);
+      part(g, 0.07, 2.0, 0.1, soul, 0, -1.5, 0, G());
+      part(g, 0.24, 0.3, 0.08, iron, 0, -3.05, 0); part(g, 0.12, 0.2, 0.08, ironL, 0, -3.25, 0);
+      part(g, 0.08, 0.15, 0.1, socket, 0.17, -1.2, 0); part(g, 0.08, 0.12, 0.1, socket, -0.17, -2.1, 0);
+      m.extra.idle = time => { cape.rotation.x = 0.08 + Math.sin(time * 1.3) * 0.05; cape2.rotation.x = 0.05 + Math.sin(time * 1.3 - 0.8) * 0.1; grip.tick(); };
+      m.extra.height = 5.75;
+      return 1.5;
+    },
+
+    /* ---- 6 · Parasitäres Phantom: schwebender Geist · extra: core, tendrils[], stalks[], spores, float ---- */
+    phantom(m, root) {
+      const vio = 0x8a5ac8, vioD = 0x5e3a98, green = 0x7ab048, inner = 0x2a1838, flesh = 0x9a4a6a, fleshD = 0x6a2a48, fleshL = 0xc07090, para = 0xc8ff3a, eyeY = 0xfff04a, claw = 0xd8e0b0, face = 0x08040c;
+      const body = m.body = pivot(root, 0, 2.6, 0), t = m.torso = pivot(body, 0, 0, 0);
+      part(t, 1.0, 1.5, 0.65, inner, 0, 0.35, -0.05);
+      part(t, 1.35, 1.25, 0.95, vio, 0, 0.5, 0, G(0.62));
+      part(t, 1.5, 0.5, 1.1, vio, 0, -0.3, 0, G(0.62)); part(t, 1.3, 0.5, 0.95, vioD, 0, -0.75, 0, G(0.58));
+      // zerrissener Saum: lose Schleierfetzen
+      for (let k = 0; k < 8; k++) { const an = k / 8 * TAU, L = 0.45 + (k % 3) * 0.18; part(t, 0.34, L, 0.05, k % 2 ? green : vioD, Math.cos(an) * 0.5, -1.0 - L / 2, Math.sin(an) * 0.36, { glow: true, opacity: 0.5, ry: -an + Math.PI / 2, rx: 0.15 }); }
+      part(t, 1.9, 0.35, 0.95, vio, 0, 1.05, 0, G(0.75));
+      // pulsierendes Parasitenherz mit Adern
+      part(t, 0.72, 0.72, 0.2, fleshD, 0, 0.55, 0.38);
+      m.extra.core = own(part(t, 0.48, 0.52, 0.3, para, 0, 0.55, 0.43, G()));
+      for (const [x, y, rz] of [[0.4, 0.82, 0.8], [-0.4, 0.82, -0.8], [0.36, 0.26, -0.6], [-0.36, 0.26, 0.6]]) part(t, 0.06, 0.5, 0.05, fleshL, x, y, 0.49, { rz });
+      // Parasitenwucherungen mit leuchtenden Pusteln
+      for (const [x, y, z, s] of [[-0.72, 1.18, -0.1, 0.38], [0.58, 1.22, -0.25, 0.3], [0.28, 0.6, -0.5, 0.42], [-0.32, 0.0, -0.56, 0.36], [0.62, -0.38, 0.32, 0.3]]) { part(t, s, s, s, flesh, x, y, z, { ry: 0.5 }); part(t, s * 0.42, s * 0.42, s * 0.42, para, x, y + s * 0.5, z, G()); }
+      // Kapuze mit leerem Gesicht und Parasitenaugen
+      const h = m.head = pivot(t, 0, 1.2, 0.05);
+      part(h, 0.95, 0.85, 0.9, vio, 0, 0.4, 0, G(0.8)); part(h, 0.45, 0.45, 0.45, vio, 0, 0.85, -0.3, { glow: true, opacity: 0.8, rx: -0.5 });
+      part(h, 0.62, 0.55, 0.06, face, 0, 0.35, 0.43);
+      for (const s of [-1, 1]) { part(h, 0.13, 0.07, 0.03, para, s * 0.14, 0.42, 0.465, G()); part(h, 0.06, 0.35, 0.06, fleshL, s * 0.13, 0.06, 0.5, { rx: -0.3, rz: s * 0.35 }); }
+      for (const [x, y] of [[0.05, 0.26], [-0.18, 0.24], [0.2, 0.55]]) part(h, 0.05, 0.05, 0.03, eyeY, x, y, 0.465, G());
+      // lange Klauenarme
+      for (const s of [-1, 1]) {
+        const a = pivot(t, s * 0.95, 0.95, 0);
+        part(a, 0.32, 0.95, 0.32, vio, 0, -0.42, 0, G(0.75)); fx(part(a, 0.4, 0.6, 0.06, vio, 0, -0.75, -0.2, G(0.45)));
+        part(a, 0.26, 0.85, 0.26, fleshD, 0, -1.25, 0); part(a, 0.14, 0.14, 0.14, para, s * 0.13, -1.1, 0.08, G());
+        part(a, 0.36, 0.26, 0.32, fleshD, 0, -1.78, 0.02);
+        for (let k = 0; k < 3; k++) part(a, 0.06, 0.5, 0.06, claw, (k - 1) * 0.12, -2.1, 0.12, { rx: -0.35 });
+        part(a, 0.06, 0.3, 0.06, claw, -s * 0.2, -1.9, 0.12, { rz: s * 0.5 });
+        a.rotation.x = -0.35; m.arms.push(a);
+      }
+      // herabhängende Tentakel (Kette aus Haltern, in idle gewiegt)
+      const tendrils = m.extra.tendrils = [];
+      for (let k = 0; k < 8; k++) {
+        const an = k / 8 * TAU + 0.39, tp = pivot(t, Math.cos(an) * 0.62, -0.95, Math.sin(an) * 0.46), segs = [], n = 4 + (k % 2), L = (k % 2 ? 1.5 : 1.3) / n;
+        tp.userData.bx = Math.sin(an) * 0.42; tp.userData.bz = -Math.cos(an) * 0.42;
+        let cur = tp, w = 0.17;
+        for (let j = 0; j < n; j++) { part(cur, w, L + 0.02, w, k % 2 ? (j % 2 ? fleshD : flesh) : green, 0, -L / 2, 0, k % 2 ? {} : G(0.72)); const nx = pivot(cur, 0, -L, 0); segs.push(nx); cur = nx; w *= 0.84; }
+        part(cur, 0.07, 0.1, 0.07, para, 0, -0.04, 0, G());
+        tp.userData.segs = segs; tendrils.push(tp);
+      }
+      // Augenstiele auf dem Rücken
+      const stalks = m.extra.stalks = [];
+      for (const s of [-1, 1]) {
+        const sp = rot(t, s * 0.45, 1.15, -0.3, -0.3, 0, -s * 0.4), segs = []; let cur = sp, w = 0.13;
+        for (let j = 0; j < 3; j++) { part(cur, w, 0.32, w, j % 2 ? flesh : fleshD, 0, 0.16, 0); const nx = pivot(cur, 0, 0.3, 0); segs.push(nx); cur = nx; w *= 0.85; }
+        part(cur, 0.17, 0.17, 0.17, fleshL, 0, 0.06, 0); part(cur, 0.09, 0.09, 0.03, eyeY, 0, 0.08, 0.085, G());
+        sp.userData.segs = segs; sp.userData.s = s; stalks.push(sp);
+      }
+      // schwebende Sporen
+      const spores = m.extra.spores = fx(pivot(t, 0, 0.2, 0));
+      for (let k = 0; k < 5; k++) { const an = k / 5 * TAU; fx(part(spores, 0.1, 0.1, 0.1, k % 2 ? para : eyeY, Math.cos(an) * 1.5, Math.sin(k * 2.3) * 0.6, Math.sin(an) * 1.5, G(0.85))); }
+      m.extra.idle = (time, dt) => {
+        for (let i = 0; i < tendrils.length; i++) {
+          const tp = tendrils[i], u = tp.userData;
+          tp.rotation.x = u.bx + Math.sin(time * 1.7 + i * 1.3) * 0.16; tp.rotation.z = u.bz + Math.cos(time * 1.3 + i) * 0.14;
+          for (let j = 0; j < u.segs.length; j++) { const sg = u.segs[j]; sg.rotation.x = Math.sin(time * 2.2 + i * 1.3 + j * 0.8) * 0.24; sg.rotation.z = Math.cos(time * 1.9 + i + j * 0.7) * 0.2; }
+        }
+        for (const sp of stalks) { const s = sp.userData.s; sp.rotation.z = -s * 0.4 + Math.sin(time * 1.4 + s) * 0.12; for (let j = 0; j < sp.userData.segs.length; j++) sp.userData.segs[j].rotation.x = Math.sin(time * 1.8 + s + j * 0.9) * 0.18; }
+        spores.rotation.y += dt * 0.6;
+      };
+      m.extra.height = 5.0; m.extra.float = true;
+      return 1.3;
+    },
+
+    /* ---- 7 · Xylar, der Kristallkoloss · extra: core (Brustkern, Laserquelle), shards (umkreisende Kristalle) ---- */
+    xylar(m, root) {
+      const cry = 0x58d0f0, cryE = 0x0c3a56, cryL = 0xa8f2ff, vio = 0x9a72ff, vioE = 0x2a1460, vioD = 0x6a48d0, stone = 0x2c2c3a, stoneL = 0x3e3e52, white = 0xeaffff, ring = 0x7ae8ff;
+      const C = E(cryE), V = E(vioE), CL = E(0x2a6a8a);
+      const body = m.body = pivot(root, 0, 2.2, 0);
+      for (const s of [-1, 1]) {
+        const l = pivot(body, s * 0.78, -0.3, 0);
+        part(l, 0.75, 0.8, 0.75, stone, 0, -0.35, 0);
+        part(l, 0.55, 0.55, 0.55, vio, 0, -0.8, 0.22, Object.assign({ ry: 0.785 }, V));
+        part(l, 0.95, 0.8, 0.95, cry, 0, -1.25, 0, C);
+        part(l, 0.08, 0.6, 0.02, cryL, s * 0.2, -1.2, 0.48, G());
+        part(l, 1.1, 0.3, 1.3, stone, 0, -1.75, 0.12);
+        for (const x of [-0.3, 0.3]) part(l, 0.25, 0.25, 0.3, cryL, x, -1.72, 0.78, CL);
+        m.legs.push(l);
+      }
+      const t = m.torso = pivot(body, 0, 0, 0);
+      part(t, 1.7, 0.55, 1.0, stone, 0, 0, 0);
+      part(t, 1.5, 0.6, 1.1, vioD, 0, 0.45, 0.02, V);
+      part(t, 2.3, 1.5, 1.35, stoneL, 0, 1.35, 0);
+      part(t, 1.0, 1.35, 0.35, cry, -0.62, 1.4, 0.62, Object.assign({ rz: 0.08 }, C)); part(t, 1.0, 1.35, 0.35, vio, 0.62, 1.4, 0.62, Object.assign({ rz: -0.08 }, V));
+      part(t, 0.08, 1.0, 0.02, cryL, -0.95, 1.4, 0.8, { glow: true, rz: 0.08 }); part(t, 0.08, 0.8, 0.02, 0xd8c8ff, 0.95, 1.45, 0.8, { glow: true, rz: -0.08 });
+      // Brustkern (Laserquelle) in steinerner Fassung
+      part(t, 0.84, 0.84, 0.12, stone, 0, 1.4, 0.8, { rz: 0.785 });
+      fx(part(t, 0.72, 0.72, 0.04, ring, 0, 1.4, 0.88, { glow: true, opacity: 0.55, rz: 0.785 }));
+      m.extra.core = own(part(t, 0.5, 0.5, 0.18, white, 0, 1.4, 0.88, { glow: true, rz: 0.785 }));
+      part(t, 2.4, 0.35, 1.4, cry, 0, 2.15, 0, C);
+      spire(t, 0, 2.0, -0.55, 0.5, 1.2, cry, -0.65, 0, { mat: C, tipMat: CL, strip: cryL });
+      for (const s of [-1, 1]) spire(t, s * 0.55, 1.8, -0.6, 0.38, 0.9, vio, -0.55, -s * 0.35, { mat: V });
+      // Schultern mit Kristallspitzen
+      for (const s of [-1, 1]) {
+        part(t, 0.95, 0.75, 1.15, stone, s * 1.5, 2.0, 0);
+        spire(t, s * 1.55, 2.3, -0.05, 0.55, 1.3, cry, -0.1, -s * 0.15, { mat: C, tipMat: CL, strip: cryL });
+        spire(t, s * 1.85, 2.2, 0.28, 0.38, 0.95, vio, 0.15, -s * 0.55, { mat: V, strip: 0xd8c8ff });
+        spire(t, s * 1.22, 2.3, -0.42, 0.3, 0.8, cryL, -0.4, s * 0.1, { mat: CL });
+      }
+      const h = m.head = pivot(t, 0, 2.3, 0.3);
+      part(h, 0.8, 0.62, 0.72, stone, 0, 0.22, 0);
+      part(h, 0.6, 0.1, 0.04, cryL, 0, 0.26, 0.37, G());
+      part(h, 0.28, 0.6, 0.55, cry, 0, 0.7, -0.05, Object.assign({ rx: -0.2 }, C));
+      for (const s of [-1, 1]) part(h, 0.2, 0.32, 0.2, vio, s * 0.32, 0.6, 0.15, Object.assign({ rz: -s * 0.4 }, V));
+      // massige Arme: Steingelenke, Kristallunterarme, Steinfäuste
+      for (const s of [-1, 1]) {
+        const a = pivot(t, s * 1.6, 1.85, 0);
+        part(a, 0.7, 0.95, 0.7, stone, 0, -0.42, 0);
+        part(a, 0.75, 0.6, 0.75, vio, 0, -1.0, 0, Object.assign({ ry: 0.785 }, V));
+        part(a, 1.05, 1.15, 1.05, cry, 0, -1.65, 0, C);
+        part(a, 0.08, 0.9, 0.02, cryL, 0.25, -1.6, 0.535, G()); part(a, 0.02, 0.7, 0.08, cryL, s * 0.535, -1.7, 0.2, G());
+        part(a, 1.15, 0.75, 1.15, stone, 0, -2.55, 0.05);
+        for (let k = 0; k < 3; k++) part(a, 0.22, 0.42, 0.22, cryL, (k - 1) * 0.36, -2.95, 0.3, Object.assign({ rx: 0.4 }, CL));
+        spire(a, s * 0.5, -1.45, -0.15, 0.24, 0.65, vio, -0.3, -s * 1.2, { mat: V });
+        m.arms.push(a);
+      }
+      // umkreisende Kristallsplitter
+      const shards = m.extra.shards = pivot(root, 0, 4.2, 0), bits = [];
+      for (let k = 0; k < 6; k++) {
+        const an = k / 6 * TAU, cp = pivot(shards, Math.cos(an) * 2.8, Math.sin(k * 2) * 0.25, Math.sin(an) * 2.8); cp.rotation.z = 0.3;
+        part(cp, 0.3, 0.75, 0.3, k % 2 ? vio : cry, 0, 0, 0, G(0.92)); part(cp, 0.18, 0.3, 0.18, cryL, 0, 0.5, 0, { glow: true, ry: 0.785 }); bits.push(cp);
+      }
+      fx(shards);
+      m.extra.idle = (time, dt) => { shards.rotation.y += dt * 0.7; for (let k = 0; k < bits.length; k++) { bits[k].rotation.y += dt * 2; bits[k].position.y = Math.sin(time * 1.6 + k * 2) * 0.25; } };
+      m.extra.height = 6.2;
+      return 2.0;
+    },
+
+    /* ---- 8 · Der Leerenerwachte König · extra: core, crown (schwebende Splitter), cape, weapon ---- */
+    voidking(m, root) {
+      const obs = 0x16121e, obsL = 0x2a2236, obsH = 0x40354f, vio = 0xa050ff, vioL = 0xe0b0ff, black = 0x0a0812, capeC = 0x1e1029, capeD = 0x130a1b;
+      const body = m.body = pivot(root, 0, 1.9, 0);
+      for (const s of [-1, 1]) {
+        const l = pivot(body, s * 0.32, -0.15, 0);
+        part(l, 0.42, 0.8, 0.46, obs, 0, -0.36, 0); part(l, 0.44, 0.04, 0.48, vio, 0, -0.56, 0, G());
+        part(l, 0.46, 0.3, 0.22, obsL, 0, -0.82, 0.16); part(l, 0.1, 0.1, 0.3, obsH, 0, -0.82, 0.36);
+        part(l, 0.4, 0.72, 0.44, obs, 0, -1.2, 0); part(l, 0.04, 0.5, 0.02, vio, 0, -1.2, 0.225, G());
+        part(l, 0.48, 0.18, 0.72, obsL, 0, -1.66, 0.1);
+        m.legs.push(l);
+      }
+      const t = m.torso = pivot(body, 0, 0, 0);
+      part(t, 1.0, 0.45, 0.66, obsL, 0, 0, 0);
+      for (const s of [-1, 1]) part(t, 0.36, 0.6, 0.08, obs, s * 0.27, -0.4, 0.33, { rx: -0.12 });
+      part(t, 0.8, 0.6, 0.08, obs, 0, -0.4, -0.33, { rx: 0.12 });
+      part(t, 0.85, 0.5, 0.58, obs, 0, 0.45, 0);
+      part(t, 1.2, 0.8, 0.75, obs, 0, 1.0, 0); part(t, 1.45, 0.35, 0.8, obsL, 0, 1.4, 0);
+      part(t, 1.22, 0.04, 0.77, vio, 0, 0.72, 0, G()); part(t, 0.04, 0.7, 0.02, vio, 0, 0.95, 0.385, G());
+      for (const s of [-1, 1]) part(t, 0.04, 0.5, 0.02, vio, s * 0.38, 1.0, 0.385, { glow: true, rz: s * 0.35 });
+      // Leerenkristall in der Brust
+      part(t, 0.46, 0.46, 0.06, obsH, 0, 1.05, 0.39, { rz: 0.785 });
+      m.extra.core = own(part(t, 0.3, 0.3, 0.08, vioL, 0, 1.05, 0.42, { glow: true, rz: 0.785 }));
+      part(t, 0.7, 0.28, 0.6, obsL, 0, 1.68, 0);
+      for (const s of [-1, 1]) {
+        part(t, 0.72, 0.42, 0.85, obs, s * 0.88, 1.5, 0, { rz: -s * 0.22 }); part(t, 0.62, 0.25, 0.75, obsL, s * 0.98, 1.22, 0, { rz: -s * 0.3 });
+        part(t, 0.74, 0.04, 0.87, vio, s * 0.89, 1.33, 0, { glow: true, rz: -s * 0.22 });
+        for (const [dz, L] of [[-0.12, 0.62], [0.2, 0.4]]) { const sp = rot(t, s * 0.95, 1.66, dz, 0, 0, -s * 0.38); part(sp, 0.13, L, 0.13, obsH, 0, L / 2, 0); part(sp, 0.07, 0.18, 0.07, vio, 0, L + 0.06, 0, G()); }
+        part(t, 0.16, 0.16, 0.08, vio, s * 0.52, 1.55, -0.41, { glow: true, rz: 0.785 });
+      }
+      // Umhang in drei Gliedern (wellt sich in idle)
+      const cape = m.extra.cape = pivot(t, 0, 1.55, -0.43), c2 = pivot(cape, 0, -1.0, 0), c3 = pivot(c2, 0, -0.9, 0);
+      part(cape, 1.35, 1.02, 0.06, capeC, 0, -0.5, 0); part(c2, 1.4, 0.92, 0.06, capeD, 0, -0.45, 0);
+      for (const [k, L] of [[0, 0.5], [1, 0.3], [2, 0.62], [3, 0.36], [4, 0.55]]) { const x = -0.56 + k * 0.28; part(c3, 0.27, L, 0.06, k % 2 ? capeC : capeD, x, -L / 2 + 0.02, 0); if (k % 2 === 0) part(c3, 0.27, 0.05, 0.065, vio, x, -L + 0.02, 0, G()); }
+      // Helm mit Augenschlitzen, Krone aus schwebenden Leerensplittern
+      const h = m.head = pivot(t, 0, 1.78, 0.02);
+      part(h, 0.56, 0.62, 0.6, obs, 0, 0.3, 0);
+      part(h, 0.48, 0.38, 0.04, 0x07050b, 0, 0.26, 0.3);
+      for (const s of [-1, 1]) { part(h, 0.13, 0.04, 0.02, vioL, s * 0.11, 0.33, 0.325, G()); part(h, 0.06, 0.35, 0.3, obsL, s * 0.3, 0.2, 0.12); const hp = rot(h, s * 0.24, 0.5, -0.05, -0.75, 0, -s * 0.45); part(hp, 0.09, 0.45, 0.09, obsH, 0, 0.22, 0); }
+      part(h, 0.08, 0.2, 0.62, obsH, 0, 0.66, 0);
+      const crown = m.extra.crown = pivot(h, 0, 0.8, 0);
+      for (let k = 0; k < 7; k++) {
+        const an = k / 7 * TAU + Math.PI / 2, L = k === 0 ? 0.5 : 0.28 + (k % 2) * 0.12, cp = rot(crown, Math.cos(an) * 0.4, 0, Math.sin(an) * 0.4, Math.sin(an) * 0.3, 0, -Math.cos(an) * 0.3);
+        part(cp, 0.1, L, 0.1, k % 2 ? vio : black, 0, L / 2, 0, k % 2 ? G() : {}); if (k % 2 === 0) part(cp, 0.06, 0.12, 0.06, vioL, 0, L + 0.05, 0, G());
+      }
+      part(crown, 0.12, 0.12, 0.12, vioL, 0, 0.42, 0, { glow: true, rx: 0.6, rz: 0.785 });
+      for (const s of [-1, 1]) {
+        const a = pivot(t, s * 0.92, 1.3, 0);
+        part(a, 0.36, 0.65, 0.4, obs, 0, -0.3, 0); part(a, 0.42, 0.24, 0.44, obsL, 0, -0.68, 0);
+        part(a, 0.42, 0.7, 0.46, obs, 0, -1.05, 0); part(a, 0.44, 0.04, 0.48, vio, 0, -0.85, 0, G());
+        part(a, 0.36, 0.26, 0.36, obsL, 0, -1.5, 0.02);
+        m.arms.push(a);
+      }
+      // langes Leerenschwert
+      m.arms[1].rotation.x = -0.25;
+      const w = m.extra.weapon = pivot(m.arms[1], 0, -1.5, 0.05), grip = steadyGrip(w, m.arms[1], -1.05), g = grip.g;
+      part(g, 0.1, 0.55, 0.1, 0x0a0810, 0, 0.12, 0); part(g, 0.16, 0.16, 0.16, vioL, 0, 0.46, 0, { glow: true, ry: 0.785 });
+      part(g, 0.85, 0.14, 0.2, obsL, 0, -0.18, 0); for (const s of [-1, 1]) part(g, 0.2, 0.3, 0.16, obsH, s * 0.45, -0.1, 0, { rz: s * 0.5 });
+      part(g, 0.28, 2.5, 0.08, black, 0, -1.5, 0);
+      for (const s of [-1, 1]) part(g, 0.05, 2.35, 0.09, vio, s * 0.14, -1.45, 0, G());
+      part(g, 0.06, 2.0, 0.09, vioL, 0, -1.35, 0, G());
+      part(g, 0.18, 0.35, 0.08, black, 0, -2.9, 0); part(g, 0.08, 0.2, 0.09, vioL, 0, -3.0, 0, G());
+      m.extra.idle = (time, dt) => {
+        crown.rotation.y += dt * 0.8;
+        cape.rotation.x = 0.1 + Math.sin(time * 1.7) * 0.05; c2.rotation.x = 0.06 + Math.sin(time * 1.7 - 0.7) * 0.08; c3.rotation.x = 0.04 + Math.sin(time * 1.7 - 1.4) * 0.12;
+        grip.tick();
+      };
+      m.extra.height = 4.95;
+      return 1.3;
+    },
+
+    /* ---- 9 · Seraphiel, die verderbte Architektin · extra: core, wings[], halo, eye, lid, orbit, weapon, float ---- */
+    seraphiel(m, root) {
+      const robe = 0xf4f0e6, robeS = 0xd8d2c4, gold = 0xe2b440, goldD = 0xa8822a, vio = 0xa050ff, vioL = 0xd8a8ff, voidC = 0x1a0c2a, mask = 0xf8f2e8, hairC = 0xf0dca8;
+      const body = m.body = pivot(root, 0, 2.75, 0), t = m.torso = pivot(body, 0, 0, 0);
+      // Gewand in Stufen mit Goldsäumen, darin violette Leerenrisse
+      part(t, 1.15, 0.55, 0.85, robe, 0, -0.2, 0); part(t, 1.05, 0.6, 0.78, robeS, 0, -0.75, 0); part(t, 0.85, 0.6, 0.62, robe, 0, -1.3, 0); part(t, 0.58, 0.5, 0.44, robeS, 0, -1.8, 0);
+      part(t, 0.3, 0.4, 0.26, gold, 0, -2.2, 0);
+      part(t, 1.18, 0.07, 0.88, gold, 0, 0.06, 0); part(t, 1.08, 0.06, 0.81, gold, 0, -0.47, 0); part(t, 0.88, 0.06, 0.65, gold, 0, -1.02, 0); part(t, 0.61, 0.06, 0.47, gold, 0, -1.57, 0);
+      part(t, 0.3, 0.45, 0.03, voidC, 0.18, -1.33, 0.316);
+      for (const [x, y, z, hh, rz] of [[0.25, -0.2, 0.43, 0.4, 0.5], [0.15, -0.72, 0.395, 0.5, -0.4], [0.32, -0.86, 0.395, 0.3, 0.6], [0.04, -1.2, 0.315, 0.4, 0.3], [0.34, -1.4, 0.318, 0.35, -0.5], [0.12, -1.75, 0.225, 0.3, -0.3], [-0.3, -0.62, 0.395, 0.3, 0.7]]) part(t, 0.035, hh, 0.02, vio, x, y, z, { glow: true, rz });
+      for (const s of [-1, 1]) part(t, 0.02, 0.45, 0.3, vio, s * 0.53, -0.8, 0.1 * s, { glow: true, rx: s * 0.5 });
+      // Oberkörper, Goldbrustplatte, Brustjuwel
+      part(t, 0.85, 0.9, 0.55, robe, 0, 0.5, 0);
+      part(t, 0.62, 0.42, 0.06, gold, 0, 0.62, 0.29);
+      for (const s of [-1, 1]) { part(t, 0.3, 0.3, 0.05, goldD, s * 0.16, 0.32, 0.285, { rz: s * 0.6 }); part(t, 0.03, 0.32, 0.02, vio, s * 0.2, 0.78, 0.33, { glow: true, rz: s * 1.0 }); }
+      m.extra.core = own(part(t, 0.2, 0.2, 0.07, vioL, 0, 0.62, 0.33, { glow: true, rz: 0.785 }));
+      for (const s of [-1, 1]) { part(t, 0.42, 0.22, 0.55, gold, s * 0.55, 0.95, 0, { rz: -s * 0.35 }); part(t, 0.1, 0.5, 0.35, goldD, s * 0.38, 1.1, -0.12); }
+      part(t, 0.75, 0.45, 0.1, gold, 0, 1.12, -0.24);
+      // Kopf: Porzellanmaske mit einem großen Auge, Goldkranz
+      const h = m.head = pivot(t, 0, 1.0, 0.02);
+      part(h, 0.18, 0.18, 0.18, mask, 0, 0.08, 0);
+      part(h, 0.52, 0.62, 0.5, mask, 0, 0.45, 0);
+      part(h, 0.56, 0.75, 0.12, hairC, 0, 0.35, -0.28); for (const s of [-1, 1]) part(h, 0.08, 0.6, 0.35, hairC, s * 0.29, 0.38, -0.06);
+      part(h, 0.58, 0.1, 0.56, gold, 0, 0.8, 0); part(h, 0.14, 0.42, 0.06, gold, 0, 1.0, 0.24);
+      for (const s of [-1, 1]) part(h, 0.06, 0.3, 0.06, gold, s * 0.22, 0.95, 0.2, { rz: -s * 0.4 });
+      part(h, 0.42, 0.26, 0.02, voidC, 0, 0.48, 0.255);
+      const eye = m.extra.eye = pivot(h, 0, 0.48, 0.262);
+      part(eye, 0.36, 0.2, 0.02, 0xfff4dc, 0, 0, 0, G()); part(eye, 0.15, 0.15, 0.02, 0xffb830, 0, 0, 0.008, G());
+      part(eye, 0.045, 0.13, 0.02, 0x2a0a40, 0, 0, 0.014); part(eye, 0.03, 0.03, 0.02, 0xffffff, 0.04, 0.04, 0.018, G());
+      const ld = m.extra.lid = lid(h, 0.44, 0.28, 0.04, gold, 0, 0.62, 0.285);
+      part(ld, 0.44, 0.025, 0.046, goldD, 0, -0.265, 0);
+      for (const [x, y, hh, rz] of [[0.22, 0.3, 0.18, 0.5], [-0.2, 0.68, 0.14, 0.6], [0.12, 0.24, 0.12, -0.4]]) part(h, 0.02, hh, 0.01, vio, x, y, 0.252, { glow: true, rz });
+      // Heiligenschein aus geometrischen Segmenten
+      const halo = m.extra.halo = pivot(h, 0, 0.78, -0.62); halo.rotation.x = -0.32;
+      for (let k = 0; k < 12; k++) { const an = k / 12 * TAU, gl = k % 3 === 0; part(halo, gl ? 0.2 : 0.36, gl ? 0.14 : 0.1, 0.06, gl ? vioL : 0xffd060, Math.cos(an) * 0.92, Math.sin(an) * 0.92, 0, { glow: true, rz: an + Math.PI / 2 }); }
+      for (let k = 0; k < 4; k++) { const an = k / 4 * TAU + Math.PI / 4; part(halo, 0.08, 0.4, 0.06, 0xffe8a0, Math.cos(an) * 1.2, Math.sin(an) * 1.2, 0, { glow: true, rz: an - Math.PI / 2 }); }
+      // drei Flügelpaare aus fächerförmigen Klingen: oben weiß-gold, Mitte hell, unten von der Leere verdorben
+      const wings = m.extra.wings = [];
+      const WING = [{ y: 0.92, rz: 0.62, sc: 1.0, c: [robe, gold, robe, robeS], tip: gold }, { y: 0.62, rz: 0.12, sc: 0.85, c: [robeS, robe, gold, robe], tip: gold }, { y: 0.32, rz: -0.42, sc: 0.72, c: [voidC, vio, voidC, 0x2e1a44], tip: vio }];
+      for (const [i, cfg] of WING.entries()) {
+        for (const s of [-1, 1]) {
+          const wp = rot(t, s * 0.26, cfg.y, -0.34, 0, s * 0.45, s * cfg.rz); wp.userData.rz = s * cfg.rz; wp.userData.s = s; wp.userData.i = i;
+          part(wp, 0.34, 0.34, 0.1, i === 2 ? voidC : gold, s * 0.12, 0, 0.02);
+          for (const [j, [L0, an]] of [[1.15, 0.38], [1.7, 0.12], [2.05, -0.14], [1.5, -0.42]].entries()) {
+            const L = L0 * cfg.sc, bp = rot(wp, 0, 0, -0.035 * j, 0, 0, s * an), gl = i === 2 && j === 1;
+            part(bp, L, 0.3, 0.05, cfg.c[j], s * (L / 2 + 0.12), 0, 0, gl ? G() : {});
+            if (j === 2) part(bp, 0.24, 0.2, 0.06, cfg.tip, s * (L + 0.22), 0, 0, Object.assign({ rz: 0.785 }, i === 2 ? G() : {}));
+          }
+          wings.push(wp);
+        }
+      }
+      // Arme in weiten Ärmeln; links ein schwebender Leerenwürfel, rechts der Lanzenstab
+      for (const s of [-1, 1]) {
+        const a = pivot(t, s * 0.58, 0.85, 0);
+        part(a, 0.3, 0.85, 0.34, robe, 0, -0.38, 0); part(a, 0.38, 0.45, 0.42, robeS, 0, -0.7, -0.02); part(a, 0.4, 0.08, 0.46, gold, 0, -0.93, -0.02); part(a, 0.16, 0.22, 0.16, mask, 0, -1.05, 0.02);
+        a.rotation.z = s * 0.1; m.arms.push(a);
+      }
+      const orb = fx(part(m.arms[0], 0.18, 0.18, 0.18, vio, 0, -1.32, 0.12, { glow: true, rx: 0.6, rz: 0.6 }));
+      const w = m.extra.weapon = pivot(m.arms[1], 0, -1.05, 0.06);
+      part(w, 0.08, 3.4, 0.08, gold, 0, 0.5, 0); part(w, 0.11, 0.3, 0.11, goldD, 0, 0, 0);
+      part(w, 0.22, 0.7, 0.06, 0xfff0c8, 0, 2.55, 0); part(w, 0.12, 0.25, 0.06, gold, 0, 2.98, 0); part(w, 0.12, 0.3, 0.1, vio, 0, 2.42, 0, G());
+      for (const s of [-1, 1]) part(w, 0.06, 0.4, 0.06, gold, s * 0.16, 2.25, 0, { rz: -s * 0.5 });
+      part(w, 0.1, 0.25, 0.1, gold, 0, -1.3, 0);
+      // umkreisende Architekturbruchstücke (Säulen, Bogensteine, Runenblöcke)
+      const orbit = m.extra.orbit = pivot(root, 0, 2.2, 0), frags = [];
+      for (let k = 0; k < 6; k++) {
+        const an = k / 6 * TAU + 0.3, fp = pivot(orbit, Math.cos(an) * 2.7, 0.3 + (k % 3) * 0.45, Math.sin(an) * 2.7), ty = k % 3; fp.rotation.set(0.2 * (k % 2 ? 1 : -1), an, 0.25);
+        if (ty === 0) { part(fp, 0.32, 1.0, 0.32, robe, 0, 0, 0); for (const y of [-0.52, 0.52]) part(fp, 0.42, 0.1, 0.42, gold, 0, y, 0); }
+        else if (ty === 1) { part(fp, 0.9, 0.22, 0.3, robeS, 0, 0, 0); part(fp, 0.24, 0.1, 0.02, vio, 0, 0, 0.16, G()); }
+        else { part(fp, 0.45, 0.45, 0.45, robeS, 0, 0, 0); part(fp, 0.47, 0.06, 0.47, gold, 0, 0.12, 0); part(fp, 0.12, 0.2, 0.02, vio, 0, -0.06, 0.235, G()); }
+        frags.push(fp);
+      }
+      fx(orbit);
+      m.extra.idle = (time, dt) => {
+        for (const wp of wings) { const u = wp.userData; wp.rotation.z = u.rz + u.s * Math.sin(time * 1.4 + u.i * 0.6) * 0.08; }
+        for (let k = 0; k < frags.length; k++) { frags[k].rotation.y += dt * (0.4 + k * 0.08); frags[k].position.y = 0.3 + (k % 3) * 0.45 + Math.sin(time * 1.2 + k) * 0.12; }
+        orb.rotation.y += dt * 2;
+      };
+      m.extra.height = 5.6; m.extra.float = true;
+      return 1.4;
+    },
+  };
+})();
+
+Models.boss2 = function (id, variant) {
+  const root = new THREE.Group(), m = { root, legs: [], arms: [], extra: {} };
+  const build = BMOD[id] || BMOD.bramblefang, r = build(m, root, variant);
+  m.shadow = Models.blobShadow(root, r || 1.4);
+  m.parts = Models.collect(root).filter(p => p !== m.shadow && !p.userData.noFlash);
+  return m;
+};
+/* =====================================================================
+   NEUE BOSSE (Stufe 40–100): Daten
+   Bosse, Arenen (eigene Instanzen mit Checkpoint), Orte in den Regionen, Unikate, Quests.
+   Logik: x_boss1_arena.js · KI und Angriffe: x_boss2_ai.js · Modelle: x_bmodels.js · Texte: lang/zz_boss.js
+   ===================================================================== */
+// Stärkestufe (1–9) und Basisstufe; ttk = angestrebte Kampfdauer in Sekunden bei passender Stufe und Ausrüstung
+// (gemessen an Referenz-Spielerwerten, siehe BOSS2_REF). Höhere Stärkestufe = deutlich mehr Leben und Druck.
+const BOSS2 = {
+  bramblefang:   { tier: 1, lvl: 40,  ttk: 80,  arena: 'brambleden',    region: 'duskwood',  radius: 1.4, speed: 3.6, model: 'bramblefang', unique: null,               elem: { fire: 1.25 } },
+  hollowwarden:  { tier: 2, lvl: 47,  ttk: 140, arena: 'hollowfields',  region: 'duskwood',  radius: 1.5, speed: 2.9, model: 'hollowwarden', unique: null,              elem: { fire: 1.3, frost: 0.9 }, solid: true },
+  twinmaids:     { tier: 3, lvl: 52,  ttk: 93,  arena: 'hiddensalon',   region: 'ehbergten', radius: 0.6, speed: 4.4, model: 'twinmaid', unique: 'zofenschwur', duo: true, elem: { void: 0.85, arcane: 1.1 } },
+  thenightmaw:   { tier: 4, lvl: 57,  ttk: 170, arena: 'nightlair',     region: 'nightmaw',  radius: 1.7, speed: 3.9, model: 'thenightmaw', unique: null,               elem: { arcane: 1.2, void: 0.7 } },
+  grandskeleton: { tier: 5, lvl: 65,  ttk: 180, arena: 'bonethrone',    region: 'undead',    radius: 1.5, speed: 2.8, model: 'grandskeleton', unique: null,             elem: { arcane: 1.5, void: 0.8 }, aoe: 1.35 },
+  phantom:       { tier: 7, lvl: 73,  ttk: 259, arena: 'parasiteheart', region: 'toxic',     radius: 1.4, speed: 2.4, model: 'phantom', unique: null,                   elem: { fire: 1.4, arcane: 1.4, void: 0.9 }, poisonHeals: true },
+  xylar:         { tier: 8, lvl: 81,  ttk: 260, arena: 'crystalsummit', region: 'aelen',     radius: 1.9, speed: 2.3, model: 'xylar', unique: 'kolossspalter',          elem: { arcane: 1.45, frost: 0.6, fire: 0.9 }, freezeMax: 0.5 },
+  voidking:      { tier: 6, lvl: 89,  ttk: 190, arena: 'voidthrone',    region: 'void',      radius: 1.3, speed: 3.6, model: 'voidking', unique: 'leerenkrone',         elem: { arcane: 1.2, void: 0.6 } },
+  seraphiel:     { tier: 9, lvl: 100, ttk: 300, arena: 'nexusheart',    region: 'nexus',     radius: 1.4, speed: 3.0, model: 'seraphiel', unique: 'architektenlanze',   elem: { arcane: 2.0, void: 0.8 }, final: true },
+};
+const BOSS2_MAXLVL = 100, BOSS2_RANKS = 5;
+// Referenzwerte eines Spielers mit passender (epischer, ausgebauter) Ausrüstung je Stufe – gemessen im Spiel
+// dps: anhaltender Schaden pro Sekunde · hp: Leben · red: Schadensminderung durch Rüstung
+const BOSS2_REF = {
+  dps: [[1, 30], [5, 80], [15, 165], [30, 295], [40, 395], [55, 574], [70, 784], [85, 1027], [100, 1303]],
+  hp:  [[1, 110], [15, 360], [30, 600], [40, 756], [55, 991], [70, 1224], [85, 1459], [100, 1693]],
+  red: [[1, 0.15], [15, 0.32], [30, 0.44], [40, 0.52], [55, 0.63], [70, 0.75], [100, 0.75]],
+};
+const bossRef = (k, L) => { const T = BOSS2_REF[k]; if (L <= T[0][0]) return T[0][1]; for (let i = 1; i < T.length; i++) if (L <= T[i][0]) { const [a, x] = T[i - 1], [b, y] = T[i]; return x + (y - x) * (L - a) / (b - a); } return T[T.length - 1][1]; };
+// Schadenseinheit: Angriffsfaktor 1,0 ≈ 12 % der Referenz-Lebenspunkte nach Rüstung
+const bossDmgUnit = L => 0.12 * bossRef('hp', L) / (1 - bossRef('red', L));
+
+// Bosse in die gemeinsame Boss-Tabelle (Namen/Titel deutsch, Englisch über das Inhaltspaket)
+Object.assign(BOSSES, {
+  bramblefang:   { name: 'Dornfang-Alpha', title: 'Leitwolf des Dornenhains', kind: 'v2', hp: 1, dmg: 1, v2: true },
+  hollowwarden:  { name: 'Der Hohle Wächter', title: 'Hüter der Hohlfelder', kind: 'v2', hp: 1, dmg: 1, v2: true },
+  twinmaids:     { name: 'Die Zwillingszofen', title: 'Ottilie & Rosalind, Dienerinnen des Prunkhauses', kind: 'v2', hp: 1, dmg: 1, v2: true },
+  thenightmaw:   { name: 'Der Urschlund', title: 'Mutter aller Schlünde', kind: 'v2', hp: 1, dmg: 1, v2: true },
+  grandskeleton: { name: 'Das Große Skelett', title: 'König unter dem Knochenthron', kind: 'v2', hp: 1, dmg: 1, v2: true },
+  phantom:       { name: 'Parasitäres Phantom', title: 'Herz der Parasitenweite', kind: 'v2', hp: 1, dmg: 1, v2: true },
+  xylar:         { name: 'Xylar, der Kristallkoloss', title: 'Wächter der Shattered Peaks', kind: 'v2', hp: 1, dmg: 1, v2: true },
+  voidking:      { name: 'Der Leerenerwachte König', title: 'Herrscher über den Thron der Leere', kind: 'v2', hp: 1, dmg: 1, v2: true },
+  seraphiel:     { name: 'Seraphiel, die verderbte Architektin', title: 'Erbauerin des Nexus', kind: 'v2', hp: 1, dmg: 1, v2: true },
+});
+// Einzelnamen der Zwillinge
+const TWIN_NAMES = { a: 'Ottilie', b: 'Rosalind' };
+
+// Arenen: eigene Instanzen (Dungeon-Welten) mit Vorraum, Checkpoint, Tür und Bossraum
+//   layout: 'gauntlet' = Vorraum → Kampfraum → Checkpoint → Bossraum · 'puzzle' = Vorraum → Rätselraum → Checkpoint → Bossraum
+//   'waves' = Wellenarena (Checkpoint am Rand), Boss nach der letzten Welle
+//   req: Stufe, Flag (Questreihe), Quest (abgeschlossen) · secret: Eingang erst sichtbar, wenn freigeschaltet
+const ARENAS = {
+  brambleden:    { boss: 'bramblefang',   name: 'Dornenhain',             region: 'duskwood',  poi: { x: 24, y: 9,  r: 5, link: 'forest' },   theme: 'ruins',   roster: 'forest',    layout: 'gauntlet', size: 22, req: { level: 40 } },
+  hollowfields:  { boss: 'hollowwarden',  name: 'Die Hohlfelder',         region: 'duskwood',  poi: { x: 36, y: 70, r: 5, link: 'fields' },   theme: 'hollow',  roster: 'forest',    layout: 'gauntlet', size: 24, req: { level: 40 } },
+  hiddensalon:   { boss: 'twinmaids',     name: 'Verborgener Salon',      region: 'ehbergten', poi: { x: 96, y: 60, r: 4, link: 'mansion' },  theme: 'mansion', roster: 'undead',    layout: 'puzzle',   size: 22, puzzle: 'leverseq', req: { level: 40, flag: 'boss_vespera' }, secret: true },
+  nightlair:     { boss: 'thenightmaw',   name: 'Schlund der Nacht',      region: 'nightmaw',  poi: { x: 92, y: 16, r: 5, link: 'den' },      theme: 'den',     roster: 'wasteland', layout: 'gauntlet', size: 24, req: { level: 40, flag: 'lairOpen' } },
+  bonethrone:    { boss: 'grandskeleton', name: 'Der Knochenthron',       region: 'undead',    poi: { x: 68, y: 70, r: 5, link: 'cemetery' }, theme: 'crypt',   roster: 'undead',    layout: 'gauntlet', size: 24, req: { level: 40 } },
+  parasiteheart: { boss: 'phantom',       name: 'Parasitenherz',          region: 'toxic',     poi: { x: 26, y: 46, r: 5, link: 'expanse' },  theme: 'hive',    roster: 'toxic',     layout: 'gauntlet', size: 24, req: { level: 40 } },
+  crystalsummit: { boss: 'xylar',         name: 'Kristallgipfel',         region: 'aelen',     poi: { x: 84, y: 14, r: 5, link: 'peaks' },    theme: 'summit',  roster: 'mountain',  layout: 'gauntlet', size: 24, req: { level: 40 } },
+  voidthrone:    { boss: 'voidking',      name: 'Thron der Leere',        region: 'void',      poi: { x: 64, y: 80, r: 5, link: 'hideout' },  theme: 'arena',   roster: 'void',      layout: 'waves',    waves: 6, req: { level: 40 } },
+  nexusheart:    { boss: 'seraphiel',     name: 'Herz des Nexus',         region: 'nexus',     poi: { x: 90, y: 56, r: 5, link: 'nexus' },    theme: 'heart',   roster: 'astral',    layout: 'gauntlet', size: 26, req: { level: 40, quest: 'm19' } },
+};
+// Eigene Farbstimmungen für einige Arenen (abgeleitet aus bestehenden Dungeon-Themen)
+THEMES.hollow = Object.assign({}, THEMES.ruins, { floor: [0x6a5a34, 0x5e5030, 0x74643a, 0x56482a], wallTop: [0x8a6a2a, 0x7a5c24], accent: 0xff9a30, torch: 0xff8a20 });
+THEMES.summit = Object.assign({}, THEMES.crystal, { accent: 0x9fe0ff, torch: 0x7fd8ff });
+THEMES.heart = Object.assign({}, THEMES.nexus, { accent: 0xffd27a, torch: 0xffe0a0 });
+
+// Arenen als Dungeons registrieren (Eingang, Karte, Teleport, Entdeckt-Status, Spielerstandort nutzen dieselben Wege)
+for (const id in ARENAS) {
+  const A = ARENAS[id], B = BOSS2[A.boss];
+  DUNGEONS[id] = { name: A.name, region: A.region, theme: A.theme, roster: A.roster, lvl: B.lvl, rooms: 4, boss: A.boss, mini: null, puzzles: A.puzzle ? [A.puzzle] : [], arena2: true, arenaDef: A,
+    arena: A.layout === 'waves', waves: A.waves || 0 };
+  // Ort in der Region: Eingang mit Verbindung zum benachbarten Ort (wird nach der übrigen Zonen-Erzeugung eingefügt)
+  const P = { x: A.poi.x, y: A.poi.y, r: A.poi.r, name: A.name, dungeon: id, arena: true, link: A.poi.link };
+  // geheime Arenen erscheinen erst nach der Freischaltung in den Ortslisten (Karte, Navigation, Befehle)
+  Object.defineProperty(REGIONS[A.region].pois, id, { value: P, enumerable: !A.secret, configurable: true, writable: true });
+}
+
+// Neue Unikate
+Object.assign(UNIQUES, {
+  zofenschwur:      { slot: 'cape', type: 'shadow', name: 'Zofenschwur', desc: 'Nach einer Ausweichrolle verursacht der nächste Treffer +60% Schaden.', src: 'Die Zwillingszofen' },
+  kolossspalter:    { slot: 'melee', type: 'warhammer', name: 'Kolossspalter', desc: 'Jeder dritte Treffer entlädt einen Kristallblitz (Arkan-Schaden im Umkreis).', src: 'Xylar, der Kristallkoloss' },
+  leerenkrone:      { slot: 'helm', type: 'circlet', name: 'Leerenkrone', desc: '+15% Schaden gegen Bosse, 10% weniger Schaden durch Bosse.', src: 'Der Leerenerwachte König' },
+  architektenlanze: { slot: 'melee', type: 'spear', name: 'Lanze der Architektin', desc: 'Arkane Zauber verursachen +30% Schaden und treffen mit 15% Chance doppelt.', src: 'Seraphiel, die verderbte Architektin' },
+});
+
+// Questreihe nach Orin: die sieben Siegel → Seraphiel; Nebenreihe zum Schlund der Nacht (The Nightmaw)
+const SEAL_BOSSES = ['bramblefang', 'hollowwarden', 'thenightmaw', 'grandskeleton', 'phantom', 'xylar', 'voidking'];
+const BOSS2_QUESTS = [
+  Q({ id: 'm19', type: 'main', act: 'Epilog', name: 'Das schlafende Auge', giver: 'seraphine', req: ['m18'], region: 'nexus', lvl: 40,
+      desc: 'Orin ist gefallen – doch im Herz des Nexus regt sich Seraphiel, die verderbte Architektin. Sieben Siegel halten ihren Schlaf.',
+      offer: [['seraphine', 'Spürst du es? Der Nexus atmet noch. Unter dem Thron, auf dem Orin saß, schläft seine Erbauerin: Seraphiel.'],
+        ['seraphine', 'Sie hat die Sterne vermessen, bevor wir Wächter waren. Die Leere hat sie verdorben. Orins Fall weckt sie.'],
+        ['seraphine', 'Sieben Wächter tragen ihre Siegel – in den Wäldern, den Feldern, den Gruften, auf den Gipfeln. Erst wenn sie fallen, öffnet sich ihr Herz.'],
+        ['seraphine', 'Sie sind stärker als alles, dem du bisher begegnet bist. Werde stärker – ab Stufe 40 kannst du ihnen entgegentreten.']],
+      obj: [{ t: 'bossset', bosses: SEAL_BOSSES, n: SEAL_BOSSES.length, text: 'Brich die sieben Siegel (besiege ihre Wächter)' }],
+      done: [['seraphine', 'Alle sieben Siegel sind gebrochen. Das Herz des Nexus steht offen.'], ['seraphine', 'Sie wird erwachen, sobald du sie berührst. Bereite dich vor.']],
+      reward: { xp: 60000, gems: 2500 } }),
+  Q({ id: 'm20', type: 'main', act: 'Epilog', name: 'Die verderbte Architektin', giver: 'seraphine', req: ['m19'], region: 'nexus', lvl: 100,
+      desc: 'Betritt das Herz des Nexus und stelle dich Seraphiel.',
+      offer: [['seraphine', 'Sie ist der letzte Schatten über dieser Welt. Ihre Lanzen folgen dir – weiche im richtigen Moment aus, dann verpuffen sie.'], ['seraphine', 'Arkane Magie verletzt sie am stärksten. Geh, Sternenkind.']],
+      obj: [{ t: 'boss', boss: 'seraphiel', text: 'Besiege Seraphiel, die verderbte Architektin' }],
+      done: [['seraphine', 'Ihr Auge hat sich geschlossen – für immer.'], ['seraphine', 'Der Nexus schweigt. Zum ersten Mal seit Äonen ist der Himmel wirklich frei.']],
+      reward: { xp: 200000, gems: 8000, flag: 'gameWon' } }),
+  Q({ id: 'n1', name: 'Spuren im Staub', giver: 'brann', req: ['m19'], region: 'nightmaw', lvl: 40,
+      desc: 'Brann hat gewaltige Pfotenabdrücke gefunden, größer als die des Nachtschlunds. Dünne die Rudel in der Ödnis aus, die vor etwas fliehen.',
+      offer: [['brann', 'Hast du die Spuren gesehen? Größer als alles, was der Nachtschlund je hinterlassen hat.'], ['brann', 'Die Rudel fliehen nach Westen. Treib sie zurück, dann sehen wir, wovor sie Angst haben.']],
+      obj: [{ t: 'kill', region: 'nightmaw', n: 15, text: 'Besiege Gegner in Nightmaw\'s Den' }],
+      done: [['brann', 'Gut. Hörst du das? Das Heulen kommt aus dem Nordosten – aus einem Schlund, den keine Karte kennt.']],
+      reward: { xp: 9000, gems: 400 } }),
+  Q({ id: 'n2', name: 'Das Heulen der Tiefe', giver: 'brann', req: ['n1'], region: 'nightmaw', lvl: 40,
+      desc: 'Folge dem Heulen bis zum Schlund der Nacht im Nordosten und berichte Brann.',
+      offer: [['brann', 'Folge dem Heulen. Wenn du den Schlund findest, komm zurück – ich habe einen Schlüssel aus der alten Wacht, der ihn öffnen könnte.']],
+      obj: [{ t: 'reach', region: 'nightmaw', poi: 'nightlair', text: 'Finde den Schlund der Nacht' }],
+      done: [['brann', 'Ein Schlund, so tief, dass kein Licht zurückkommt. Nimm den Wachtschlüssel – und nimm dich in Acht. Was dort haust, ist der Urahn aller Schlünde.']],
+      reward: { xp: 6000, gems: 300, flag: 'lairOpen' } }),
+];
+for (const q of BOSS2_QUESTS) { QUESTS.push(q); QUEST_BY_ID[q.id] = q; }
+// Orin ist nicht mehr der letzte Kampf: sein Fall öffnet die neuen Weltstufen, der Abspann folgt nach Seraphiel
+QUEST_BY_ID.m18.reward.flag = 'orinDown';
+
+// Musik: eigenes Thema für Seraphiel (zwei Phasen)
+Music.tracks.bossSeraphiel = { root: 47, bpm: 132, prog: [[0, 'm'], [3, 'M'], [8, 'M'], [1, 'M'], [0, 'm'], [10, 'M'], [5, 'm'], [7, 'M']], scale: [0, 2, 3, 6, 7, 11], bass: [0, 3, 7, 10, 12, 15], arp: 0.9, drums: 2, lead: 'sawtooth', pad: 'sawtooth', boss: true, bell: true };
+Music.tracks.bossSeraphiel2 = { root: 47, bpm: 160, prog: [[0, 'm'], [1, 'M'], [0, 'm'], [6, 'M'], [3, 'M'], [8, 'M'], [10, 'M'], [11, 'M']], scale: [0, 1, 3, 6, 7, 10], bass: [0, 2, 4, 6, 8, 10, 12, 14], arp: 1, drums: 3, lead: 'sawtooth', pad: 'square', boss: true, bell: true };
+/* =====================================================================
+   NEUE BOSSE: Arenen, Freischaltung, Stufen, Belohnungen, Revanche, Story
+   ===================================================================== */
+THEMES.hollow.id = 'hollow'; THEMES.summit.id = 'summit'; THEMES.heart.id = 'heart';
+
+const Arenas = {
+  // Kampfstufe eines neuen Bosses: Basisstufe, bei höherer Spielerstufe mitwachsend, plus Weltstufe (höchstens 100)
+  bossLevel(bossId) {
+    const B = BOSS2[bossId], D = Profile.data, pl = D ? D.level : 1, T = WORLD_TIERS[Game.tier] || WORLD_TIERS[0];
+    return clamp(Math.max(B.lvl, pl) + T.lvl, B.lvl, BOSS2_MAXLVL);
+  },
+  ranks() { const D = Profile.data; if (!D) return {}; if (!D.bossRank || typeof D.bossRank !== 'object') D.bossRank = {}; return D.bossRank; },
+  // höchster besiegter Revanche-Rang (−1 = noch nie besiegt)
+  bestRank(bossId) { const D = Profile.data, r = this.ranks()[bossId]; return D && D.flags['boss_' + bossId] ? (r == null ? 0 : r) : -1; },
+  defeated(bossId) { const D = Profile.data; return !!(D && D.flags['boss_' + bossId]); },
+  // Gründe, warum eine Arena gesperrt ist (leer = offen)
+  lockReasons(id) {
+    const A = ARENAS[id], D = Profile.data, out = []; if (!A || !D) return out; const r = A.req || {};
+    if (r.level && D.level < r.level) out.push(t('arena.lock.level', { n: r.level }));
+    if (r.flag && !D.flags[r.flag]) {
+      if (r.flag === 'boss_vespera') out.push(t('arena.lock.vespera'));
+      else { const q = QUESTS.find(qq => qq.reward && qq.reward.flag === r.flag); out.push(q ? t('map.lock.quest', { quest: q.name }) : t('map.lock.story')); }
+    }
+    if (r.quest && !Quests.isDone(r.quest)) {
+      if (r.quest === 'm19') out.push(t('arena.lock.seals', { n: SEAL_BOSSES.filter(b => D.flags['boss_' + b]).length, max: SEAL_BOSSES.length }));
+      else out.push(t('map.lock.quest', { quest: QUEST_BY_ID[r.quest].name }));
+    }
+    return out;
+  },
+  locked(id) { return this.lockReasons(id).length > 0; },
+  // geheime Arena: Eingang erst sichtbar, wenn die Bedingungen erfüllt sind (oder bereits einmal betreten/besiegt)
+  visible(id) { const A = ARENAS[id]; if (!A || !A.secret) return true; const D = Profile.data; if (!D) return false; return !this.locked(id) || this.defeated(A.boss) || !!(D.discovered && D.discovered.dungeons[id]); },
+  // Sichtbarkeit geheimer Orte in den Ortslisten (Karte, Navigation, Befehle) an den Spielstand anpassen
+  syncHidden() {
+    for (const id in ARENAS) {
+      const A = ARENAS[id]; if (!A.secret) continue; const pois = REGIONS[A.region].pois, v = this.visible(id), d = Object.getOwnPropertyDescriptor(pois, id);
+      if (d && d.enumerable !== v) Object.defineProperty(pois, id, { value: d.value, enumerable: v, configurable: true, writable: true });
+    }
+  },
+  // Eingang betreten: bei besiegtem Boss Revanche-Rang wählen
+  async enter(id, ret) {
+    const A = ARENAS[id], best = this.bestRank(A.boss);
+    let rank = 0;
+    if (best >= 0) {
+      const btn = [{ label: t('arena.rank0'), value: 0 }];
+      if (best >= 1) btn.push({ label: t('arena.rankN', { n: best }), value: best });
+      if (best < BOSS2_RANKS) btn.push({ label: t('arena.rankNext', { n: best + 1 }), value: best + 1, cls: 'gold' });
+      btn.push({ label: t('arena.cancel'), value: 'x', back: true });
+      const html = `<div class="note">${escapeHtml(t('arena.rematchText', { boss: BOSSES[A.boss].name }))}</div><div class="note">${escapeHtml(t('arena.rankInfo'))}</div>`;
+      this.choosing = true;
+      let v = 'x'; try { v = await Modal.show(t('arena.rematchTitle'), html, btn); } catch (e) { v = 'x'; }
+      this.choosing = false;
+      if (v === 'x' || v == null || !Game.inGame() || Game.state !== 'play') return;
+      rank = +v;
+    }
+    Game.arenaRun = { id, rank, checkpoint: false };
+    Game.enterDungeon(id, ret);
+  },
+  // Belohnungsseltenheiten je Stärkestufe (garantierte Beute)
+  lootPlan(tier, rank) {
+    const base = tier <= 2 ? [2, 1] : tier <= 5 ? [2, 2, 1] : tier <= 8 ? [3, 2, 2] : [3, 3, 2, 2];
+    const extra = []; for (let k = 0; k < Math.floor(rank / 2); k++) extra.push(2);
+    return base.concat(extra);
+  },
+};
+
+/* ---------------- Eingänge in den Zonen ---------------- */
+const ArenaZone = {
+  // Land um den Eingang und eine Verbindung zum benachbarten Ort freilegen (nach der übrigen Erzeugung, ohne Zufall)
+  layout(L, R0) {
+    L.arenas = [];
+    const W = L.W, H = L.H, I = (x, y) => y * W + x, inb = (x, y) => x >= 1 && y >= 1 && x < W - 1 && y < H - 1;
+    const carve = (x, y, keep) => { if (!inb(x, y)) return; const i = I(x, y); L.tiles[i] = 1; L.bridge[i] = 0; if (keep) L.keep[i] = 1; };
+    for (const k of Object.getOwnPropertyNames(R0.pois)) {
+      const P = R0.pois[k]; if (!P || !P.arena) continue;
+      const cx = P.x + 0.5, cz = P.y + 0.5, par = L.poi[P.link] || L.start, rr = P.r + 2;
+      for (let y = Math.floor(cz - rr); y <= Math.ceil(cz + rr); y++) for (let x = Math.floor(cx - rr); x <= Math.ceil(cx + rr); x++) if (dist(x + 0.5, y + 0.5, cx, cz) < rr) carve(x, y, true);
+      const n = Math.ceil(dist(cx, cz, par.x, par.z) * 2);
+      for (let s = 0; s <= n; s++) {
+        const tt = s / n, x = Math.floor(lerp(cx, par.x, tt)), z = Math.floor(lerp(cz, par.z, tt));
+        for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) carve(x + dx, z + dz, false);
+        if (inb(x, z) && dist(x + 0.5, z + 0.5, par.x, par.z) > (par.r || 4) * 0.7 && dist(x + 0.5, z + 0.5, cx, cz) > 1.5) L.path[I(x, z)] = 1;
+      }
+      L.poi[k] = Object.assign({ id: k }, P, { x: cx, z: cz });
+      L.arenas.push(k);
+    }
+  },
+  build(w, L) {
+    for (const k of L.arenas || []) { const P = L.poi[k]; const e = new ArenaEntrance(w, P.x, P.z, P.dungeon); w.entrances.push(e); }
+  },
+};
+// Eingang einer Boss-Arena: gesperrt (rot, mit Grund) oder offen; geheime Eingänge bleiben bis zur Freischaltung unsichtbar
+class ArenaEntrance extends Entrance {
+  constructor(world, x, z, id) {
+    super(world, x, z, id, 0);
+    this.arenaId = id; this.vis = null; this.lk = null;
+    this.matOpen = R.glow(0xffc04a); this.matLock = R.glow(0xd04a3a);
+    // Bosszeichen über dem Tor
+    this.sign = part(this.g, 0.7, 0.7, 0.12, 0xffd27a, 0, 3.25, 0.42, { glow: true }); this.sign.rotation.z = Math.PI / 4;
+    this.look(true);
+  }
+  locked() { return Arenas.locked(this.arenaId); }
+  look(force) {
+    const v = Arenas.visible(this.arenaId), l = this.locked();
+    if (!force && v === this.vis && l === this.lk) return;
+    this.vis = v; this.lk = l; this.g.visible = v; this.rune.material = l ? this.matLock : this.matOpen; this.sign.visible = !l;
+  }
+  update(dt) {
+    this.cool -= dt; this.look(); const p = Game.player;
+    if (!this.vis || !p || p.dead || this.cool > 0 || Game.state !== 'play' || Arenas.choosing) return;
+    if (dist2(p.x, p.z, this.x, this.z) < 1.0) {
+      this.cool = 2.5;
+      if (this.locked()) { UI.banner(t('arena.sealed', { name: DUNGEONS[this.arenaId].name }), Arenas.lockReasons(this.arenaId).join(' · '), 3); AudioSys.play('error'); p.kvz += 4; return; }
+      Arenas.enter(this.arenaId, { x: this.x, z: this.z + 2.2 });
+    }
+  }
+}
+
+/* ---------------- Instanzen: Vorraum → Kampf/Rätsel → Checkpoint → Bossraum ---------------- */
+const ArenaGen = {
+  generate(id, tier) {
+    const D = DUNGEONS[id], A = D.arenaDef;
+    if (A.layout === 'waves') return this.waves(id, tier);
+    const B = THEMES[D.theme], rng = new RNG(strHash('arena2:' + id)), S = A.size || 24;
+    const types = A.layout === 'puzzle' ? ['start', 'puzzle', 'antechamber', 'boss'] : ['start', 'combat', 'antechamber', 'boss'];
+    const dims = { start: [11, 11], combat: [16, 15], puzzle: [16, 16], antechamber: [11, 10], boss: [S, S] }, gap = 6;
+    let W = 6; for (const ty of types) W += dims[ty][0] + gap; const H = S + 8;
+    const world = new World(W, H, B, 'dungeon'); world.dungeon = id; world.def = D; world.isDungeon = true; world.isArena2 = true;
+    const lvl = Arenas.bossLevel(D.boss), cz = Math.floor(H / 2); let x = 3;
+    types.forEach((type, idx) => {
+      const [w, h] = dims[type], y = Math.floor(cz - h / 2);
+      const room = { id: idx, x, y, w, h, cx: x + w / 2, cz: y + h / 2, type, main: true, cell: { gx: idx, gy: 0, idx, main: true }, progress: idx / 3, level: type === 'boss' ? lvl : Math.max(1, lvl - 2),
+        doors: [], state: 'idle', cleared: !['combat', 'boss'].includes(type), visited: false, waves: 0, wave: 0, enemies: [] };
+      world.rooms.push(room);
+      for (let yy = y; yy < y + h; yy++) for (let xx = x; xx < x + w; xx++) { world.tiles[world.i(xx, yy)] = 1; world.roomOf[world.i(xx, yy)] = idx; }
+      if (type !== 'puzzle') { const mx = Math.floor(x + w / 2), my = Math.floor(y + h / 2); for (let yy = y; yy < y + h; yy++) for (let o = -1; o <= 1; o++) world.reserved[world.i(mx + o, yy)] = 1; for (let xx = x; xx < x + w; xx++) for (let o = -1; o <= 1; o++) world.reserved[world.i(xx, my + o)] = 1; }
+      x += w + gap;
+    });
+    // gerade Gänge (3 breit) zwischen den Räumen
+    for (let i = 1; i < world.rooms.length; i++) { const a = world.rooms[i - 1], b = world.rooms[i]; for (let xx = a.x + a.w; xx < b.x; xx++) for (let o = -1; o <= 1; o++) { const k = world.i(xx, cz + o); if (world.tiles[k] === 0) world.tiles[k] = 1; } }
+    DungeonGen.findDoors(world, new Set());
+    for (const room of world.rooms) if (room.type === 'puzzle') room.pzDef = { id: id + '_pz', type: A.puzzle, reward: 'door' };
+    for (const room of world.rooms) { if (room.type === 'antechamber') this.antechamber(world, room); else DungeonGen.furnish(world, room, rng); }
+    this.bossRoomDeco(world, world.rooms[3]);
+    world.build(rng);
+    world.startRoom = world.rooms[0]; world.bossRoom = world.rooms[3]; world.antechamber = world.rooms[2];
+    world.spawn = { x: world.startRoom.cx, z: world.startRoom.cz + 1.5 };
+    // Neuversuch nach dem Tod: direkt am Checkpoint, Kampf- und Rätselraum bleiben erledigt, der Boss startet neu
+    const run = Game.arenaRun;
+    if (run && run.id === id && run.checkpoint) {
+      for (const r of world.rooms.slice(0, 3)) { r.cleared = true; r.state = 'done'; r.visited = true; world.revealRoom(r); }
+      world.spawn = { x: world.antechamber.cx, z: world.antechamber.cz + 1.5 }; if (world.checkpoint) world.checkpoint.on = true;
+    }
+    return world;
+  },
+  // Wellenarena (Thron der Leere): Checkpoint ist erreicht, sobald der Boss erscheint
+  waves(id, tier) {
+    const w = DungeonGen.arena(id, tier), room = w.startRoom; w.isArena2 = true;
+    room.level = Math.max(1, Arenas.bossLevel(DUNGEONS[id].boss) - 3);
+    return w;
+  },
+  antechamber(world, room) {
+    const B = world.B;
+    world.addBrazier(room.x + 1.5, room.y + 1.5, B.torch); world.addBrazier(room.x + room.w - 1.5, room.y + 1.5, B.torch);
+    world.addBrazier(room.x + 1.5, room.y + room.h - 1.5, B.torch); world.addBrazier(room.x + room.w - 1.5, room.y + room.h - 1.5, B.torch);
+    // Checkpoint-Stein: beim Betreten aktiviert – nach einem Tod beginnt der Bosskampf hier neu
+    const g = new THREE.Group(), cx = room.cx, cz = room.cz - 1.6;
+    part(g, 1.3, 0.3, 1.3, shade(B.stone[0], 0.8), 0, 0.15, 0); part(g, 0.6, 1.8, 0.6, shade(B.stone[0], 0.9), 0, 1.2, 0);
+    const crystal = part(g, 0.42, 0.7, 0.42, 0x7affe0, 0, 2.5, 0, { glow: true }); crystal.rotation.y = Math.PI / 4;
+    const ring = part(g, 2.2, 0.04, 2.2, 0x7affe0, 0, 0.03, 0, { glow: true, opacity: 0.35 });
+    g.position.set(cx, 0, cz); world.group.add(g); world.setBlock(Math.floor(cx), Math.floor(cz), 2);
+    world.torches.push({ x: cx, y: 2.5, z: cz, color: 0x7affe0, seed: cx, i: 0.9, dist: 6 });
+    const cp = world.checkpoint = { x: cx, z: cz, on: false, room };
+    let tt = 0;
+    world.updaters.push(dt => {
+      tt += dt; crystal.position.y = 2.5 + Math.sin(tt * 2) * 0.12; crystal.rotation.y += dt * (cp.on ? 2.5 : 0.6); ring.visible = cp.on;
+      const P = Game.player;
+      if (!cp.on && P && !P.dead && dist2(P.x, P.z, cx, cz) < 9) {
+        cp.on = true; if (Game.arenaRun) Game.arenaRun.checkpoint = true;
+        P.hp = P.maxHp; P.mana = P.maxMana; UI.toast(t('arena.checkpoint'), '#7affe0'); AudioSys.play('portal');
+        Particles.burst(cx, 2.4, cz, { n: 30, colors: [0x7affe0, 0xffffff], speed: 4, up: 3 });
+      }
+      return true;
+    });
+  },
+  bossRoomDeco(world, room) {
+    const B = world.B, r = () => Math.random();
+    // Leuchtende Bodenrunen markieren die Arena
+    for (let k = 0; k < 10; k++) { const a = k / 10 * TAU, rr = room.w * 0.36; world.bGlow.add(room.cx + Math.cos(a) * rr, 0.03, room.cz + Math.sin(a) * rr, 0.5, 0.04, 0.5, B.accent, a); }
+    void r;
+  },
+};
+
+/* ---------------- Ablauf im Spiel: Boss erscheinen lassen, Wellen, Neuversuch ---------------- */
+(() => {
+  const G = Game;
+  const _enc = G.updateEncounter, _start = G.startEncounter, _arena = G.updateArena, _leave = G.leaveDungeon, _go = G.renderGameOver, _def = G.onBossDefeated, _up = G.update;
+  G.startEncounter = function (room) {
+    _start.call(this, room);
+    const D = DUNGEONS[this.world.dungeon];
+    if (D && D.arena2 && room.type === 'boss') { room.spawnT = 1.4; if (D.boss === 'seraphiel') Music.play('bossSeraphiel'); }
+  };
+  G.updateEncounter = function (dt) {
+    const room = this.encounter, D = this.world && DUNGEONS[this.world.dungeon];
+    if (room && D && D.arena2 && room.type === 'boss' && !room.bossSpawned) {
+      room.spawnT -= dt; if (room.spawnT <= 0) { room.bossSpawned = true; Boss2.spawn(D.boss, room, room.cx, room.cz - 2); }
+      return;
+    }
+    return _enc.call(this, dt);
+  };
+  // Wellenarena der neuen Bosse: Wellen mit Gegnern der Arena-Stufe, danach der Boss
+  G.updateArena = function (dt) {
+    const w = this.world, D = DUNGEONS[w.dungeon];
+    if (!D || !D.arena2) return _arena.call(this, dt);
+    const room = w.startRoom, P = this.player; if (room.cleared) return;
+    const run = this.arenaRun;
+    if (room.state === 'idle') {
+      if (dist(P.x, P.z, room.cx, room.cz) < 9) {
+        room.state = 'active'; room.wave = run && run.checkpoint ? D.waves : 0; room.nextT = 1.5; this.encounter = room;
+        UI.banner(DUNGEONS[w.dungeon].name.toUpperCase(), run && run.checkpoint ? t('arena.wavesSkipped') : t('game.arena.sub', { n: D.waves }), 2.6); Music.play('boss'); AudioSys.play('boss');
+      }
+      return;
+    }
+    const alive = this.enemies.filter(e => !e.dead && e.room === room).length;
+    if (!room.bossSpawned) {
+      if (alive === 0) { room.nextT -= dt; if (room.nextT <= 0) {
+        if (room.wave < D.waves) {
+          room.wave++; const n = 4 + room.wave + this.tier;
+          for (let k = 0; k < n; k++) { const g = pick(w.spawnGates), p = w.freeNear(g.x, g.z, 2.5, Math.random); this.spawnEnemy(this.pickArch(), p.x, p.z, room.level + Math.floor(room.wave / 3), { active: true, room, spawnFx: true, elite: chance(0.18 + room.wave * 0.03) }); }
+          AudioSys.play('spawn'); UI.banner(t('game.wave.banner', { n: room.wave, max: D.waves }), '', 1.3); room.nextT = 1.2;
+        } else {
+          room.bossSpawned = true; if (run) run.checkpoint = true; // ab hier beginnt ein Neuversuch direkt beim Boss
+          Boss2.spawn(D.boss, room, room.cx, room.cz - 2);
+        }
+      } }
+    } else if (room.bossDead) { for (const e of room.enemies) if (!e.dead) Combat.damageEnemy(e, e.hp + 1, { cmd: true }); room.cleared = true; this.encounter = null; UI.hideBoss();
+      const pt = new Portal(w, room.cx, room.cz - 4, true, () => this.leaveDungeon(), 0x7affe0); w.portals.push(pt); }
+  };
+  G.leaveDungeon = function (full) { this.arenaRun = null; return _leave.call(this, full); };
+  G.renderGameOver = function () {
+    _go.call(this);
+    const w = this.world, D = w && w.isDungeon && DUNGEONS[w.dungeon];
+    if (D && D.arena2) $('btnRetry').textContent = this.arenaRun && this.arenaRun.checkpoint ? t('arena.retryCheckpoint') : t('arena.retry');
+    else $('btnRetry').textContent = t('html.go.retry');
+  };
+  // Belohnungen der neuen Bosse (alte Bosse unverändert)
+  G.onBossDefeated = function (e) {
+    if (!e.v2) return _def.call(this, e);
+    return Boss2Rewards.grant(e);
+  };
+  // geheime Orte regelmäßig mit dem Spielstand abgleichen
+  let syncT = 0;
+  G.update = function (dt, realDt) { syncT -= realDt || dt; if (syncT <= 0) { syncT = 1; try { Arenas.syncHidden(); } catch (er) { DebugLog.add('arena', 'Sichtbarkeit geheimer Orte', er); } } return _up.call(this, dt, realDt); };
+  // Karte: Sperrgrund der Arenen
+  const _lock = WorldMap.dungeonLock;
+  WorldMap.dungeonLock = function (dg) { const D = DUNGEONS[dg]; if (D && D.arena2) { const r = Arenas.lockReasons(dg); return r.length ? r.join(' · ') : null; } return _lock.call(this, dg); };
+})();
+
+/* ---------------- Belohnungen ---------------- */
+const Boss2Rewards = {
+  grant(e) {
+    const G = Game, P = G.player, D = Profile.data, T = WORLD_TIERS[G.tier], id = e.bossId, B = BOSS2[id], run = G.arenaRun, rank = e.rank || 0;
+    Shake.add(0.9); G.slowMo = 1.4; if (e.room) e.room.bossDead = true;
+    for (const m of G.enemies) if (m.bossMinion && !m.dead) Combat.damageEnemy(m, m.hp + 1, { cmd: true });
+    const first = !D.flags['boss_' + id], L = e.level;
+    // garantierte Beute je Stärkestufe (Seltenheit), Stufe = Kampfstufe
+    Arenas.lootPlan(B.tier, rank).forEach((minR, k) => G.dropItem(e.x + rand(-1, 1), e.z + rand(-1, 1), Loot.random(L + 1, P.luck, { bonus: 2.2 + T.loot + rank * 0.4, minRarity: minR })));
+    if (B.unique && (first || chance(0.1 + rank * 0.04))) G.dropItem(e.x, e.z, Loot.unique(B.unique, L + 2));
+    G.dropGems(e.x, e.z, Math.round(randi(120, 180) * (1 + L / 25) * (first ? 1 : 0.6) * (1 + rank * 0.25)));
+    Loot.addShards(Loot.bossShards(e, G.tier) + Math.floor(B.tier / 3) + rank);
+    for (let k = 0; k < 3; k++) Pickups.spawn('food', e.x, e.z); Pickups.spawn('arrows', e.x, e.z, { n: 15 }); Pickups.spawn('mana', e.x, e.z);
+    const xp = Math.round(xpNeed(Math.min(L, MAX_LEVEL - 1)) * (first ? 1.25 : 0.35 + rank * 0.1));
+    G.addXp(xp * G.tierXp);
+    D.flags['boss_' + id] = true; D.stats.bosses++;
+    const R = Arenas.ranks(); R[id] = Math.max(R[id] == null ? 0 : R[id], rank);
+    if (id === 'twinmaids') { Save.mark('secrets', 'ehbergten_twins'); Discover.markDungeon(D, B.arena); }
+    Quests.event('boss', id);
+    UI.banner(t('game.banner.bossDefeated'), BOSSES[id].name + (rank ? ' · ' + t('arena.rankShort', { n: rank }) : ''), 3.2); Music.play('victory');
+    if (run) run.checkpoint = false;
+    Profile.save(true);
+    if (id === 'seraphiel') { setTimeout(() => Boss2Story.seraphielDown(e), 2600); return; }
+    const did = G.world.dungeon; setTimeout(() => { if (G.world && G.world.dungeon === did) G.showVictory(e); }, 2600);
+  },
+};
+
+/* ---------------- Story: Orin → Seraphiel ---------------- */
+const Boss2Story = {
+  // nach Orins Sieg: kein Abspann mehr, sondern Weltstufen frei und Seraphiel regt sich
+  orinDown() {
+    const D = Profile.data; if (!D || D.flags.orinDownSeen) return;
+    D.flags.orinDown = true; D.flags.orinDownSeen = true; D.maxTier = Math.max(D.maxTier || 0, 2); Profile.save(true);
+    UI.toast(t('game.toast.newTiers'), '#ffd060');
+    Dialog.story([['n', () => t('boss2.story.orin1')], ['n', () => t('boss2.story.orin2')], ['seraphine', () => t('boss2.story.orin3')]], () => { Dialog.close(); UI.toast(t('boss2.story.toastM19'), '#ffd27a'); }, 'seraphine');
+  },
+  // Seraphiel erwacht beim ersten Treffer
+  awaken(b) {
+    Music.play('bossSeraphiel'); UI.banner(BOSSES.seraphiel.name.toUpperCase(), t('boss2.seraphiel.awake'), 3);
+    Dialog.story([['n', () => t('boss2.story.wake1')], ['n', () => t('boss2.story.wake2')]], () => { Dialog.close(); b.awake = true; }, 'seraphine');
+  },
+  seraphielDown(e) {
+    const D = Profile.data; D.flags.seraphielDown = true; Profile.save(true);
+    Dialog.story([['n', () => t('boss2.story.end1')], ['n', () => t('boss2.story.end2')], ['seraphine', () => t('boss2.story.end3')]], () => {
+      Dialog.close();
+      if (Quests.isActive('m20')) { const s = Quests.S.m20; if (s.st === 'active') Quests.advance('m20'); if (Quests.S.m20 && Quests.S.m20.st === 'ready') Quests.complete('m20'); }
+      else if (Game.world && Game.world.isDungeon) Game.showVictory(e);
+    }, 'seraphine');
+  },
+};
+(() => {
+  const G = Game, _fin = G.finale, _credits = G.renderCredits;
+  // Orins Sieg: Questabschluss wie bisher, danach Seraphiel statt Abspann
+  G.finale = function () {
+    const q = QUEST_BY_ID.m18;
+    Dialog.story([['n', () => t('game.finale.line')]].concat(q.done || []), () => { Dialog.close(); if (Quests.isActive('m18')) Quests.complete('m18'); Boss2Story.orinDown(); }, 'seraphine');
+    void _fin;
+  };
+  // Abspann nach Seraphiel: neuer Epilog vor dem bisherigen
+  G.renderCredits = function () {
+    _credits.call(this);
+    const D = Profile.data; if (!D || !D.flags.seraphielDown) return;
+    const ps = [t('boss2.epilogue1'), t('boss2.epilogue2')].map(p => `<p style="margin:0 0 12px">${escapeHtml(p)}</p>`).join('');
+    $('creditText').innerHTML = ps + $('creditText').innerHTML;
+  };
+  // Quest m18 abgeschlossen (auch über Befehle): Seraphiel-Kapitel einleiten
+  const _complete = Quests.complete;
+  Quests.complete = function (id) { const r = _complete.call(this, id); if (id === 'm18') setTimeout(() => Boss2Story.orinDown(), 1600); return r; };
+  // neues Questziel „bossset“: bestimmte Bosse in beliebiger Reihenfolge besiegen (bereits besiegte zählen)
+  const setProg = id => {
+    const s = Quests.S[id], o = Quests.cur(id); if (!s || !o || o.t !== 'bossset') return false;
+    const D = Profile.data, n = o.bosses.filter(b => D.flags['boss_' + b]).length; s.prog = Math.min(o.n, n);
+    if (n >= o.n) { Quests.advance(id); return true; }
+    return false;
+  };
+  const _event = Quests.event, _step = Quests.onStep, _targets = Quests.targets;
+  Quests.event = function (type, a, b) {
+    _event.call(this, type, a, b);
+    if (type === 'boss' && Profile.data) for (const id in this.S) if (this.S[id].st === 'active') { if (!setProg(id)) { const o = this.cur(id); if (o && o.t === 'bossset') UI.refreshQuests(); } }
+  };
+  Quests.onStep = function (id) { const o = this.cur(id); if (o && o.t === 'bossset') { if (setProg(id)) return; Game.refreshQuestWorld(); return; } return _step.call(this, id); };
+  Quests.targets = function (id) {
+    const q = this.q(id), s = this.S[id]; if (q && s && s.st === 'active') { const o = q.obj[s.step];
+      if (o && o.t === 'bossset') { const D = Profile.data, out = []; for (const b of o.bosses) if (!D.flags['boss_' + b]) { const A = ARENAS[BOSS2[b].arena]; out.push({ region: A.region, poi: BOSS2[b].arena }); } return out; } }
+    return _targets.call(this, id);
+  };
+})();
+/* =====================================================================
+   NEUE BOSSE: KI, Angriffe, Wut-Phase, Resistenzen, Beschwörungen, Lebensleiste
+   Jeder Angriff ist telegrafiert (rote Zone/Linie, Aufladen, Warnton) und per Rolle oder Laufen vermeidbar.
+   Schaden: Faktor 1,0 ≈ 12 % der Referenz-Lebenspunkte nach Rüstung (bossDmgUnit), Leben über die angestrebte Kampfdauer.
+   ===================================================================== */
+const BOSS2_ENRAGE = 0.3;
+// Beschwörungen (Werte vor Stufen-Skalierung; Modelle aus den bestehenden Gegner-Looks)
+const BOSS2_SUMMONS = {
+  bone:   { cls: 'minion',  def: { hp: 12, dmg: 5,  speed: 6.4, radius: 0.32, xp: 2,  mass: 0.5 }, look: { model: 'skeleton' }, key: 'boss2.sum.bone', scale: 0.8 },
+  wraith: { cls: 'blinker', def: { hp: 46, dmg: 13, speed: 3.7, radius: 0.4,  xp: 14, mass: 1 },   look: { model: 'wraith', skin: 0x9aff6a }, key: 'boss2.sum.wraith', elite: true },
+  echo:   { cls: 'rusher',  def: { hp: 52, dmg: 12, speed: 3.9, radius: 0.4,  xp: 12, mass: 1.1 }, look: { model: 'construct' }, key: 'boss2.sum.echo' },
+};
+
+class Boss2 extends Enemy {
+  constructor(id, x, z, room, o = {}) {
+    const B = BOSS2[id], L = clamp(o.level || Arenas.bossLevel(id), 1, BOSS2_MAXLVL), rank = o.rank || 0, T = WORLD_TIERS[Game.tier] || WORLD_TIERS[0];
+    const model = Models.boss2 ? Models.boss2(B.model, o.variant) : Models.golem([0x5a5a6a, 0xffa030], Game.world.B.deco); // Ersatz, falls die Modelle fehlen
+    const def = { name: BOSSES[id].name, hp: 1, dmg: 1, speed: B.speed, radius: B.radius, xp: 0, mass: 200 };
+    super('boss', x, z, L, { def, model, active: true, room, yaw: 0 });
+    this.bossId = id; this.v2 = true; this.isBoss = true; this.mini = false; this.kind = 'v2'; this.B = B; this.rank = rank; this.variant = o.variant || null;
+    this.nameFn = () => this.variant ? TWIN_NAMES[this.variant] : BOSSES[id].name;
+    // Leben über die angestrebte Kampfdauer (Referenz-Schaden des Spielers auf dieser Stufe), Schaden über die Schadenseinheit
+    this.baseHp = B.ttk * 0.5 * bossRef('dps', L) * T.hp * (1 + 0.3 * rank); this.maxHp = this.hp = this.baseHp;
+    this.baseDmg = bossDmgUnit(L) * (1 + 0.12 * rank); this.dmg = this.baseDmg;
+    this.cds = {}; this.action = null; this.enraged = false; this.phase = 0; this.cfg = { phases: [1, BOSS2_ENRAGE] }; this.restT = 1.2;
+    this.introT = 1.8; this.height = model.extra.height || 4; this.armPose = null; this.statusFx = null; this.float = !!model.extra.float;
+    this.res = { stun: 0, freeze: 0 }; this.awake = !B.final; this.contactT = 0; this.pushT = 0; this.scaleT = 0; this.hpMul = 1;
+    this.m.root.position.y = -4;
+    const ai = BOSS2_AI[id]; this.ai = ai; if (ai && ai.init) ai.init(this);
+  }
+  get title() { return BOSSES[this.bossId].title; }
+  update(dt) {
+    if (this.introT > 0 && !this.dead) {
+      this.introT -= dt; this.invuln = true; const p = 1 - Math.max(0, this.introT) / 1.8;
+      this.m.root.position.set(this.x, -4 * (1 - easeOut(p)), this.z); this.m.root.rotation.y = this.yaw;
+      if (Math.random() < 0.8) Particles.spawn(this.x + rand(-1.5, 1.5), 0.1, this.z + rand(-1.5, 1.5), rand(-1, 1), rand(2, 4), rand(-1, 1), 0.7, 0.2, pick(Game.world.B.stone), 6);
+      Shake.add(dt * 0.6);
+      if (this.introT <= 0) { this.invuln = false; AudioSys.play('roar'); FX.ring(this.x, this.z, 0.5, 6, 0.6, 0xffffff); this.m.root.position.y = 0; }
+      return;
+    }
+    // Wut-Unverwundbarkeit läuft in Spielzeit ab (Pause/Zeitlupe-sicher)
+    if (this.enrInvT > 0) { this.enrInvT -= dt; if (this.enrInvT <= 0) this.invuln = false; }
+    super.update(dt);
+    if (this.dead || this.removed) return;
+    const P = Game.player;
+    for (const k in this.cds) this.cds[k] -= dt;
+    this.res.stun -= dt; this.res.freeze -= dt;
+    if (this.B.solid && P && !P.dead) this.solidBody(P);
+    if (this.ai && this.ai.tick) this.ai.tick(this, dt, P);
+    if (this.m.extra.idle) this.m.extra.idle(Game.time, dt);
+    if (this.aura) { this.aura.rotation.y += dt * 1.5; this.aura.material.opacity = 0.35 + Math.sin(Game.time * 6) * 0.15; this.aura.position.set(this.x, 0.05, this.z); }
+  }
+  // fester Körper: Spieler (auch rollend) und Gegner werden aus der Körper-Hitbox geschoben
+  solidBody(P) {
+    const push = (o, r) => { const dx = o.x - this.x, dz = o.z - this.z, d = Math.hypot(dx, dz) || 0.001, rr = this.radius + r; if (d < rr) { const k = rr - d; Game.world.moveCircle(o, dx / d * k, dz / d * k, r); } };
+    push(P, P.radius); for (const e of Game.enemies) if (e !== this && !e.dead && !e.isBoss) push(e, e.radius);
+  }
+  think(dt, sm, P) {
+    if (!this.awake) { this.moveSpd = 0; return; }
+    if (!this.enraged && this.hp / this.maxHp <= BOSS2_ENRAGE) { this.enrage(P); return; }
+    if (this.action) { if (!this.action.update(dt)) this.action = null; return; }
+    if (this.ai) this.ai.think(this, dt, sm, P);
+  }
+  start(act) { if (this.action && this.action.cancel) this.action.cancel(); this.action = act; }
+  // Treffer auf den Spieler (multi: Serien-Treffer)
+  hit(P, mul = 1, o = {}) { P.hurt(this.dmg * mul * (this.st.weak ? 0.8 : 1), o.x != null ? o.x : this.x, o.z != null ? o.z : this.z, { source: this, status: o.status || null, noKb: o.noKb, ground: o.ground, high: o.high, multi: o.multi }); }
+  // Sprunghöhe (Sprungschlag) nach der Standard-Animation setzen
+  animate(dt) { super.animate(dt); if (this.liftY) this.m.root.position.y = this.liftY; }
+  ready(k) { return (this.cds[k] || 0) <= 0; }
+  setCd(k, base, enr) { this.cds[k] = (this.enraged && enr != null ? enr : base) * rand(0.95, 1.05); }
+  // Wut-Phase: Aura, Farbwechsel, Brüllen, kurze Meldung, Druckwelle
+  enrage(P) {
+    this.enraged = true; this.phase = 1; if (this.action && this.action.cancel) this.action.cancel(); this.action = null;
+    const col = this.B.final ? 0xb070ff : 0xff3a22;
+    const aura = new THREE.Mesh(R.box(this.radius * 3.2, 0.04, this.radius * 3.2), R.glow(col, 0.45)); aura.userData.noFlash = true; R.scene.add(aura); this.aura = aura;
+    if (this.m.extra.core) this.m.extra.core.material = R.glow(col);
+    AudioSys.play('roar'); Shake.add(0.6); FX.ring(this.x, this.z, 0.5, 8, 0.6, col); Lights.flash(this.x, 2, this.z, col, 5, 0.6, 14);
+    if (P && dist(P.x, P.z, this.x, this.z) < 6) { const a = yawTo(this.x, this.z, P.x, P.z); P.kvx += Math.sin(a) * 14; P.kvz += Math.cos(a) * 14; }
+    Projectiles.destroyNear(this.x, this.z, 30, 'enemy');
+    UI.banner(t('boss2.enraged.title'), t('boss2.enraged.sub', { name: this.name }), 2.4);
+    this.speed *= 1.15; this.invuln = true; this.enrInvT = 0.9;
+    if (this.ai && this.ai.onEnrage) this.ai.onEnrage(this, P);
+    UI.bossPhase(UI.boss || this);
+  }
+  // Treffer-Anpassung: Element-Schwächen, Flächenschaden, Nahkampf-Immunität (Seraphiel in der Wut-Phase)
+  modDamage(dmg, o) {
+    if (o.melee && this.meleeImmune) { DmgNum.spawn(this.x, this.height + 0.4, this.z, t('boss2.meleeImmune'), 'info'); return 0; }
+    const el = this.B.elem || {}; if (o.school && el[o.school]) dmg *= el[o.school];
+    if (o.aoe && this.B.aoe) dmg *= this.B.aoe;
+    if (this.ai && this.ai.onHurt) dmg = this.ai.onHurt(this, dmg, o);
+    return dmg;
+  }
+  // Status-Resistenzen: Betäubung verkürzt, Frost höchstens 1 s, Wurzeln höchstens 1 s, Verlangsamung halbiert
+  addStatus(type, dur, mag = 0) {
+    if (this.dead) return;
+    if (type === 'stun') { if (this.res.stun > 0) return; dur = Math.min(dur * 0.35, 0.7); this.res.stun = 5; this.interrupt(); }
+    else if (type === 'freeze') { if (this.res.freeze > 0) { type = 'chill'; mag = 0.35; } else { dur = Math.min(dur, this.B.freezeMax || 1); this.res.freeze = 4; this.interrupt(); } }
+    else if (type === 'root') dur = Math.min(dur, 1);
+    else if (type === 'chill') mag *= 0.5;
+    super.addStatus(type, dur, mag);
+  }
+  interrupt() { if (this.action && this.action.cancel) this.action.cancel(); this.action = null; this.armPose = null; this.cancelTele(); }
+  onDot(d, k) {
+    if (k === 'poison' && this.B.poisonHeals) { const h = Math.min(this.maxHp - this.hp, d); if (h > 0) { this.hp += h; DmgNum.spawn(this.x, this.height + 0.3, this.z, '+' + Math.round(h), 'heal'); } return; }
+    super.onDot(d, k);
+  }
+  pose(dt) {
+    const m = this.m, ex = m.extra;
+    if (this.armPose != null) { this.posed = true; for (const a of m.arms) a.rotation.x = lerp(a.rotation.x, this.armPose, Math.min(1, dt * 10)); }
+    if (ex.jaw) ex.jaw.rotation.x = lerp(ex.jaw.rotation.x, this.jawOpen ? 0.6 : 0, Math.min(1, dt * 14));
+    if (this.spinning) m.body.rotation.y = this.spinA || 0; else if (!this.lockSpin) m.body.rotation.y = 0;
+    if (ex.core) ex.core.scale.setScalar((this.charging ? 1.5 : 1) * (1 + Math.sin(Game.time * (4 + (this.enraged ? 6 : 0))) * 0.12));
+    if (ex.halo) ex.halo.rotation.z += dt * 0.8;
+    if (ex.orbit) ex.orbit.rotation.y += dt * (this.enraged ? 2 : 1);
+    if (ex.lid) ex.lid.scale.y = lerp(ex.lid.scale.y, this.awake ? 0.1 : 1, Math.min(1, dt * 4));
+  }
+  die(o) {
+    if (this.dead) return;
+    if (this.action && this.action.cancel) this.action.cancel(); this.action = null;
+    if (this.aura) { R.scene.remove(this.aura); this.aura = null; }
+    // Zwilling: erst der zweite Tod beendet den Kampf; die Überlebende gerät in Wut
+    if (this.partner && !this.partner.dead) {
+      this.isBoss = false; this.xp = 0; this.noLoot = true;
+      UI.banner(t('boss2.twins.fall', { name: this.name }), t('boss2.twins.rage', { name: this.partner.name }), 2.6);
+      const p = this.partner; if (!p.enraged) p.enrage(Game.player);
+      Enemy.prototype.die.call(this, o); return;
+    }
+    if (this.ai && this.ai.onDeath) this.ai.onDeath(this);
+    super.die(o);
+  }
+  deathAnim(dt) {
+    this.deadT += dt; const m = this.m;
+    if (Math.random() < 0.8) Particles.spawn(this.x + rand(-1.5, 1.5), rand(0.5, 4), this.z + rand(-1.5, 1.5), rand(-2, 2), rand(1, 4), rand(-2, 2), 0.8, 0.2, pick([0xffffff, Game.world.B.accent, 0xffd040]), 3);
+    m.root.position.set(this.x + Math.sin(this.deadT * 40) * 0.08, -Math.max(0, this.deadT - 1.2) * 2, this.z);
+    Models.setFlash(m, Math.sin(this.deadT * 30) > 0 ? Models.flashMat : null);
+    if (this.deadT > 2.6) { R.scene.remove(m.root); this.removed = true; }
+  }
+  remove() { if (this.aura) { R.scene.remove(this.aura); this.aura = null; } super.remove(); }
+  // Boss im Raum erscheinen lassen (Zwillinge: zwei verbundene Bosse, gemeinsame Lebensleiste)
+  // o.level: feste Stufe (Befehl /boss spawn); ohne Raum (Befehl außerhalb der Arena) gilt ein Kampfbereich um den Spawnpunkt
+  static spawn(id, room, x, z, o = {}) {
+    const run = Game.arenaRun, rank = run && run.id === BOSS2[id].arena ? run.rank : 0, G = Game;
+    room = room || Boss2.areaAt(x, z);
+    let list;
+    if (BOSS2[id].duo) {
+      const a = new Boss2(id, x - 3, z, room, { rank, variant: 'a', level: o.level }), b = new Boss2(id, x + 3, z, room, { rank, variant: 'b', level: o.level });
+      a.partner = b; b.partner = a; b.cds.throw = 1.2; list = [a, b];
+    } else list = [new Boss2(id, x, z, room, { rank, level: o.level })];
+    for (const b of list) { G.enemies.push(b); room.enemies.push(b); }
+    UI.showBoss(list.length > 1 ? Boss2Group.make(list) : list[0]);
+    UI.banner(BOSSES[id].name.toUpperCase(), BOSSES[id].title + (rank ? ' · ' + t('arena.rankShort', { n: rank }) : ''), 3);
+    return list;
+  }
+  // Kampfbereich (Rechteck in der Welt) für Bosse ohne eigenen Raum: Beschwörungen, Tore und Teleports bleiben darin
+  static areaAt(x, z) {
+    const w = Game.world, S = 18, rx = clamp(Math.floor(x) - S / 2, 0, Math.max(0, w.W - S)), ry = clamp(Math.floor(z) - S / 2, 0, Math.max(0, w.H - S));
+    return { x: rx, y: ry, w: Math.min(S, w.W), h: Math.min(S, w.H), cx: rx + Math.min(S, w.W) / 2, cz: ry + Math.min(S, w.H) / 2, enemies: [], free: true };
+  }
+}
+// gemeinsame Lebensleiste der Zwillinge
+const Boss2Group = {
+  make(list) {
+    return { members: list, bossId: list[0].bossId, v2: true, isGroup: true, mini: false, cfg: { phases: [1, BOSS2_ENRAGE] }, rank: list[0].rank,
+      get hp() { return list.reduce((s, b) => s + (b.dead ? 0 : b.hp), 0); }, get maxHp() { return list.reduce((s, b) => s + b.maxHp, 0); },
+      get removed() { return list.every(b => b.removed); }, get enraged() { return list.some(b => b.enraged && !b.dead); }, get awake() { return true; },
+      get phase() { return this.enraged ? 1 : 0; }, get st() { return Object.assign({}, ...list.filter(b => !b.dead).map(b => b.st)); }, get name() { return BOSSES[list[0].bossId].name; } };
+  },
+};
+
+/* ---------------- Angriffsbausteine ---------------- */
+const B2X = {
+  aim(b, P) { return yawTo(b.x, b.z, P.x, P.z); },
+  proj(b, a, o) {
+    return Projectiles.spawn({ x: b.x + Math.sin(a) * (b.radius + 0.3), y: o.y || 1.15, z: b.z + Math.cos(a) * (b.radius + 0.3), vx: Math.sin(a) * o.speed, vz: Math.cos(a) * o.speed, faction: 'enemy',
+      dmg: b.dmg * o.mul, kind: o.kind || 'orb', color: o.color || 0xffffff, life: o.life || 3, radius: o.r || 0.28, owner: b, status: o.status || null, homing: o.homing, fizzle: o.fizzle, multi: o.multi, trail: o.trail });
+  },
+  // Einzelgeschoss mit kurzer Ziellinie
+  shot(b, P, o) {
+    let t = 0, fired = false, a = this.aim(b, P); const wind = o.wind || 0.35, tele = Tele.rect(b.x, b.z, a, o.len || 11, 0.4, wind, o.tc || 0xff5030);
+    AudioSys.play('telegraph', 1.4); b.armPose = o.pose != null ? o.pose : -1.9; if (o.jaw) b.jawOpen = true;
+    return { update(dt) { t += dt;
+      if (!fired) { a = B2X.aim(b, P); b.yaw = a; tele.g.position.set(b.x, 0.05, b.z); tele.g.rotation.y = a; }
+      if (!fired && t >= wind) { fired = true; Tele.kill(tele); B2X.proj(b, a, o); AudioSys.play('shoot'); }
+      if (t >= wind + 0.22) { b.armPose = null; b.jawOpen = false; return false; } return true; },
+    cancel() { Tele.kill(tele); b.armPose = null; b.jawOpen = false; } };
+  },
+  // Geschossring nach Aufladen; groups/gap = Lücken im Ring
+  ring(b, P, o) {
+    let t = 0, fired = 0; const wind = o.wind || 0.9, waves = o.waves || 1, tele = Tele.circle(b.x, b.z, o.tr || b.radius + 1.6, wind, o.tc || 0xff5030); tele.follow = b;
+    AudioSys.play('telegraph'); AudioSys.play('summon', 1.6); b.charging = true; b.armPose = -2.6; b.superArmor = true;
+    return { update(dt) { t += dt;
+      if (t < wind && Math.random() < 0.8) Particles.spawn(b.x + rand(-1.4, 1.4), rand(0.6, 2.6), b.z + rand(-1.4, 1.4), 0, 0.5, 0, 0.4, 0.12, o.color || 0xffffff, -2, 0);
+      if (fired < waves && t >= wind + fired * 0.5) {
+        const off = rand(0, TAU), n = o.n, g = o.groups || 0;
+        for (let k = 0; k < n; k++) {
+          let a = off + k / n * TAU;
+          if (g) { const per = n / g, gi = Math.floor(k / per), j = k % per; a = off + gi * TAU / g + j * (TAU / g) * (1 - (o.gap || 0.35)) / per; }
+          B2X.proj(b, a, o);
+        }
+        fired++; AudioSys.play('shoot'); FX.ring(b.x, b.z, 0.4, 3, 0.3, o.color || 0xffffff);
+      }
+      if (fired >= waves && t > wind + waves * 0.5 + 0.2) { b.charging = false; b.armPose = null; b.superArmor = false; return false; } return true; },
+    cancel() { Tele.kill(tele); b.charging = false; b.armPose = null; b.superArmor = false; } };
+  },
+  // Nahkampf: Kegel vor dem Boss, kurz telegrafiert
+  melee(b, P, o) {
+    let t = 0, done = false; b.yaw = this.aim(b, P); const wind = o.wind || 0.55, tele = Tele.cone(b.x, b.z, b.yaw, o.r, o.arc || 110, wind, o.tc || 0xff3a22);
+    AudioSys.play('telegraph'); b.armPose = -2.7; if (o.jaw) b.jawOpen = true;
+    return { update(dt) { t += dt;
+      if (!done) { if (t < wind * 0.5) { b.face(B2X.aim(b, P), dt, 3); tele.g.rotation.y = b.yaw; } tele.g.position.set(b.x, 0.045, b.z); }
+      if (!done && t >= wind) { done = true; b.armPose = -0.3; if (b.inCone(P, o.r, (o.arc || 110) + 10)) b.hit(P, o.mul, { status: o.status || null }); AudioSys.play('slam', 1.3); Particles.burst(b.x + Math.sin(b.yaw) * o.r * 0.6, 0.4, b.z + Math.cos(b.yaw) * o.r * 0.6, { n: 10, colors: Game.world.B.stone, speed: 4, up: 3 }); }
+      if (t >= wind + (o.rec || 0.4)) { b.armPose = null; b.jawOpen = false; return false; } return true; },
+    cancel() { Tele.kill(tele); b.armPose = null; b.jawOpen = false; } };
+  },
+  // großer Flächenschlag um den Boss
+  smash(b, P, o) {
+    let t = 0, done = false; const wind = o.wind || 1.2, tele = Tele.circle(b.x, b.z, o.r, wind, o.tc || 0xff3a22); tele.follow = b;
+    AudioSys.play('telegraph'); AudioSys.play('roar', 0.8); b.armPose = -3; b.superArmor = true; b.charging = true;
+    return { update(dt) { t += dt;
+      if (!done && t >= wind) { done = true; b.armPose = -0.2; b.charging = false; if (dist(P.x, P.z, b.x, b.z) < o.r + P.radius) b.hit(P, o.mul, { ground: true, status: o.status || null });
+        FX.ring(b.x, b.z, 0.5, o.r + 0.6, 0.5, o.color || 0xe8d8b8); Particles.burst(b.x, 0.2, b.z, { n: 50, colors: o.colors || Game.world.B.stone, speed: 9, up: 6, size: 0.2 }); Shake.add(0.7); AudioSys.play('slam'); }
+      if (t >= wind + 0.6) { b.armPose = null; b.superArmor = false; return false; } return true; },
+    cancel() { Tele.kill(tele); b.armPose = null; b.superArmor = false; b.charging = false; } };
+  },
+  // Sprung in eine rote Zone am Spieler (Zone folgt kurz, dann fest)
+  leap(b, P, o) {
+    let t = 0, phase = 0, sx = b.x, sz = b.z, tx = P.x, tz = P.z; const wind = o.wind || 1.0, fly = o.fly || 0.45, tele = Tele.circle(tx, tz, o.r, wind + fly, o.tc || 0xff3a22);
+    AudioSys.play('telegraph'); AudioSys.play('roar'); b.armPose = -2.9; b.superArmor = true;
+    return { update(dt) { t += dt;
+      if (phase === 0) { if (t < wind * 0.5) { tx = P.x; tz = P.z; tele.g.position.set(tx, 0.04, tz); } b.face(yawTo(b.x, b.z, tx, tz), dt, 6); if (t >= wind) { phase = 1; t = 0; sx = b.x; sz = b.z; } return true; }
+      if (phase === 1) { const p = Math.min(1, t / fly); b.x = lerp(sx, tx, p); b.z = lerp(sz, tz, p); b.m.root.position.y = Math.sin(p * Math.PI) * 3.5; b.liftY = b.m.root.position.y;
+        if (p >= 1) { phase = 2; t = 0; b.m.root.position.y = 0; b.liftY = 0; const w = Game.world; if (!w.walkableAt(b.x, b.z)) { const s = w.freeNear(b.x, b.z, 4, Math.random); if (s) { b.x = s.x; b.z = s.z; } }
+          if (dist(P.x, P.z, tx, tz) < o.r + P.radius) b.hit(P, o.mul, { x: tx, z: tz, ground: true });
+          FX.ring(tx, tz, 0.4, o.r + 0.8, 0.5, o.color || 0xffb050); Particles.burst(tx, 0.2, tz, { n: 46, colors: o.colors || Game.world.B.stone, speed: 9, up: 6, size: 0.2 }); Shake.add(0.75); AudioSys.play('slam'); }
+        return true; }
+      if (t >= 0.55) { b.armPose = null; b.superArmor = false; return false; } return true; },
+    cancel() { Tele.kill(tele); b.armPose = null; b.superArmor = false; b.m.root.position.y = 0; b.liftY = 0; } };
+  },
+  // Verfolgung im Wirbel (bis zu maxHits Treffer)
+  pursuit(b, P, o) {
+    let t = 0, tick = 0, hits = 0; const wind = 0.7, dur = o.dur || 3, tele = Tele.circle(b.x, b.z, o.r, wind, o.tc || 0xff5030); tele.follow = b;
+    AudioSys.play('roar', 1.2); AudioSys.play('telegraph'); b.superArmor = true;
+    return { update(dt) { t += dt; tick -= dt;
+      if (t > wind) { b.spinning = true; b.spinA = (b.spinA || 0) + dt * 16; const a = B2X.aim(b, P), sp = b.speed * (o.speedMul || 1.6); Game.world.moveCircle(b, Math.sin(a) * sp * dt, Math.cos(a) * sp * dt, b.radius);
+        if (hits < (o.maxHits || 3) && tick <= 0 && dist(P.x, P.z, b.x, b.z) < o.r + P.radius) { tick = 0.6; hits++; b.hit(P, o.mul, { multi: true, status: o.status || null }); }
+        if (Math.random() < 0.7) Particles.spawn(b.x + rand(-o.r, o.r), 0.3, b.z + rand(-o.r, o.r), 0, 1.2, 0, 0.4, 0.15, pick(o.colors || [0x2a1a16, 0xd04a3a]), 2); }
+      if (t >= wind + dur) { b.spinning = false; b.superArmor = false; return false; } return true; },
+    cancel() { Tele.kill(tele); b.spinning = false; b.superArmor = false; } };
+  },
+  // Beschwörung an markierten Stellen
+  summon(b, P, kind, n, o = {}) {
+    const w = Game.world, S = BOSS2_SUMMONS[kind], spots = [], teles = []; let t = 0; const wind = o.wind || 1.1;
+    for (let k = 0; k < n * 3 && spots.length < n; k++) { const s = w.randomFloor(b.room, Math.random, { avoid: P, minD: 3 }); if (s) { spots.push(s); teles.push(Tele.circle(s.x, s.z, 0.8, wind, o.tc || 0xb050ff)); } }
+    AudioSys.play('summon'); b.armPose = -2.8; b.charging = true;
+    return { update(dt) { t += dt; if (t >= wind) { for (const s of spots) B2X.spawnSummon(b, kind, s.x, s.z); b.armPose = null; b.charging = false; return false; } return true; },
+      cancel() { teles.forEach(x => Tele.kill(x)); b.armPose = null; b.charging = false; } };
+  },
+  spawnSummon(b, kind, x, z) {
+    const S = BOSS2_SUMMONS[kind], name = t(S.key), def = Object.assign({ name }, S.def);
+    const e = Game.spawnEnemy(S.cls, x, z, Math.max(1, b.level - (kind === 'bone' ? 0 : 2)), { def, look: Object.assign({ name }, S.look), active: true, room: b.room, spawnFx: true, elite: !!S.elite, scale: S.scale });
+    e.bossMinion = true; e.summonKind = kind; e.xp = Math.round(enemyXp(S.def.xp, e.level) * 0.5); return e;
+  },
+  count(kind) { return Game.enemies.filter(e => e.summonKind === kind && !e.dead).length; },
+  // Linientreffer mit langer Telegrafie (Laser/Lanze)
+  beam(b, P, o) {
+    let t = 0, done = false; const a = o.yaw != null ? o.yaw : this.aim(b, P), x0 = o.x != null ? o.x : b.x, z0 = o.z != null ? o.z : b.z, wind = o.wind || 1.0;
+    const tele = Tele.rect(x0, z0, a, o.len, o.w, wind, o.tc || 0xff3a22); AudioSys.play('telegraph'); b.charging = true; b.armPose = o.pose != null ? o.pose : -2.2; b.yaw = a;
+    let beam = null;
+    return { update(dt) { t += dt;
+      if (!done && t >= wind) { done = true; b.charging = false;
+        const dx = Math.sin(a), dz = Math.cos(a), px = P.x - x0, pz = P.z - z0, proj = px * dx + pz * dz;
+        if (proj > -0.5 && proj < o.len && Math.abs(px * dz - pz * dx) < o.w / 2 + P.radius) b.hit(P, o.mul, { noKb: !!o.noKb, high: true, status: o.status || null });
+        const geo = new THREE.BoxGeometry(o.w * 0.8, 0.8, o.len); geo.translate(0, 0, o.len / 2);
+        beam = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: o.color || 0xbff4ff, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false }));
+        beam.position.set(x0, 1.1, z0); beam.rotation.y = a; R.scene.add(beam); Lights.flash(x0 + dx * o.len / 2, 1.5, z0 + dz * o.len / 2, o.color || 0xbff4ff, 5, 0.3, o.len);
+        AudioSys.play(o.sound || 'void'); Shake.add(0.4);
+        if (o.onFire) o.onFire(x0, z0, a);
+      }
+      if (beam) { beam.material.opacity = Math.max(0, 0.9 - (t - wind) * 2.2); }
+      if (t >= wind + 0.45) { if (beam) { R.scene.remove(beam); beam.geometry.dispose(); beam.material.dispose(); beam = null; } b.armPose = null; return false; } return true; },
+    cancel() { Tele.kill(tele); b.charging = false; b.armPose = null; if (beam) { R.scene.remove(beam); beam.geometry.dispose(); beam.material.dispose(); beam = null; } } };
+  },
+  // Energiefeld am Boden: Schaden pro Sekunde, solange der Spieler darin steht
+  field(b, x, z, r, dur, mulPerSec, color) {
+    let t = 0, tick = 0.2; const g = new THREE.Mesh(R.box(r * 2, 0.05, r * 2), R.glow(color, 0.4)); g.position.set(x, 0.06, z); g.userData.noFlash = true; R.scene.add(g);
+    Game.effects.push(dt => { t += dt; tick -= dt; const P = Game.player;
+      g.material.opacity = 0.25 + Math.sin(t * 8) * 0.1 + (t > dur - 1 ? -(t - dur + 1) * 0.3 : 0);
+      if (Math.random() < dt * 10) Particles.spawn(x + rand(-r, r), 0.1, z + rand(-r, r), 0, rand(1, 2), 0, 0.5, 0.1, color, 0, 0);
+      if (tick <= 0 && P && !P.dead && (P.y || 0) < 0.4 && Math.abs(P.x - x) < r + P.radius * 0.5 && Math.abs(P.z - z) < r + P.radius * 0.5) { tick = 1; P.hurt(b.dmg * mulPerSec, x, z, { dot: true }); }
+      if (t >= dur || !Game.world) { R.scene.remove(g); g.material.dispose(); return false; } return true; });
+  },
+  // Riss im Boden: öffnet sich, dann Explosion
+  tear(b, x, z, r, delay, mul, color) {
+    let t = 0, done = false; const tele = Tele.circle(x, z, r, delay, color || 0xb050ff);
+    Game.effects.push(dt => { t += dt; const P = Game.player;
+      if (Math.random() < dt * 20) Particles.spawn(x + rand(-r, r) * 0.6, 0.1, z + rand(-r, r) * 0.6, 0, rand(1.5, 3), 0, 0.4, 0.12, pick([0x9a4aff, 0x1a0a2a, 0xffffff]), 0, 0);
+      if (!done && t >= delay) { done = true; if (P && !P.dead && dist(P.x, P.z, x, z) < r + P.radius) b.hit(P, mul, { x, z, ground: true, multi: true });
+        FX.ring(x, z, 0.3, r + 0.6, 0.4, color || 0xb050ff); Particles.burst(x, 0.4, z, { n: 26, colors: [0x9a4aff, 0xffffff, 0x2a0a3a], speed: 6, up: 6 }); AudioSys.play('explode'); Shake.add(0.25); }
+      if (done) { Tele.kill(tele); return false; } return true; });
+  },
+  teleportTo(b, x, z, colors) {
+    Particles.burst(b.x, 1.5, b.z, { n: 26, colors: colors || [0x9a4aff, 0xffffff], speed: 5 }); b.x = x; b.z = z;
+    Particles.burst(b.x, 1.5, b.z, { n: 26, colors: colors || [0x9a4aff, 0xffffff], speed: 5 }); AudioSys.play('portal');
+  },
+  // Platz neben/hinter dem Spieler
+  besidePlayer(P, d, side) {
+    const w = Game.world, base = side === 'behind' ? (P.yaw || 0) + Math.PI : (P.yaw || 0) + (side === 'left' ? Math.PI / 2 : -Math.PI / 2);
+    for (let k = 0; k < 8; k++) { const a = base + k * 0.6 * (k % 2 ? 1 : -1), x = P.x + Math.sin(a) * d, z = P.z + Math.cos(a) * d; if (w.walkableAt(x, z)) return { x, z }; }
+    return w.freeNear(P.x, P.z, 3, Math.random) || { x: P.x + 1, z: P.z };
+  },
+};
+
+/* ---------------- Verhalten je Boss ---------------- */
+const BOSS2_AI = {
+  // 1 · Dornfang-Alpha: Ausweich-Lehrstück – Astwurf alle 2 s (Wut 1,2 s), Astsalve: 16 Geschosse nach 0,9 s Aufladen, alle 11 s (Wut 8 s)
+  bramblefang: {
+    init(b) { b.cds.throw = 1.2; b.cds.burst = 6; },
+    think(b, dt, sm, P) {
+      if (b.ready('burst')) { b.setCd('burst', 11, 8); b.start(B2X.ring(b, P, { n: 16, wind: 0.9, mul: 0.32, speed: 7.5, kind: 'shard', color: 0x7a9a3a, tc: 0xffb040 })); return; }
+      if (b.ready('throw')) { b.setCd('throw', 2.0, 1.2); b.start(B2X.shot(b, P, { mul: 0.8, speed: 13.5, kind: 'shard', color: 0x8a6a3a, r: 0.32, wind: 0.32, jaw: true })); return; }
+      if (b.dP > 9) b.seek(P, sm); else if (b.dP < 4.5) b.flee(P, sm, 0.9); else b.strafeAround(P, sm, dt, 0.7);
+    },
+  },
+  // 2 · Der Hohle Wächter: Nahkampf, Sprungschlag (1 s rote Zone am Spieler, großer Radius) alle 6,5 s (Wut 4,5 s), fester Körper
+  hollowwarden: {
+    init(b) { b.cds.leap = 4; b.cds.melee = 1; },
+    think(b, dt, sm, P) {
+      if (b.ready('leap') && b.dP > 2.5) { b.setCd('leap', 6.5, 4.5); b.start(B2X.leap(b, P, { r: 3.8, wind: 1.0, mul: 3.2, colors: [0x8a6a2a, 0xff9a30, 0x3a2a14], color: 0xff9a30 })); return; }
+      if (b.ready('melee') && b.dP < b.radius + 2.3) { b.setCd('melee', 1.6, 1.25); b.start(B2X.melee(b, P, { r: b.radius + 2.4, arc: 120, wind: 0.55, mul: 1.0 })); return; }
+      b.seek(P, sm);
+    },
+  },
+  // 3 · Zwillingszofen: versetzte Würfe, Klemmtritt (5 Tritte), nur solange beide leben
+  twinmaids: {
+    init(b) { b.cds.throw = b.variant === 'b' ? 1.2 : 0.2; b.cds.trap = 9; },
+    think(b, dt, sm, P) {
+      const p = b.partner, both = p && !p.dead;
+      if (both && b.variant === 'a' && b.ready('trap') && p.ready('trap') && !p.action && b.dP < 7 && dist(P.x, P.z, p.x, p.z) < 7) {
+        b.setCd('trap', 13); p.setCd('trap', 13); const act = BOSS2_AI.twinmaids.trap(b, p, P); b.start(act); p.start(act.partnerAct); return; }
+      if (b.ready('throw')) { b.setCd('throw', 2.4, 1.6);
+        b.start(B2X.shot(b, P, b.variant === 'a' ? { mul: 0.9, speed: 15, kind: 'shard', color: 0xff4a5a, r: 0.26, wind: 0.3 } : { mul: 0.9, speed: 12.5, kind: 'shard', color: 0x4affe0, r: 0.34, wind: 0.36 })); return; }
+      const side = b.variant === 'a' ? 1 : -1; b.strafe = side;
+      if (b.dP > 8) b.seek(P, sm); else if (b.dP < 3.5) b.flee(P, sm, 0.9); else b.strafeAround(P, sm, dt, 0.8);
+    },
+    // beide springen links und rechts neben den Spieler und klemmen ihn mit 5 Tritten ein
+    trap(a, b, P) {
+      let t = 0, kicks = 0, phase = 0; const tele = Tele.circle(P.x, P.z, 1.8, 0.7, 0xff3a22); AudioSys.play('telegraph'); AudioSys.play('phase');
+      const sideA = B2X.besidePlayer(P, 1.3, 'left'), sideB = B2X.besidePlayer(P, 1.3, 'right');
+      const partnerAct = { update() { return !!(a.action && phase < 3); }, cancel() {} };
+      const act = { partnerAct, update(dt) { t += dt;
+        if (phase === 0) { tele.g.position.set(P.x, 0.04, P.z); if (t >= 0.25) { phase = 1; B2X.teleportTo(a, sideA.x, sideA.z, [0xff4a5a, 0xffffff]); if (!b.dead) B2X.teleportTo(b, sideB.x, sideB.z, [0x4affe0, 0xffffff]); } return true; }
+        if (phase === 1) { a.yaw = B2X.aim(a, P); if (!b.dead) b.yaw = B2X.aim(b, P); if (t >= 0.7) { phase = 2; t = 0; P.addStatus('chill', 1.8, 0.7); } return true; }
+        if (phase === 2) { const k = kicks % 2 ? b : a; if (t >= 0.3 && kicks < 5) { t = 0; kicks++; if (!k.dead && dist(k.x, k.z, P.x, P.z) < 2.6) k.hit(P, 0.45, { multi: true, noKb: true }); k.armPose = -2.2; setTimeout(() => { k.armPose = null; }, 120); AudioSys.play('slam', 1.6); }
+          if (kicks >= 5 && t >= 0.3) { phase = 3; return false; } return true; }
+        return false; },
+      cancel() { Tele.kill(tele); phase = 3; } };
+      return act;
+    },
+  },
+  // 4 · Der Urschlund: Biss alle 1,3 s (starker Einzeltreffer), Wirbelverfolgung 1,6× Tempo, bis zu 3 Treffer, alle ~9 s (Wut ~5 s)
+  thenightmaw: {
+    init(b) { b.cds.pursuit = 6; b.cds.bite = 0.8; },
+    think(b, dt, sm, P) {
+      if (b.ready('pursuit')) { b.setCd('pursuit', 9, 5); b.start(B2X.pursuit(b, P, { r: b.radius + 1.0, dur: 3, speedMul: 1.6, maxHits: 3, mul: 0.5 })); return; }
+      if (b.ready('bite') && b.dP < b.radius + 2.2) { b.setCd('bite', 1.3); b.start(B2X.melee(b, P, { r: b.radius + 2.3, arc: 100, wind: 0.38, mul: 1.7, jaw: true, rec: 0.25 })); return; }
+      b.seek(P, sm, 1.05);
+    },
+  },
+  // 5 · Das Große Skelett: Nahkampf, Totenruf (3 Knochendiener) alle 14 s (Wut 9 s); Arkan und Flächenschaden besonders wirksam
+  grandskeleton: {
+    init(b) { b.cds.raise = 5; b.cds.melee = 1; },
+    think(b, dt, sm, P) {
+      if (b.ready('raise') && B2X.count('bone') < 9) { b.setCd('raise', 14, 9); b.start(B2X.summon(b, P, 'bone', 3, { tc: 0x8aff9a })); return; }
+      if (b.ready('melee') && b.dP < b.radius + 2.6) { b.setCd('melee', 1.8, 1.4); b.start(B2X.melee(b, P, { r: b.radius + 2.8, arc: 140, wind: 0.6, mul: 1.4 })); return; }
+      b.seek(P, sm);
+    },
+  },
+  // 6 · Parasitäres Phantom: Kontaktschaden (0,5 s), Flächenhieb alle 6,5 s (Wut 4,5 s), 10 Elite-Geister, Splittersturm (24 Geschosse mit Lücken)
+  phantom: {
+    init(b) { b.cds.smash = 5; b.cds.wraiths = 8; b.cds.storm = 12; },
+    tick(b, dt, P) {
+      b.contactT -= dt; if (b.awake && P && !P.dead && b.contactT <= 0 && dist(P.x, P.z, b.x, b.z) < b.radius + P.radius + 0.35) { b.contactT = 0.5; P.hurt(b.dmg * 0.35, b.x, b.z, { source: b, multi: true, noKb: true, status: { type: 'poison', dur: 2, mag: b.dmg * 0.05 } }); }
+    },
+    think(b, dt, sm, P) {
+      if (b.ready('wraiths') && B2X.count('wraith') <= 3) { b.setCd('wraiths', 20, 16); b.start(B2X.summon(b, P, 'wraith', 10, { tc: 0x9aff6a, wind: 1.3 })); return; }
+      if (b.ready('storm')) { b.setCd('storm', 15, 11); b.start(B2X.ring(b, P, { n: 24, groups: 4, gap: 0.4, wind: 1.1, mul: 1.8, speed: 8, kind: 'shard', color: 0xb0ff60, tc: 0x9aff6a, r: 0.3 })); return; }
+      if (b.ready('smash') && b.dP < 7) { b.setCd('smash', 6.5, 4.5); b.start(B2X.smash(b, P, { r: 5.5, wind: 1.25, mul: 4.2, color: 0x9aff6a, colors: [0x9aff6a, 0x5a2a6a, 0xffffff] })); return; }
+      b.seek(P, sm, 0.85);
+    },
+  },
+  // 7 · Xylar: Schwung (sehr stark), Splittersalve (5 Kristalle im 0,25-s-Takt), Kernlaser mit Energiefeldern (8 s, Schaden/s) alle 20 s (Wut 14 s)
+  xylar: {
+    init(b) { b.cds.laser = 9; b.cds.salvo = 3; b.cds.swing = 1; },
+    think(b, dt, sm, P) {
+      if (b.ready('laser')) { b.setCd('laser', 20, 14); b.start(B2X.beam(b, P, { len: 22, w: 1.6, wind: 1.0, mul: 3.5, color: 0x9fe0ff, tc: 0x7fd8ff, noKb: true, sound: 'frost',
+        onFire: (x0, z0, a) => { for (let d = 2; d < 22; d += 2.2) { const x = x0 + Math.sin(a) * d, z = z0 + Math.cos(a) * d; if (Game.world.blockedShot(Math.floor(x), Math.floor(z))) break; B2X.field(b, x, z, 0.9, 8, 0.4, 0x7fe0ff); } } })); return; }
+      if (b.ready('swing') && b.dP < b.radius + 2.6) { b.setCd('swing', 2.2, 1.7); b.start(B2X.melee(b, P, { r: b.radius + 2.8, arc: 150, wind: 0.7, mul: 3.0, rec: 0.5 })); return; }
+      if (b.ready('salvo') && b.dP > 3) { b.setCd('salvo', 4.5, 3.4); b.start(BOSS2_AI.xylar.salvo(b, P)); return; }
+      b.seek(P, sm);
+    },
+    salvo(b, P) {
+      let t = 0, n = 0; const tele = Tele.rect(b.x, b.z, B2X.aim(b, P), 14, 0.5, 0.4, 0x7fd8ff); AudioSys.play('telegraph'); b.charging = true; b.armPose = -1.8;
+      return { update(dt) { t += dt; tele.g.position.set(b.x, 0.05, b.z); tele.g.rotation.y = B2X.aim(b, P);
+        if (t >= 0.4 + n * 0.25 && n < 5) { n++; b.yaw = B2X.aim(b, P); B2X.proj(b, b.yaw, { mul: 0.9, speed: 15, kind: 'shard', color: 0x9fe0ff, r: 0.3 }); AudioSys.play('frost', 1.4); }
+        if (n >= 5 && t >= 0.4 + 5 * 0.25) { Tele.kill(tele); b.charging = false; b.armPose = null; return false; } return true; },
+      cancel() { Tele.kill(tele); b.charging = false; b.armPose = null; } };
+    },
+  },
+  // 8 · Der Leerenerwachte König: Nahkampf, Leerenblitz alle 2,1 s (mittlere bis große Distanz), Teleportschlag (4 schnelle Hiebe) alle 13 s (Wut 9 s)
+  voidking: {
+    init(b) { b.cds.tp = 7; b.cds.bolt = 1.5; b.cds.melee = 1; },
+    think(b, dt, sm, P) {
+      if (b.ready('tp')) { b.setCd('tp', 13, 9); b.start(BOSS2_AI.voidking.strike(b, P)); return; }
+      if (b.ready('melee') && b.dP < b.radius + 2.2) { b.setCd('melee', 1.4, 1.1); b.start(B2X.melee(b, P, { r: b.radius + 2.4, arc: 120, wind: 0.45, mul: 1.4, tc: 0xb050ff })); return; }
+      if (b.ready('bolt') && b.dP >= 4.5 && b.dP < 18) { b.setCd('bolt', 2.1); b.start(B2X.shot(b, P, { mul: 1.8, speed: 15, kind: 'orb', color: 0xb070ff, r: 0.42, wind: 0.35, tc: 0xb050ff, len: 18, trail: 0x6a2aaa })); return; }
+      if (b.dP > 12) b.seek(P, sm, 1.1); else if (b.dP < 3) b.seek(P, sm, 0.6); else b.strafeAround(P, sm, dt, 0.9);
+    },
+    strike(b, P) {
+      let t = 0, phase = 0, hits = 0, tele = null;
+      AudioSys.play('phase'); b.superArmor = true;
+      return { update(dt) { t += dt;
+        if (phase === 0) { b.m.root.scale.setScalar(Math.max(0.05, 1 - t / 0.35)); if (t >= 0.35) { const s = B2X.besidePlayer(P, 1.6, chance(0.5) ? 'left' : 'right'); B2X.teleportTo(b, s.x, s.z); b.m.root.scale.setScalar(1); tele = Tele.circle(b.x, b.z, 2.3, 0.35, 0xb050ff); phase = 1; t = 0; } return true; }
+        if (phase === 1) { b.yaw = B2X.aim(b, P); if (t >= 0.35) { phase = 2; t = 0.18; } return true; }
+        if (phase === 2) { if (t >= 0.18 && hits < 4) { t = 0; hits++; b.yaw = B2X.aim(b, P); b.armPose = hits % 2 ? -2.6 : -0.6; if (dist(b.x, b.z, P.x, P.z) < 2.3 + P.radius) b.hit(P, 0.25, { multi: true, noKb: true }); AudioSys.play('slam', 1.8); Particles.burst(P.x, 1, P.z, { n: 6, colors: [0xb070ff, 0xffffff], speed: 3 }); }
+          if (hits >= 4 && t >= 0.25) { b.armPose = null; b.superArmor = false; return false; } return true; }
+        return false; },
+      cancel() { if (tele) Tele.kill(tele); b.m.root.scale.setScalar(1); b.armPose = null; b.superArmor = false; } };
+    },
+  },
+  // 9 · Seraphiel: ruht bis zum ersten Treffer; Teleport-Lanze, Leerenrisse, Zerbrochene Realität (Tore, Echos, zielsuchende Lanzen),
+  // Wut: Teleport alle 15 s, immun gegen Nahkampf; stößt den Spieler bei Annäherung weg; skaliert live mit Spieler-Stärke
+  seraphiel: {
+    init(b) { b.cds.lance = 3; b.cds.tears = 6; b.cds.reality = 22; b.cds.blink = 15; b.phase = 0; b.cfg = { phases: [1, 0.6, BOSS2_ENRAGE] }; b.gates = []; },
+    onHurt(b, dmg) { if (!b.awake && !b.waking) { b.waking = true; Boss2Story.awaken(b); } return dmg; },
+    tick(b, dt, P) {
+      if (!b.awake || !P || P.dead) return;
+      // Abstoßen bei Annäherung
+      b.pushT -= dt; if (b.pushT <= 0 && dist(P.x, P.z, b.x, b.z) < b.radius + 2.2) { b.pushT = 1.1; const a = yawTo(b.x, b.z, P.x, P.z); P.kvx += Math.sin(a) * 13; P.kvz += Math.cos(a) * 13; FX.ring(b.x, b.z, 0.4, 3.4, 0.3, 0xffd27a); AudioSys.play('block'); }
+      // Live-Skalierung mit Spielerstufe und Ausrüstungswert (Leben in Prozent bleibt erhalten)
+      b.scaleT -= dt; if (b.scaleT <= 0) { b.scaleT = 3; const m = BOSS2_AI.seraphiel.powerMul(b); if (Math.abs(m - b.hpMul) > 0.01) { const f = b.hp / b.maxHp; b.hpMul = m; b.maxHp = b.baseHp * m; b.hp = b.maxHp * f; b.dmg = b.baseDmg * (1 + (m - 1) * 0.5); } }
+      // Phase 2 ab 60 %
+      if (b.phase === 0 && b.hp / b.maxHp <= 0.6) { b.phase = 1; UI.banner(t('boss2.seraphiel.phase2'), '', 2); UI.bossPhase(b); AudioSys.play('roar'); }
+    },
+    // Spieler-Stärke: Stufe und Ausrüstungswert gegenüber der Erwartung auf Kampfstufe
+    powerMul(b) {
+      const D = Profile.data, eq = D.equip, its = [eq.melee, eq.ranged, eq.armor, eq.helm].filter(Boolean);
+      const gear = its.length ? its.reduce((s, it) => s + it.power + (it.upg || 0), 0) / its.length : D.level;
+      return clamp(1 + 0.8 * (gear / (b.level + 7) - 1) + 0.02 * (D.level - b.level), 0.85, 1.7);
+    },
+    onEnrage(b) { b.meleeImmune = true; b.cds.blink = 2; Music.play('bossSeraphiel2'); UI.toast(t('boss2.seraphiel.meleeImmune'), '#ffd27a'); },
+    think(b, dt, sm, P) {
+      const S = BOSS2_AI.seraphiel;
+      if (b.enraged && b.ready('blink')) { b.setCd('blink', 15); const s = Game.world.randomFloor(b.room, Math.random, { avoid: P, minD: 8 }); if (s) { B2X.teleportTo(b, s.x, s.z, [0xffd27a, 0x9a4aff]); UI.toast(t('boss2.seraphiel.blink'), '#ffd27a'); } return; }
+      if (b.phase >= 1 && b.ready('reality')) { b.setCd('reality', 35, 30); b.start(S.reality(b, P)); return; }
+      if (b.ready('lance')) { b.setCd('lance', 7, 5); b.start(S.lance(b, P)); return; }
+      if (b.ready('tears')) { b.setCd('tears', 9, 6.5); b.start(S.tears(b, P)); return; }
+      if (b.dP < 5) b.flee(P, sm, 0.8); else if (b.dP > 11) b.seek(P, sm); else b.strafeAround(P, sm, dt, 0.6);
+    },
+    // hinter den Spieler teleportieren, nach 0,35 s Blitzlanze (Linie, sehr hoher Schaden)
+    lance(b, P) {
+      let t = 0, beam = null; AudioSys.play('portal');
+      return { update(dt) { t += dt;
+        if (!beam && t >= 0.25) { const s = B2X.besidePlayer(P, 2.4, 'behind'); B2X.teleportTo(b, s.x, s.z, [0xffd27a, 0xffffff]); const a = yawTo(b.x, b.z, P.x, P.z); b.yaw = a;
+          beam = B2X.beam(b, P, { yaw: a, len: 11, w: 1.2, wind: 0.35, mul: 4.0, color: 0xfff2a0, tc: 0xffd27a, sound: 'explode' }); }
+        if (beam) return beam.update(dt);
+        return true; },
+      cancel() { if (beam) beam.cancel(); } };
+    },
+    // drei Risse unter und neben dem Spieler (0,85 s), jeder explodiert mit hohem Schaden
+    tears(b, P) {
+      let t = 0; b.armPose = -2.6; b.charging = true; AudioSys.play('void');
+      const a = rand(0, TAU); B2X.tear(b, P.x, P.z, 1.7, 0.85, 2.5); B2X.tear(b, P.x + Math.cos(a) * 2.4, P.z + Math.sin(a) * 2.4, 1.7, 0.85, 2.5); B2X.tear(b, P.x - Math.cos(a) * 2.4, P.z - Math.sin(a) * 2.4, 1.7, 0.85, 2.5);
+      return { update(dt) { t += dt; if (t >= 0.9) { b.armPose = null; b.charging = false; return false; } return true; }, cancel() { b.armPose = null; b.charging = false; } };
+    },
+    // Zerbrochene Realität (10 s): 5 Tore beschwören jede Sekunde 3 Echos (höchstens 12), dazu 15 zielsuchende Lanzen im 0,45-s-Takt
+    reality(b, P) {
+      let tt = 0, spawnT = 0.6, lanceT = 1.0, lances = 0; const room = b.room, gates = [];
+      for (let k = 0; k < 5; k++) { const a = k / 5 * TAU + 0.3, x = room.cx + Math.cos(a) * room.w * 0.36, z = room.cz + Math.sin(a) * room.h * 0.36; gates.push(BOSS2_AI.seraphiel.gate(x, z)); }
+      UI.banner(t('boss2.seraphiel.reality'), t('boss2.seraphiel.realitySub'), 2.6); AudioSys.play('roar', 0.7); Shake.add(0.5); b.charging = true; b.armPose = -3;
+      const close = () => { for (const g of gates) g.close(); b.charging = false; b.armPose = null; };
+      return { update(dt) { tt += dt; spawnT -= dt; lanceT -= dt;
+        if (spawnT <= 0) { spawnT = 1; for (const g of gates) for (let k = 0; k < 3; k++) if (B2X.count('echo') < 12) { const s = Game.world.freeNear(g.x, g.z, 1.6, Math.random) || g; B2X.spawnSummon(b, 'echo', s.x, s.z); } }
+        if (lanceT <= 0 && lances < 15) { lanceT = 0.45; lances++; const g = gates[lances % gates.length], a = yawTo(g.x, g.z, P.x, P.z);
+          Projectiles.spawn({ x: g.x, y: 1.2, z: g.z, vx: Math.sin(a) * 10, vz: Math.cos(a) * 10, faction: 'enemy', dmg: b.dmg * 1.8, kind: 'lance', color: 0xffd27a, life: 3.2, radius: 0.32, owner: b, homing: 2.2, fizzle: true, trail: 0xffe8a0 }); AudioSys.play('shoot', 1.3); }
+        if (tt >= 10) { close(); return false; } return true; },
+      cancel: close };
+    },
+    gate(x, z) {
+      const g = new THREE.Group(); part(g, 0.3, 2.6, 0.3, 0x2a1a3a, -0.9, 1.3, 0); part(g, 0.3, 2.6, 0.3, 0x2a1a3a, 0.9, 1.3, 0); const core = part(g, 1.5, 2.2, 0.1, 0x9a4aff, 0, 1.3, 0, { glow: true, opacity: 0.75 });
+      g.position.set(x, 0, z); R.scene.add(g); let t = 0, open = true;
+      Game.effects.push(dt => { t += dt; core.scale.set(1 + Math.sin(t * 9) * 0.06, open ? Math.min(1, t * 3) : Math.max(0, core.scale.y - dt * 3), 1); if (Math.random() < dt * 12) Particles.spawn(x + rand(-0.7, 0.7), rand(0.4, 2.4), z, 0, 0.6, 0, 0.6, 0.1, pick([0x9a4aff, 0xffffff]), 0, 0);
+        if (!open && core.scale.y <= 0.02) { R.scene.remove(g); return false; } if (!Game.world) { R.scene.remove(g); return false; } return true; });
+      AudioSys.play('portal'); return { x, z, close() { open = false; } };
+    },
+    onDeath(b) { Projectiles.destroyNear(b.x, b.z, 60, 'enemy'); for (const e of Game.enemies) if (e.summonKind === 'echo' && !e.dead) Combat.damageEnemy(e, e.hp + 1, { cmd: true }); },
+  },
+};
+
+/* ---------------- Treffer, Status, Unikate: Anpassungen für die neuen Bosse ---------------- */
+(() => {
+  const _de = Combat.damageEnemy, _as = Combat.applyStatus, _ex = Combat.explosion, _ph = Combat.playerHit;
+  let aoe = 0;
+  Combat.explosion = function (...a) { aoe++; try { return _ex.apply(this, a); } finally { aoe--; } };
+  Combat.damageEnemy = function (e, dmg, o = {}) {
+    if (e && e.v2 && !e.dead && !e.removed && !e.invuln) {
+      o = Object.assign({}, o); if (aoe > 0) o.aoe = true;
+      // keine Sofort-Tötung: /onehit wirkt bei den neuen Bossen höchstens mit 25 % der Lebenspunkte je Treffer
+      if (!o.cmd) { if (Cheat.onehit && Profile.settings.onehitBosses) dmg = Math.max(dmg, e.maxHp * 0.25); else if (Cheat.dmg !== 1) dmg *= Cheat.dmg; o.cmd = true; }
+      dmg = e.modDamage(dmg, o); if (!(dmg > 0)) return 0;
+      if (o.kb) o.kb *= 0.25; // Rückstoß stark verringert
+      dmg = Math.min(dmg, e.hp + 1);
+    }
+    if (e && e.isBoss && !e.dead && P2.leerenkrone()) dmg *= 1.15; // Leerenkrone: +15 % gegen Bosse
+    return _de.call(this, e, dmg, o);
+  };
+  Combat.applyStatus = function (e, type, dur, mag) {
+    if (e && e.v2 && (type === 'stun' || type === 'freeze')) { e.isBoss = false; try { return _as.call(this, e, type, dur, mag); } finally { e.isBoss = true; } }
+    return _as.call(this, e, type, dur, mag);
+  };
+  // Unikate: Zofenschwur (Treffer nach Rolle +60 %), Kolossspalter (jeder 3. Treffer Kristallblitz)
+  Combat.playerHit = function (e, base, o = {}) {
+    const P = Game.player;
+    if (P && P.hasUnique('zofenschwur') && P.rollBuffT > 0 && !o.ranged) { base *= 1.6; P.rollBuffT = 0; DmgNum.spawn(e.x, e.height + 0.8, e.z, t('boss2.u.zofen'), 'crit'); }
+    const r = _ph.call(this, e, base, o);
+    if (P && r && !o.ranged && P.hasUnique('kolossspalter')) { P.kolossN = (P.kolossN || 0) + 1; if (P.kolossN % 3 === 0) setTimeout(() => { if (Game.world && !P.dead) Combat.explosion(e.x, e.z, 2.4, base * P.dmgMult * 0.8, { enemies: true, player: false, school: 'arcane', color: 0x9fe0ff }); }, 60); }
+    return r;
+  };
+})();
+const P2 = {
+  leerenkrone() { const P = Game.player; return !!(P && P.hasUnique('leerenkrone')); },
+};
+(() => {
+  // Rolle merkt sich den Zofenschwur-Bonus; Leerenkrone mindert Boss-Schaden; Lanze der Architektin stärkt Arkan
+  const proto = Player.prototype, _hurt = proto.hurt, _sm = proto.spellMult, _up = proto.update;
+  proto.hurt = function (amount, sx, sz, o = {}) { if (o.source && o.source.isBoss && this.hasUnique('leerenkrone')) amount *= 0.9; return _hurt.call(this, amount, sx, sz, o); };
+  proto.spellMult = function (school) { const m = _sm.call(this, school); return school === 'arcane' && this.hasUnique('architektenlanze') ? m * (Math.random() < 0.15 ? 2.6 : 1.3) : m; };
+  proto.update = function (dt, ...a) { const was = this.rolling > 0, r = _up.call(this, dt, ...a); if (!was && this.rolling > 0) this.rollBuffT = 2; else if (this.rollBuffT > 0) this.rollBuffT -= dt; return r; };
+})();
+
+/* ---------------- Lebensleiste: Wut-Markierung, Statussymbole, Phasentext ---------------- */
+const Boss2UI = {
+  init() {
+    const css = document.createElement('style');
+    css.textContent = '#bossBar .bbar{position:relative}#bossEnrage{position:absolute;top:-3px;bottom:-3px;left:30%;width:3px;background:#ff3a22;box-shadow:0 0 6px #ff3a22;display:none;z-index:3}'
+      + '#bossBar.v2 #bossEnrage{display:block}#bossBar.enraged .bbar{box-shadow:0 0 14px #ff3a22,0 0 2px #ff3a22 inset;animation:b2pulse .8s infinite alternate}#bossBar.enraged #bossFill{background:linear-gradient(90deg,#ff3a22,#ff8a3a)}'
+      + '@keyframes b2pulse{from{filter:brightness(1)}to{filter:brightness(1.35)}}#bossStatus{display:flex;gap:4px;justify-content:center;margin-top:3px;min-height:16px;font-size:13px}#bossStatus span{background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.25);border-radius:3px;padding:0 4px}';
+    document.head.appendChild(css);
+    const bar = document.querySelector('#bossBar .bbar'); if (bar && !document.getElementById('bossEnrage')) { const m = document.createElement('div'); m.id = 'bossEnrage'; bar.appendChild(m); }
+    const bb = document.getElementById('bossBar'); if (bb && !document.getElementById('bossStatus')) { const s = document.createElement('div'); s.id = 'bossStatus'; bb.appendChild(s); }
+    const _show = UI.showBoss, _phase = UI.bossPhase, _hide = UI.hideBoss;
+    UI.showBoss = function (b) { _show.call(this, b); this.els.bossBar.classList.toggle('v2', !!b.v2); this.els.bossBar.classList.toggle('enraged', !!b.enraged); Boss2UI.last = ''; };
+    UI.hideBoss = function () { _hide.call(this); this.els.bossBar.classList.remove('v2', 'enraged'); const s = $('bossStatus'); if (s) s.innerHTML = ''; };
+    UI.bossPhase = function (b) {
+      if (!b || !b.v2) return _phase.call(this, b);
+      const bb = this.boss && this.boss.v2 ? this.boss : b, rk = bb.rank ? ' · ' + t('arena.rankShort', { n: bb.rank }) : '';
+      this.els.bossPhase.textContent = (!bb.awake ? t('boss2.bar.dormant') : bb.enraged ? t('boss2.bar.enraged') : t('boss2.bar.phase', { n: (bb.phase || 0) + 1, max: (bb.cfg && bb.cfg.phases.length) || 2 })) + rk;
+      this.els.bossBar.classList.toggle('enraged', !!bb.enraged);
+    };
+  },
+  last: '', t: 0,
+  ICONS: { stun: '💫', freeze: '❄', chill: '🧊', burn: '🔥', poison: '☠', weak: '⬇', shock: 'ϟ', root: '🌿' },
+  tick(dt) {
+    const b = UI.boss; if (!b || !b.v2) return; this.t -= dt; if (this.t > 0) return; this.t = 0.25;
+    const st = b.st || {}, k = Object.keys(st).filter(x => this.ICONS[x]).sort().join(',') + '|' + (b.enraged ? 1 : 0) + (b.awake ? 1 : 0) + (b.phase || 0);
+    if (k === this.last) return; this.last = k;
+    const s = $('bossStatus'); if (s) s.innerHTML = Object.keys(st).filter(x => this.ICONS[x]).map(x => `<span title="${escapeHtml(STATUS_NAME[x] || x)}">${this.ICONS[x]}</span>`).join('');
+    UI.bossPhase(b);
+  },
+};
+(() => {
+  const _init = UI.init, _upd = UI.update;
+  UI.init = function (...a) { const r = _init.apply(this, a); try { Boss2UI.init(); } catch (e) { DebugLog.add('boss', 'Lebensleiste', e); } return r; };
+  UI.update = function (dt) { const r = _upd.call(this, dt); try { Boss2UI.tick(dt); } catch (e) { /* Anzeige */ } return r; };
+})();
 /* ============================== FREIE KAMERA: SCHWENK, DREHUNG, NEIGUNG, ZOOM ===================== */
 // Umsehen, ohne die Figur zu bewegen:
 //  · Schwenken: Taste halten + Maus ziehen (Standard: mittlere Maustaste), Kamera-Tasten, rechter Stick (außerhalb des Kampfes),
@@ -16122,7 +17986,7 @@ Cmd.register({ name: 'restore', aliases: ['wiederherstellen'], cat: 'system', pe
 // Grenzen (CMD2): Gegenstandsstufe 1–60 · /give höchstens 50 Gegenstände (ab 11 mit Rückfrage) · Edelsteine 0–9.999.999 ·
 //   Aufstiegssplitter 0–9.999 · Pfeile 0–99 (Köcher des Spiels) · Talentpunkte 0–999 · höchstens 4 Verzauberungen je Gegenstand ·
 //   /upgrade force: nie über Loot.absCap(it) (höchste mit allen 3 Aufstiegen erreichbare Stufe).
-const CMD2 = { ilvl: 60, give: 50, ask: 10, gems: 9999999, shards: 9999, arrows: 99, xp: 10000000, tp: 999, ench: 4, upg: 20, search: 40 };
+const CMD2 = { ilvl: 120, give: 50, ask: 10, gems: 9999999, shards: 9999, arrows: 99, xp: 10000000, tp: 999, ench: 4, upg: 20, search: 40 };
 const EQ_SLOTS = ['melee', 'ranged', 'armor', 'helm', 'cape', 'art1', 'art2', 'art3'];
 const EQ_ALIAS = { melee: ['waffe', 'weapon', 'nahkampf', 'mainhand'], ranged: ['bogen', 'bow', 'fernkampf', 'fernwaffe', 'range'], armor: ['ruestung', 'brust', 'chest', 'armour', 'body'],
   helm: ['helmet', 'kopf', 'head'], cape: ['umhang', 'mantel', 'cloak'], art1: ['artefakt1', 'artifact1', 'a1'], art2: ['artefakt2', 'artifact2', 'a2'], art3: ['artefakt3', 'artifact3', 'a3'] };
@@ -16763,7 +18627,7 @@ Cmd.register({ name: 'discover', aliases: ['entdecken'], cat: 'unlock', perm: 'a
 // /tp /home /time set /weather /timescale /spawn /killall /boss /chest /loot · /quest /puzzle /flag · /difficulty /savereset /debug /seed
 // Alle Befehle laufen über die Spielsysteme (Reisen mit Ladeübergang, Gegner/Bosse, Truhen, Beute, Quests, Rätsel), damit
 // Meldungen, Musik, Entdeckungen, Questfortschritt und das Speichern genauso ablaufen wie im normalen Spiel.
-const CMDW = { spawnMax: 30, enemiesMax: 150, bossesMax: 3, lvlMax: 60, radiusMax: 200, flagLen: 40, flagVal: 80, listMax: 60, seedMax: 999999, weatherHold: 600, afterSec: 15 };
+const CMDW = { spawnMax: 30, enemiesMax: 150, bossesMax: 3, lvlMax: 120, radiusMax: 200, flagLen: 40, flagVal: 80, listMax: 60, seedMax: 999999, weatherHold: 600, afterSec: 15 };
 const TP_KINDS = ['region', 'dungeon', 'boss', 'wp', 'poi', 'entrance'];
 // zusätzliche Schlüsselwörter für /tp <art> <ort> (neben den Übersetzungen 'cmd.val.tpkind.<art>')
 const TP_SYN = { region: ['zone', 'gebiet'], dungeon: ['verlies'], boss: ['bossraum'], wp: ['waypoint', 'waystone', 'wegpunkt', 'wegstein', 'wegsteine'], poi: ['place', 'ort'], entrance: ['eingang'] };
@@ -16894,14 +18758,17 @@ const CmdWorld = {
     }
     return o;
   },
-  bossLevel(b) { const d = this.dungeonOfBoss(b), D = DUNGEONS[d], T = WORLD_TIERS[Game.tier] || WORLD_TIERS[0]; return clamp(D ? D.lvl + T.lvl + (D.arena ? 1 : 3) : Profile.data.level, 1, CMDW.lvlMax); },
+  bossLevel(b) { if (BOSS2[b]) return Arenas.bossLevel(b); const d = this.dungeonOfBoss(b), D = DUNGEONS[d], T = WORLD_TIERS[Game.tier] || WORLD_TIERS[0]; return clamp(D ? D.lvl + T.lvl + (D.arena ? 1 : 3) : Profile.data.level, 1, CMDW.lvlMax); },
   // Boss sofort besiegen – über den normalen Tod (Beute, Erfahrung, Questfortschritt, Siegesbanner)
   killBoss(b) {
     b.introT = 0; b.invuln = false; b.kneel = false; if (b.m && b.m.root) b.m.root.position.y = 0;
+    if (b.v2) { b.awake = true; b.waking = true; b.enrInvT = 0; } // neue Bosse: Seraphiel nicht erst wecken (keine Zwischensequenz)
     if (b.kind === 'beast' && !b.decided) { b.decided = true; Quests.setFlag('nightmawSlain'); Game.dropItem(b.x, b.z, Loot.unique('nachtfang', b.level + 2)); } // Nachtschlund: wie „Erschlagen“
     Combat.damageEnemy(b, b.hp + 1, { cmd: true });
   },
   livingBoss(b) { return Game.enemies.find(e => e.isBoss && e.bossId === b && !e.dead && !e.removed) || null; },
+  // alle lebenden Teile eines neuen Bosses (Zwillingszofen: beide)
+  livingV2(b) { return Game.enemies.filter(e => e.v2 && e.bossId === b && !e.dead && !e.removed); },
 
   /* ---------- Rätsel ---------- */
   puzzleList() {
@@ -17066,7 +18933,9 @@ Cmd.register({ name: 'boss', cat: 'world', perm: 'admin',
         if (!CmdWorld.dungeonOfBoss(a.boss)) c.fail('cmd.boss.noDungeon', { name: B.name });
         const q = CmdWorld.ahead(4.5), p = CmdWorld.spot(w, q.x, q.z, 8, (X, Z) => dist2(X + 0.5, Z + 0.5, c.P.x, c.P.z) < 6, true);
         if (!p) c.fail('cmd.spawn.noSpace');
-        const lvl = a.level || CmdWorld.bossLevel(a.boss), b = new Boss(a.boss, p.x, p.z, lvl, null, null);
+        const lvl = a.level || CmdWorld.bossLevel(a.boss);
+        if (BOSS2[a.boss]) { const room = w.isDungeon && w.bossRoom && w.roomAt(p.x, p.z) === w.bossRoom ? w.bossRoom : null; Boss2.spawn(a.boss, room, p.x, p.z, { level: lvl }); AudioSys.play('boss'); return t('cmd.boss.spawned', { name: B.name, lvl }); }
+        const b = new Boss(a.boss, p.x, p.z, lvl, null, null);
         G.enemies.push(b); UI.showBoss(b); UI.banner(B.name.toUpperCase(), B.title, 3); AudioSys.play('boss');
         return t('cmd.boss.spawned', { name: B.name, lvl });
       } },
@@ -17076,6 +18945,7 @@ Cmd.register({ name: 'boss', cat: 'world', perm: 'admin',
         const F = c.D.flags, B = BOSSES[a.boss], had = !!F['boss_' + a.boss] || (a.boss === 'nachtschlund' && (F.nightmawSlain || F.nightmawFreed));
         if (!had) c.fail('cmd.boss.notDefeated', { name: B.name });
         delete F['boss_' + a.boss]; if (a.boss === 'nachtschlund') { delete F.nightmawSlain; delete F.nightmawFreed; }
+        if (c.D.bossRank) delete c.D.bossRank[a.boss]; // neue Bosse: Revanche-Rang zurücksetzen
         CmdWorld.refreshWorld();
         const w = c.W, d = CmdWorld.dungeonOfBoss(a.boss); if (w.isDungeon && w.dungeon === d && w.bossRoom && w.bossRoom.cleared) c.hint(t('cmd.boss.reenter'));
         c.hint(t('cmd.boss.resetNote'));
@@ -17088,6 +18958,19 @@ Cmd.register({ name: 'boss', cat: 'world', perm: 'admin',
         const G = Game, w = c.W, B = BOSSES[a.boss], d = CmdWorld.dungeonOfBoss(a.boss);
         if (!d) c.fail('cmd.boss.noDungeon', { name: B.name });
         let b = CmdWorld.livingBoss(a.boss); const own = w.isDungeon && w.dungeon === d;
+        if (BOSS2[a.boss]) {
+          // neue Bosse: lebende Teile besiegen oder in der eigenen Arena (sonst vor dem Spieler) erscheinen lassen und besiegen
+          let list = CmdWorld.livingV2(a.boss);
+          if (!list.length) {
+            if (w.isDungeon && !own) c.fail('cmd.boss.skipHere', { name: B.name, dungeon: DUNGEONS[d].name });
+            const room = own ? w.bossRoom : null, q = CmdWorld.ahead(3), p = own ? { x: room.cx, z: room.cz - 2 } : (CmdWorld.spot(w, q.x, q.z, 8) || { x: c.P.x, z: c.P.z });
+            if (room) { room.bossSpawned = true; room.state = 'active'; G.encounter = room; if (w.isArena) room.wave = DUNGEONS[d].waves; }
+            list = Boss2.spawn(a.boss, room, p.x, p.z);
+          }
+          for (const x of list) CmdWorld.killBoss(x);
+          if (own && !w.isArena && w.bossRoom && !w.bossRoom.cleared && (!G.encounter || G.encounter === w.bossRoom)) G.clearRoom(w.bossRoom);
+          return t('cmd.boss.skipped', { name: B.name });
+        }
         if (!b) {
           if (w.isDungeon && !own) c.fail('cmd.boss.skipHere', { name: B.name, dungeon: DUNGEONS[d].name });
           const room = own ? w.bossRoom : null, q = CmdWorld.ahead(3), p = CmdWorld.spot(w, q.x, q.z, 8) || { x: c.P.x, z: c.P.z };

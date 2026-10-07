@@ -321,11 +321,60 @@ Waypoint-Effekte laufen genauso wie beim normalen Spielen.
 - **Automatische Sicherung** vor `/unlock all`, `/lock`, `/savereset`, `/clearinv`, `/giveall`, `/quest completeall` und
   `/restore` (die letzten 3 je Slot, lokal); `/backup` sichert von Hand, `/restore [n]` stellt wieder her.
   `/undo` macht die letzten 5 Admin-Befehle rückgängig, die den Spielstand geändert haben (nur im selben Spielstand).
-- **Grenzen:** Stufe 1–40, Gegenstandsstufe bis 60, höchstens 50 Stück je `/give`, Edelsteine bis 9.999.999, 30 Gegner je
+- **Grenzen:** Stufe 1–100, Gegenstandsstufe bis 120, höchstens 50 Stück je `/give`, Edelsteine bis 9.999.999, 30 Gegner je
   `/spawn` (150 gleichzeitig), Faktoren wie oben. Ungültige Eingaben ergeben eine Fehlermeldung, nie einen Absturz.
 - **Protokoll:** Jeder Admin-Befehl wird mit Zeit und Ergebnis protokolliert (letzte 80, `/history`); Protokoll und Kurzbefehle
   liegen lokal und im Cloud-Profil.
 - **Kurzbefehle:** `/alias heilen /heal; /mana` legt einen Makro-Befehl an (höchstens 30 Stück, 300 Zeichen, 3 Ebenen tief).
+
+## Bosse der Stufen 40–100
+
+Neun neue Bosse mit eigenen **Boss-Arenen** an neuen Orten. Bestehende Dungeons und Bosse bleiben unverändert. Die
+Stufenobergrenze liegt jetzt bei **100** (Gegenstandsstufe bis 120).
+
+| # | Boss | Arena (Region, Nachbarort) | Stufe | Stärke | Kern-Mechanik |
+|---|---|---|---|---|---|
+| 1 | Dornfang-Alpha | Dornenhain (Duskwood, Forgotten Forest) | 40 | 1 | Astwurf alle 2 s, Astsalve (16 Geschosse) |
+| 2 | Der Hohle Wächter | Die Hohlfelder (Duskwood, Hollow Fields) | 47 | 2 | Sprungschlag mit 1-s-Zone, fester Körper |
+| 3 | Die Zwillingszofen | Verborgener Salon (Ehbergten, Ornate Mansion) – geheim | 52 | 3 | versetzte Würfe, Klemmtritt (5 Tritte) nur solange beide leben |
+| 4 | Der Urschlund | Schlund der Nacht (Nightmaw's Den, The Den) | 57 | 4 | Biss alle 1,3 s, Wirbelverfolgung (höchstens 3 Treffer) |
+| 5 | Das Große Skelett | Der Knochenthron (Undead Caverns, Grand Cemetery) | 65 | 5 | Totenruf: 3 Knochendiener; Arkan und Flächenschaden wirken stark |
+| 6 | Parasitäres Phantom | Parasitenherz (Toxic Wastelands, Parasitic Expanse) | 73 | 7 | Kontaktschaden, Flächenhieb, 10 Elite-Geister, Splittersturm; Gift heilt es |
+| 7 | Xylar, der Kristallkoloss | Kristallgipfel (Mount Aelen, Shattered Peaks) | 81 | 8 | Splittersalve, Kernlaser mit Energiefeldern (8 s) |
+| 8 | Der Leerenerwachte König | Thron der Leere (Void Rift, Hideout) – Wellenarena | 89 | 6 | Leerenblitz, Teleportschlag (4 Hiebe); erscheint nach der letzten Welle |
+| 9 | Seraphiel, die verderbte Architektin | Herz des Nexus (Astral Nexus, Central Nexus) | 100 | 9 | ruht bis zum ersten Treffer; Teleport-Lanze, Leerenrisse, Zerbrochene Realität |
+
+- **Stufe und Skalierung:** Jeder Boss hat eine Basisstufe auf der Spielkurve (40 → 100). Ist der Spieler höher, wächst der
+  Boss auf dessen Stufe mit (Leben und Schaden), dazu die Weltstufe (+10/+20 Stufen, höchstens 100). Leben = angestrebte
+  Kampfdauer × Referenz-Schaden des Spielers auf dieser Stufe (ca. 1–2 min früh bis ca. 5 min bei Seraphiel); Schaden:
+  Faktor 1,0 ≈ 12 % der Lebenspunkte eines passend ausgerüsteten Spielers. Seraphiel passt Leben und Schaden zusätzlich
+  laufend an Stufe und Ausrüstungswert an (der Lebensanteil bleibt dabei erhalten).
+- **Telegrafie:** Jeder Angriff hat eine rote Zone, Linie oder Aufladung und lässt sich per Rolle oder Laufen vermeiden.
+  Seraphiels zielsuchende Lanzen verpuffen, wenn man im Trefferfenster rollt.
+- **Wut bei 30 %:** Aura, Farbwechsel, Brüllen, Meldung „Raserei“, kürzere Abklingzeiten. Die Lebensleiste zeigt Name,
+  Titel, Phase, eine Markierung bei 30 % und Statussymbole (Brennen, Gift, Frost …).
+- **Resistenzen:** Betäubung höchstens 0,7 s (danach 5 s Schutz), Frost höchstens 1 s (Xylar 0,5 s), Wurzeln höchstens 1 s,
+  Rückstoß auf ein Viertel, keine Sofort-Tötung (`/onehit` mit „auch Bosse“ wirkt mit höchstens 25 % je Treffer).
+  Elemente: Das Spiel kennt die Schulen Feuer, Frost, „Blitz & Arkan“ und Leere – „Blitz“ und „Heilig“ aus der
+  Vorgabe laufen über „Blitz & Arkan“.
+- **Arenen:** Vorraum → Kampf- bzw. Rätselraum → Vorraum mit **Checkpoint** (heilt voll) → Bossraum. Beim Betreten
+  schließen sich die Türen. Ein Tod setzt den Kampf zurück; „Am Checkpoint erneut versuchen“ beginnt im Vorraum, der
+  Boss startet mit vollem Leben. Im Thron der Leere zählt das Erscheinen des Königs als Checkpoint (Wellen übersprungen).
+- **Freischaltung:** Alle Arenen ab Stufe 40. Der Schlund der Nacht öffnet sich über die Questkette „Spuren im Staub“ →
+  „Das Heulen der Tiefe“ (Brann). Der Verborgene Salon bleibt unsichtbar, bis Lady Vespera besiegt ist; drinnen öffnet
+  ein Hebelrätsel den Weg. Das Herz des Nexus hält „sieben Siegel“ – die sieben übrigen neuen Bosse.
+  Gesperrte Eingänge und die Weltkarte nennen den Grund.
+- **Belohnungen:** garantierte Beute je Stärkestufe (Seltenheit), Erfahrung, Edelsteine, Aufstiegssplitter und
+  Questfortschritt. Unikate: Zofenschwur (Zwillingszofen; Treffer nach einer Rolle +60 %), Kolossspalter (Xylar; jeder
+  3. Treffer Kristallblitz), Leerenkrone (König; +15 % Schaden gegen Bosse, −10 % Schaden von Bossen), Lanze der
+  Architektin (Seraphiel; Arkan stärker). Die Zwillingszofen tragen zusätzlich einen Geheimnis-Eintrag ein.
+- **Bossstatus und Revanche:** Siege werden gespeichert (auch in der Cloud) und auf der Weltkarte abgehakt. Wer eine
+  Arena eines besiegten Bosses betritt, wählt **„Boss erneut bekämpfen“**: Normal oder Rang 1–5 (je Rang +30 % Leben,
+  +12 % Schaden, mehr Beute und Erfahrung; der nächste Rang wird durch einen Sieg frei).
+- **Story:** Orin bleibt der vorletzte Kampf. Nach seinem Fall gibt es keinen Abspann mehr, sondern Weltstufen und das
+  neue Kapitel „Das schlafende Auge“ (sieben Siegel brechen) → „Die verderbte Architektin“. Seraphiel hat eigene Musik
+  in zwei Phasen, Zwischensequenzen beim Erwachen und beim Tod; danach folgen Epilog und Abspann.
+- **Befehle:** `/boss spawn|skip|reset` und `/tp boss` kennen die neuen Bosse (`/boss reset` setzt auch den Revanche-Rang zurück).
 
 ## Einstellungen
 
@@ -337,10 +386,10 @@ angemeldet ist – im Supabase-Profil (`profiles.settings`, `keybindings`, `lang
 
 - **Charakter-Creator:** Geschlecht, Haut, je 8 Frisuren, Haar- und Augenfarbe, Gesicht, Bart, Narben & Tattoos, Kleidung und Farbe,
   Name, Zufallsknopf, drehbare Live-Vorschau. Klassen: Krieger, Magier, Waldläufer, Schurke.
-- **Welt:** 9 Regionen über Brücken verbunden, 12 Dungeons inklusive Void Arena, Tag-/Nachtzyklus, Wetter und Musik je Region.
-- **Kampf und Magie:** 13 Waffentypen mit eigenen Kombos und Spezialangriffen, 14 legendäre Unikate, 16 Zauber in 4 Schulen,
+- **Welt:** 9 Regionen über Brücken verbunden, 12 Dungeons inklusive Void Arena und 9 Boss-Arenen, Tag-/Nachtzyklus, Wetter und Musik je Region.
+- **Kampf und Magie:** 13 Waffentypen mit eigenen Kombos und Spezialangriffen, 18 legendäre Unikate, 16 Zauber in 4 Schulen,
   Talentbäume, Runen, Element-Kombos.
-- **Quests:** 43 Quests mit Hauptgeschichte (Prolog, sieben Akte, Finale), Nebenquests, Kopfgeldern, Sammel-, Eskort- und
+- **Quests:** 47 Quests mit Hauptgeschichte (Prolog, sieben Akte, Finale, Epilog mit Seraphiel), Nebenquests, Kopfgeldern, Sammel-, Eskort- und
   Tagesaufträgen; Dialoge mit Porträts und Entscheidungen.
 - **Rätsel:** 10 Rätseltypen mit mehrstufigen Hinweisen und Geheimräumen, darunter 18 Zahnradgetriebe in 7 Varianten.
 - **Weltkarte (M):** zoombare Pixel-Art-Karte der Himmelsinseln mit Detailstufen, Nebel des Krieges, Filtern, Questmarkern und Waypoint-Schnellreise.
