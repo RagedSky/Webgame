@@ -42,6 +42,7 @@ zeigt eine Warnung unter Einstellungen › Konto. Einen versehentlich veröffent
    [`supabase/schema.sql`](supabase/schema.sql) ausführen. Dasselbe SQL steht auch als nicht ausgeführter Codeblock am Ende von `index.html`.
    Es legt `profiles` und `savegames` an, mit Row Level Security: Nutzer lesen, schreiben und löschen nur ihre eigenen Zeilen
    (`user_id = auth.jwt()->>'sub'`).
+   Die Spalte `profiles.is_admin` (Admin-Befehle der Konsole) kann nur der Datenbank-Besitzer setzen, nie der Spieler selbst.
 4. Projekt-URL und *Publishable Key* (oder Anon Key) in `CONFIG.supabaseUrl` / `CONFIG.supabaseKey` eintragen.
 
 Der Supabase-Client bekommt das Clerk-Session-Token als `accessToken`
@@ -122,6 +123,7 @@ gedrückten Tasten live angezeigt; gespeichert wird beim Loslassen, Esc bricht a
 | Inventar · Zauber & Talente · Quest-Log · Weltkarte | I · K · J · M | Back · – · – · – (LB/RB wechseln die Menüs) |
 | Rätsel-Hinweis | T | – |
 | Navigationsanzeige ein/aus | N | – |
+| Chat öffnen · Befehl eingeben | Enter · / (Num /) | frei belegbar |
 | Pause | Esc / P | Start |
 
 Mit dem Gamepad lassen sich auch alle Menüs bedienen: Steuerkreuz bewegt den Fokus, A bestätigt, B geht zurück.
@@ -226,10 +228,89 @@ in einer anderen Region, führt alles zum nächsten passenden Ausgang; im Dungeo
 Zwischensequenzen wird die Anzeige ausgeblendet, im Kampf durchsichtiger. Es können bis zu vier Quests verfolgt werden,
 davon höchstens eine Hauptquest; die erste ist der Fokus der Navigation (Klick im Tracker setzt den Fokus).
 
+## Chat & Befehlskonsole
+
+Unten links im HUD liegt ein Chatfenster. **Enter** öffnet es, **/** öffnet es mit vorangestelltem Schrägstrich
+(beides unter Einstellungen › Steuerung frei belegbar, auch als Kombination), **Esc** schließt es. Solange der Chat offen ist,
+ruht die Spielsteuerung. Auf Touch-Geräten öffnet der Knopf 💬 oben rechts den Chat; das Eingabefeld rückt dann nach oben,
+damit die Bildschirmtastatur es nicht verdeckt.
+
+- **Verlauf:** bis zu 200 Zeilen mit Scrollen, farbigen Meldungstypen (System, Fehler, Erfolg, Hinweis, Flüstern, Emote) und
+  optionalen Zeitstempeln. Nachrichten sind höchstens 200 Zeichen lang; mehr als 5 Nachrichten in 5 Sekunden werden gebremst.
+- **Eingabe:** ↑/↓ blättert durch die letzten 50 Eingaben (gespeichert), **Tab** vervollständigt Befehle, Gegenstände, Orte,
+  Regionen, Dungeons, Bosse, Quests, Rätsel und Spielernamen; darüber erscheint eine Vorschlagsliste mit Syntax.
+- **Einblenden:** Ohne Aktivität blendet der Chat nach 9 Sekunden aus (abschaltbar). Größe (S/M/L), Deckkraft, Auto-Ausblenden,
+  Zeitstempel und Chat an/aus stehen unter **Einstellungen › Konto › Chat & Entwickler**. Der Chat skaliert mit dem HUD-Regler.
+- **Nachrichten ohne /** erscheinen lokal mit dem Charakternamen. Ein Mehrspieler-Kanal über Supabase Realtime ist vorbereitet
+  (`ChatNet`, Broadcast-Kanal `aetherfall-chat`), aber aus: Er wird nur mit `CONFIG.chatRealtime: true` und Anmeldung aktiv.
+
+### Befehle
+
+Befehle beginnen mit `/`, Groß-/Kleinschreibung ist egal, Argumente mit Leerzeichen stehen in Anführungszeichen
+(`/tp "Asche-Steppe"`). Gegenstände, Orte und Quests gehen als ID oder als deutscher bzw. englischer Name. Zahlen dürfen
+`50k`, `1m` oder Tausenderpunkte enthalten. Bei Tippfehlern schlägt das Spiel den nächsten Befehl vor („Meintest du /give?“),
+falsche Argumente werden mit Syntax und Beispiel erklärt. Mehrere Befehle in einer Zeile trennt `;` (höchstens 10).
+
+**Für alle:** `/help [befehl]` · `/clear` · `/pos` (`/coords`) · `/stats` · `/time` · `/ping` · `/lang de|en` · `/save` · `/sync` ·
+`/bind [aktion]` · `/quests` · `/track <quest>` · `/whisper <name> <text>` · `/me <text>` · `/history [n]` · `/alias` ·
+`/cheats [status]` · `/confirm` · `/cancel`
+
+**Nur Admin** – Gegenstände und Währung: `/give <gegenstand> [anzahl] [stufe] [seltenheit]` (`/give help` listet alle Kategorien),
+`/giveall <kategorie>`, `/gems` bzw. `/gold [+|-|=] <menge>` (das Spiel kennt nur Edelsteine ◆), `/currency <art> <menge>`,
+`/take <gegenstand> [anzahl|alle]`, `/clearinv`, `/repair`, `/upgrade <slot> [stufen] [force]`, `/enchant <slot> <modifikator> [stufe]`.
+
+**Nur Admin** – Charakter: `/level`, `/xp`, `/skillpoints`, `/respec [all|talents|attrs]`, `/heal`, `/mana`, `/stamina`,
+`/god`, `/infmana`, `/infstamina`, `/onehit` (jeweils `[on|off]`), `/speed`, `/jumpheight` (0,25–4), `/damage` (0,1–100),
+`/noclip`, `/unstuck`, `/appearance`.
+
+**Nur Admin** – Freischalten: `/unlock <all|map|waypoints|quests|spells|weapons|recipes|regions|puzzles|achievements|skills|cosmetics>`,
+`/lock <kategorie>`, `/reveal [hier|region|alles]`, `/waypoints unlock|list`, `/discover <ort>`.
+
+**Nur Admin** – Welt: `/tp <wegstein|ort|region|dungeon|boss|x y>`, `/home [region]`, `/time set <morgen|mittag|abend|nacht|HH:MM>`,
+`/weather <wetter>`, `/timescale <0–60>`, `/spawn <gegner> [anzahl 1–30] [stufe]`, `/killall [radius] [bosse]`,
+`/boss spawn|reset|skip <boss>`, `/chest [seltenheit] [stufe]`, `/loot [radius]`.
+
+**Nur Admin** – Quests, Rätsel, System: `/quest start|complete|reset|list|completeall`, `/puzzle solve|reset|list`,
+`/flag set|get|del|list`, `/difficulty <0–2>`, `/savereset`, `/backup [list]`, `/restore [n]`, `/undo`, `/seed [set <zahl>]`,
+`/debug <fps|trefferzonen|ki|pfade|koordinaten|aus>`, `/cheats on|off`.
+
+Befehle nutzen die Systeme des Spiels: Quest-Belohnungen, Stufenaufstiege, Benachrichtigungen, Karten-Haken und
+Waypoint-Effekte laufen genauso wie beim normalen Spielen.
+
+### Rechte und Entwicklermodus
+
+- **Angemeldet:** Admin-Befehle gibt es nur, wenn in Supabase `profiles.is_admin = true` steht. Spieler können die Spalte selbst
+  nicht setzen (Trigger und Spaltenrechte, siehe [`supabase/schema.sql`](supabase/schema.sql)); vergeben wird sie im
+  SQL-Editor: `update public.profiles set is_admin = true where user_id = 'user_…';`. Offline gilt der zuletzt bekannte Status.
+- **Gast / lokal:** Einstellungen › Konto › Chat & Entwickler › **Entwicklermodus** (Standard aus) schaltet die Admin-Befehle für
+  lokale Spielstände frei; im Chat erscheint ein Hinweis.
+- Ohne Rechte: „Dafür brauchst du Admin-Rechte.“ Abgelehnte Versuche stehen ebenfalls im Protokoll.
+- Befehle wirken ausschließlich im Client auf den eigenen Spielstand. Im Code stehen keine geheimen Schlüssel.
+
+### Sicherheitsnetze
+
+- **Cheat-Kennzeichen:** Sobald ein Admin-Befehl etwas verändert, bekommt der Spielstand `cheats_used` – sichtbar als Abzeichen
+  „Cheats“ in der Slot-Übersicht. `/cheats off` schaltet alle Cheats und Admin-Befehle für die Sitzung ab, das Kennzeichen bleibt.
+- **Rückfragen** bei allem, was etwas entfernt, senkt, zurücksetzt oder überschreibt, und bei großen Eingriffen:
+  `/unlock all`, `/lock`, `/clearinv`, `/giveall`, `/give` über 10 Stück, `/take`, Senken von Edelsteinen/Währungen,
+  `/level`, `/xp`, `/skillpoints` und `/upgrade`, Entfernen/Senken/Verdrängen einer Verzauberung, `/respec`,
+  `/quest reset`, Neustart einer erledigten Quest, `/quest completeall`, `/boss reset`, `/boss skip`, `/puzzle reset`,
+  Überschreiben/Löschen eines Flags, `/killall` mit Bossen, `/seed set`, `/noclip`, `/restore`, `/undo`.
+  Bestätigt wird mit den Knöpfen im Chat oder `/confirm` bzw. `/cancel`; eine Rückfrage verfällt nach 45 Sekunden oder
+  sobald ein anderer Spielstand geladen ist. `/savereset` und `/lock all` fragen zweimal.
+- **Automatische Sicherung** vor `/unlock all`, `/lock`, `/savereset`, `/clearinv`, `/giveall`, `/quest completeall` und
+  `/restore` (die letzten 3 je Slot, lokal); `/backup` sichert von Hand, `/restore [n]` stellt wieder her.
+  `/undo` macht die letzten 5 Admin-Befehle rückgängig, die den Spielstand geändert haben (nur im selben Spielstand).
+- **Grenzen:** Stufe 1–40, Gegenstandsstufe bis 60, höchstens 50 Stück je `/give`, Edelsteine bis 9.999.999, 30 Gegner je
+  `/spawn` (150 gleichzeitig), Faktoren wie oben. Ungültige Eingaben ergeben eine Fehlermeldung, nie einen Absturz.
+- **Protokoll:** Jeder Admin-Befehl wird mit Zeit und Ergebnis protokolliert (letzte 80, `/history`); Protokoll und Kurzbefehle
+  liegen lokal und im Cloud-Profil.
+- **Kurzbefehle:** `/alias heilen /heal; /mana` legt einen Makro-Befehl an (höchstens 30 Stück, 300 Zeichen, 3 Ebenen tief).
+
 ## Einstellungen
 
 Tabs **Allgemein** (Sprache, Weltstufe, Tipps & Tutorials) · **Steuerung** · **Grafik** · **Audio** · **Anzeige**
-(Navigationshilfen, Quest-Tracker, Minikarte) · **Konto**. Alle Einstellungen werden lokal gespeichert und – wenn man
+(Navigationshilfen, Quest-Tracker, Minikarte) · **Konto** (Anmeldung, Slots, Chat & Entwickler, Konsole, Befehlsprotokoll). Alle Einstellungen werden lokal gespeichert und – wenn man
 angemeldet ist – im Supabase-Profil (`profiles.settings`, `keybindings`, `language`) und beim Start geladen.
 
 ## Inhalt

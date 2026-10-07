@@ -17,6 +17,7 @@ create table if not exists public.profiles (
   language     text not null default 'de' check (language ~ '^[a-z]{2}$'),
   settings     jsonb not null default '{}'::jsonb,
   keybindings  jsonb not null default '{}'::jsonb,
+  is_admin     boolean not null default false,       -- Admin-Befehle der Konsole; nur per SQL/Dashboard setzbar
   created_at   timestamptz not null default now(),
   updated_at   timestamptz not null default now()
 );
@@ -84,3 +85,32 @@ create policy "savegames_delete_own" on public.savegames for delete to authentic
 -- Rechte: nur angemeldete Nutzer (Rolle authenticated aus dem Clerk-Token), kein anonymer Zugriff
 revoke all on public.profiles, public.savegames from anon;
 grant select, insert, update, delete on public.profiles, public.savegames to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- Admin-Rechte für die Befehlskonsole (profiles.is_admin)
+-- Spieler können is_admin weder beim Anlegen noch beim Ändern ihres Profils setzen:
+--   1. Trigger: für die Rollen anon/authenticated wird is_admin auf false bzw. den alten Wert zurückgesetzt.
+--   2. Spaltenrechte: die Rolle authenticated darf die Spalte is_admin nicht schreiben (nur lesen).
+-- Vergeben wird das Recht nur im Supabase-Dashboard bzw. SQL-Editor (als Datenbank-Besitzer), z. B.:
+--   update public.profiles set is_admin = true where user_id = 'user_…';
+-- ---------------------------------------------------------------------------
+alter table public.profiles add column if not exists is_admin boolean not null default false;
+
+create or replace function public.aetherfall_protect_admin()
+returns trigger language plpgsql set search_path = '' as $$
+begin
+  if current_user in ('authenticated', 'anon') then
+    if tg_op = 'INSERT' then new.is_admin := false;
+    else new.is_admin := old.is_admin;
+    end if;
+  end if;
+  return new;
+end;
+$$;
+drop trigger if exists profiles_protect_admin on public.profiles;
+create trigger profiles_protect_admin before insert or update on public.profiles
+  for each row execute function public.aetherfall_protect_admin();
+
+revoke insert, update on public.profiles from authenticated;
+grant insert (user_id, display_name, language, settings, keybindings, created_at, updated_at) on public.profiles to authenticated;
+grant update (user_id, display_name, language, settings, keybindings, updated_at) on public.profiles to authenticated;
