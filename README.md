@@ -105,13 +105,13 @@ gedrückten Tasten live angezeigt; gespeichert wird beim Loslassen, Esc bricht a
 | Aktion | Standard | Gamepad |
 |---|---|---|
 | Bewegen | W A S D / Pfeiltasten | linker Stick |
-| Springen (in der Luft erneut: Doppelsprung ab Stufe 6) | Leertaste | A (in Reichweite: Interagieren) |
+| Springen (in der Luft erneut: Doppelsprung, an Wänden: Wandsprung – beide als Fähigkeit freizuschalten) | Leertaste | A (in Reichweite: Interagieren) |
 | Sprinten (Ausdauer) | Shift | L3 (umschalten) |
 | Zielen | Maus | rechter Stick im Kampf (sonst automatische Zielwahl) |
-| Angriff (Kombo) | Linksklick | RT |
+| Angriff (Kombo; im Sprint: Sturmangriff, in der Luft: Landungsschlag) | Linksklick | RT |
 | Spezialangriff | C | RB |
 | Fernkampf | Rechtsklick / F | LT |
-| Ausweichrolle | V | B |
+| Ausweichrolle (im vollen Sprint: Rutschen; mit Luftstoß auch in der Luft) | V | B |
 | Zauber-Slots 1–4 | 1 2 3 4 | Steuerkreuz |
 | Artefakte | Q E R | LB, X, RS |
 | Heiltrank | H | Y |
@@ -120,7 +120,7 @@ gedrückten Tasten live angezeigt; gespeichert wird beim Loslassen, Esc bricht a
 | Kamera zentrieren · Zoom | Num 5 / Z · Mausrad / + − | Stick loslassen |
 | Kamera drehen / kippen | Strg + mittlere Maustaste ziehen · Num 7 / Num 9 bzw. , / . · Bild ↑ / Bild ↓ (Num 3 / Num 1) | frei belegbar |
 | Ansicht zurücksetzen (Drehung, Neigung, Zoom) | Num 0 / Shift + Z | frei belegbar |
-| Inventar · Zauber & Talente · Quest-Log · Weltkarte | I · K · J · M | Back · – · – · – (LB/RB wechseln die Menüs) |
+| Inventar · Zauber & Talente · Quest-Log · Weltkarte · Kodex | I · K · J · M · L | Back · – · – · – · Pausemenü (LB/RB wechseln die Menüs) |
 | Rätsel-Hinweis | T | – |
 | Navigationsanzeige ein/aus | N | – |
 | Chat öffnen · Befehl eingeben | Enter · / (Num /) | frei belegbar |
@@ -156,20 +156,43 @@ SPRINT); zwei Finger schwenken die Kamera, auseinander/zusammen zoomt, Verdrehen
   alles bleibt an seinem Rand verankert, Vergrößerungen werden auf den verfügbaren Platz begrenzt (im Hochformat bricht
   die Hotbar in mehrere Reihen um).
 
-## Springen, Sprinten, Sprungpassagen
+## Sprinten, Springen, Parkour
 
-- Sprung mit sichtbarer Höhe (Schatten bleibt am Boden), kurzer Luftkontrolle und Doppelsprung ab Stufe 6. Sprinten
-  (+45 % Tempo) verbraucht Ausdauer, ein Ring neben der Figur erscheint nur bei Bedarf. Die Rolle bricht den Sprint ab,
-  ein Sprung aus dem Sprint reicht weiter.
-- Über Gruben, Lava, Gift, Leere und Abgründe kommt man nur im Sprung; wer hineinfällt, verliert kurz Leben (Lava/Gift mehr)
-  und erscheint am letzten sicheren Punkt.
-- **Jede Region** hat zwei optionale Passagen: Baumstämme über Wasser, Trittsteine über Lava/Gift, Void-Brücken (verschwinden
-  im Takt), bröckelnde Steine, bewegliche und schwebende Plattformen – zu Inseln mit Schatztruhen; auf der zweiten Insel
-  öffnet sich die Truhe erst, wenn man drei schwebende **Sprungschalter** im Sprung berührt.
-- **Jeder Dungeon** (außer der Arena) hat einen Pflicht-Sprungraum: ein Abgrund mit Plattformketten von allen Türen zu
-  einer Mittelinsel mit überspringbaren Hindernissen.
-- Bodenangriffe (Druckwellen, Stachelfallen, Feuer-/Säureflächen) lassen sich überspringen; Geschosse fliegen unter einem
-  hohen Sprung hindurch. Navigationsanzeige und Weltkarte kennen die Sprungpassagen.
+Sprinten und Springen sind an vielen Stellen die bessere Wahl – im Kampf, bei Bossen, in Rätseln und beim Reisen.
+Alle Aktionen laufen über die vorhandenen Tasten (frei belegbar, auch Kombinationen, Gamepad, Touch); Hinweise zeigen
+immer die aktuell belegte Taste.
+
+- **Sturmangriff:** Angriff im Sprint → Vorstoß mit ×1,9 Schaden, starkem Rückstoß und kurzer Betäubung (18 Ausdauer,
+  kurze Erholung). **Rutschen:** Ausweichtaste im vollen Sprint – flache Hitbox, Bolzen auf Brusthöhe und hohe Laser
+  verfehlen. **Landungsschlag:** Angriff in der Luft oder Landen auf Gegnern → Flächenschaden + Betäubung
+  (Abklingzeit 3,5 s, 15 Ausdauer). Abklingzeiten neben dem Ausdauerring.
+- **Reisen:** in sicheren Orten (Lager, Stadt) kostet Sprinten nichts, auf Wegen etwa die Hälfte, in der Wildnis voll.
+- **Wahrnehmung:** Gegner sehen dich normal auf ~9 m, beim Sprinten weiter (Sprinten ist laut), von hinten schlechter.
+  Wer sich absetzt und außer Sicht bleibt, wird verloren – das Rudel sucht („?“) am letzten Ort und kehrt dann heim.
+- **Sprung-Ausweichen** (gelb telegrafiert, Symbol ⤒): Brute-Schockwelle, Tiefschuss der Schützen, Fegehieb, rollende
+  Fässer; bei Bossen u. a. Schockwellen des Hohlen Wächters, Knochenfeger des Großen Skeletts, Kristallwellen und tiefe
+  Laser von Xylar, Glutwellen des Aschenschmieds. **Sprint-Positionsspiel:** Wirbel des Urschlunds, Energiefelder von Xylar,
+  Klemmtritt der Zwillingszofen (rechtzeitig wegsprinten bricht ihn), Sog-Zonen von Leerenkönig und Seraphiel, Lavaflut.
+  Die Rolle bleibt das Mittel gegen Einzeltreffer.
+- **Fähigkeiten:** Doppelsprung (Quest „Wurzeln des Übels“, Elwen), Wandsprung + Kante hochziehen (Quest „Gipfelsturm“,
+  Hilde), Dornenspurt, Bebenlandung, Schattenhatz, Luftstoß, Leerenschritt (erste Siege über die neuen Bosse). Alte Regionen
+  enthalten Wege, die erst damit erreichbar sind (Doppelsprung-Säulen und -Lücken, Wandsprung-Kamine mit Truhen); ohne
+  Fähigkeit erklärt ein Hinweis, was fehlt und woher es kommt. Ein vierter Talentzweig „Bewegung“ je Klasse und neue
+  Verzauberungen (Ausdauer, Schritt, Ansturm) verbessern Ausdauer, Sprinttempo, Erholung und Sprint-/Landungsschaden.
+- **Höhenvorteil** in jeder Region: Aussichtsfelsen (decken einen großen Kartenbereich auf), Truhenfelsen, Fernkampffelsen
+  (Nahkämpfer kommen nicht hinauf), Sprungabkürzungen und Geheimwege aus Geisterplatten.
+- **Sprung-Rätsel** in allen Regionen: Luft-Druckplatten, Lasergänge (springen/rutschen/Takt), hohe Schalter, Fackellauf mit
+  Zeitlimit und Fallenstreifen; dazu bestehende Sprungpassagen, Sprungschalter und Pflicht-Sprungräume in Dungeons.
+- **Parkour in allen 9 Regionen** (Baumstämme, Förderbänder, Lavasteine, Eisschollen, Void-Brücken …) in den Stufen
+  normal/schwer/meister (Meister ohne Sturz) mit Checkpoints und **Bestzeiten** (Kodex → Bestzeiten).
+- **Zeitbasiertes:** Sprint-Kurier, Wettlauf gegen Fenna, Eskorte mit Zeitlimit, einstürzende Brücke, Zeitrune mit
+  Zeit-Truhe, Fackel- und Fabrikrätsel, blinkende Laser (HUD-Zeitanzeige).
+- **Karte & Navigation:** entdeckte Abkürzungen, Aussichtspunkte und Parkour-Starts mit eigenem Filter „Bewegung“; die
+  Navigation schlägt eine entdeckte Sprungabkürzung als türkise Alternativroute vor.
+- **Gegner** flankieren, Fernkämpfer bleiben hinter den Nahkämpfern, sie weichen sichtbaren Flächenangriffen aus, springen
+  über Hindernisse und nutzen Sprint-Schübe; alles fair telegrafiert.
+- Neue Quests (Kurier, Wettlauf, Parkour-Meister, Landungsschlag-Siege, Abhängen, Aussicht, Eskorte, Tagesauftrag) und
+  16 Bewegungs-Erfolge.
 
 ## Ausrüstung: Aufwertungsstufe, Obergrenze, Aufstieg
 
@@ -329,7 +352,7 @@ Waypoint-Effekte laufen genauso wie beim normalen Spielen.
 
 ## Bosse der Stufen 40–100
 
-Neun neue Bosse mit eigenen **Boss-Arenen** an neuen Orten. Bestehende Dungeons und Bosse bleiben unverändert. Die
+Zehn neue Bosse mit eigenen **Boss-Arenen** an neuen Orten (inklusive Vulkhar, dem Aschenschmied der Cinder Wastes). Bestehende Dungeons und Bosse bleiben unverändert. Die
 Stufenobergrenze liegt jetzt bei **100** (Gegenstandsstufe bis 120).
 
 | # | Boss | Arena (Region, Nachbarort) | Stufe | Stärke | Kern-Mechanik |
@@ -339,6 +362,7 @@ Stufenobergrenze liegt jetzt bei **100** (Gegenstandsstufe bis 120).
 | 3 | Die Zwillingszofen | Verborgener Salon (Ehbergten, Ornate Mansion) – geheim | 52 | 3 | versetzte Würfe, Klemmtritt (5 Tritte) nur solange beide leben |
 | 4 | Der Urschlund | Schlund der Nacht (Nightmaw's Den, The Den) | 57 | 4 | Biss alle 1,3 s, Wirbelverfolgung (höchstens 3 Treffer) |
 | 5 | Das Große Skelett | Der Knochenthron (Undead Caverns, Grand Cemetery) | 65 | 5 | Totenruf: 3 Knochendiener; Arkan und Flächenschaden wirken stark |
+| 5b | Vulkhar, der Aschenschmied | Seelenesse (Cinder Wastes, Volcano of Lost Souls) | 69 | 6 | Glutwellen (springen), Lavaflut (zur kühlen Insel sprinten), Lanzenfächer; Feuer kaum wirksam, Frost stark |
 | 6 | Parasitäres Phantom | Parasitenherz (Toxic Wastelands, Parasitic Expanse) | 73 | 7 | Kontaktschaden, Flächenhieb, 10 Elite-Geister, Splittersturm; Gift heilt es |
 | 7 | Xylar, der Kristallkoloss | Kristallgipfel (Mount Aelen, Shattered Peaks) | 81 | 8 | Splittersalve, Kernlaser mit Energiefeldern (8 s) |
 | 8 | Der Leerenerwachte König | Thron der Leere (Void Rift, Hideout) – Wellenarena | 89 | 6 | Leerenblitz, Teleportschlag (4 Hiebe); erscheint nach der letzten Welle |
@@ -360,9 +384,9 @@ Stufenobergrenze liegt jetzt bei **100** (Gegenstandsstufe bis 120).
 - **Arenen:** Vorraum → Kampf- bzw. Rätselraum → Vorraum mit **Checkpoint** (heilt voll) → Bossraum. Beim Betreten
   schließen sich die Türen. Ein Tod setzt den Kampf zurück; „Am Checkpoint erneut versuchen“ beginnt im Vorraum, der
   Boss startet mit vollem Leben. Im Thron der Leere zählt das Erscheinen des Königs als Checkpoint (Wellen übersprungen).
-- **Freischaltung:** Alle Arenen ab Stufe 40. Der Schlund der Nacht öffnet sich über die Questkette „Spuren im Staub“ →
+- **Freischaltung:** über den Story-Fortschritt (Akte von Buch II, siehe unten) und die Stufenempfehlung (Bossstufe − 6, mindestens 40). Der Schlund der Nacht öffnet sich über die Questkette „Spuren im Staub“ →
   „Das Heulen der Tiefe“ (Brann). Der Verborgene Salon bleibt unsichtbar, bis Lady Vespera besiegt ist; drinnen öffnet
-  ein Hebelrätsel den Weg. Das Herz des Nexus hält „sieben Siegel“ – die sieben übrigen neuen Bosse.
+  ein Hebelrätsel den Weg. Das Herz des Nexus hält „acht Siegel“ – die acht übrigen neuen Bosse (ohne die optionalen Zwillingszofen).
   Gesperrte Eingänge und die Weltkarte nennen den Grund.
 - **Belohnungen:** garantierte Beute je Stärkestufe (Seltenheit), Erfahrung, Edelsteine, Aufstiegssplitter und
   Questfortschritt. Unikate: Zofenschwur (Zwillingszofen; Treffer nach einer Rolle +60 %), Kolossspalter (Xylar; jeder
@@ -372,9 +396,56 @@ Stufenobergrenze liegt jetzt bei **100** (Gegenstandsstufe bis 120).
   Arena eines besiegten Bosses betritt, wählt **„Boss erneut bekämpfen“**: Normal oder Rang 1–5 (je Rang +30 % Leben,
   +12 % Schaden, mehr Beute und Erfahrung; der nächste Rang wird durch einen Sieg frei).
 - **Story:** Orin bleibt der vorletzte Kampf. Nach seinem Fall gibt es keinen Abspann mehr, sondern Weltstufen und das
-  neue Kapitel „Das schlafende Auge“ (sieben Siegel brechen) → „Die verderbte Architektin“. Seraphiel hat eigene Musik
+  neue Kapitel „Das schlafende Auge“ (acht Siegel brechen) → „Die verderbte Architektin“. Seraphiel hat eigene Musik
   in zwei Phasen, Zwischensequenzen beim Erwachen und beim Tod; danach folgen Epilog und Abspann.
 - **Befehle:** `/boss spawn|skip|reset` und `/tp boss` kennen die neuen Bosse (`/boss reset` setzt auch den Revanche-Rang zurück).
+
+## Story: Buch II, Kodex und Erfolge
+
+- **Buch I** bleibt die Geschichte um Orin. Jeder alte Boss hinterlässt ein Fragment aus dem **Logbuch der Architektin**;
+  im Versteck der Void Rift (Quest „Das verdächtige Versteck“) fallen zum ersten Mal ihr Zeichen und ihr Name –
+  Orin war ihr Werkzeug.
+- **Buch II** (nach Orins Fall): acht Akte, je ein Akt pro Region, jeder mit drei Quests, Dialogen mit Auswahl (die Wahl
+  wirkt später nach), Boss-Intro beim ersten Erscheinen, Outro nach dem Sieg und Lore-Fundstücken in der Region. Die
+  Arenen öffnen sich über den Story-Fortschritt (vorheriger Akt) und die Stufenempfehlung (Bossstufe − 6).
+  Rollen: Dornfang-Alpha (Dornensamen der Architektin), der Hohle Wächter (ausgehöhlter Feldwächter Hollbrand),
+  der Urschlund (Mutter aller Schlünde, von der alten Wacht versiegelt – Schloss auf der Karte bis zum Wachtschlüssel),
+  das Große Skelett Aldemar (erster Friedhofswächter, Meister von Mortheus), Vulkhar der Aschenschmied (schmiedet ihre
+  Lanzen; Wendepunkt von Buch II mit Kael), das Parasitäre Phantom (ihr „Gärtner“, Quelle der Brut), Xylar (aus
+  Kronensplittern gewachsen, von Sylvaras Gesang gebannt), Varos der Leerenerwachte König (Gründer der Void Arena,
+  seine Krone öffnet das Nexus-Herz) und Seraphiel selbst. Acht Siegel müssen brechen.
+- **Geheimstory der Zwillingszofen** (optional, Ornate Mansion): Briefe sammeln, Glockenrätsel lösen, Salon betreten;
+  danach erscheint Matthis in Ehbergten, und das Wissen der Zofen hilft im Finale.
+- **Weltfolgen** nach jedem Bosssieg: andere NPC-Zeilen, ruhigeres Wetter und Musik, weniger Rudel, ein Wegstein an der
+  Arena, thematische Händlerware, eine Nachspiel-Nebenquest, Kodex-Eintrag und Erfolge.
+- **Belohnungen:** je Boss ein Unikat oder eine Bewegungsfähigkeit (neu: Wächtereid, Essenglut, Symbiontenmantel).
+- **Kodex** (Taste L, Pausemenü, HUD-Knopf): Lore, Bosse (Status, Revanche-Rang), Erfolge, Bestzeiten, Fähigkeiten.
+  Karte: Filter „Bosse“ und „Lore“; Tracker und Questbuch zeigen „Akt n · i/n“ und den Bossstatus.
+- Farbige Namen (Gegenstände, Quests, NPCs, Bosse, Orte) laufen über ein zentrales Rich-Text-System – sie erscheinen nie
+  als Rohtext.
+
+## Balancing und Anti-Grind
+
+- **Zentrale Tabelle `BAL`** (Ende von `b_util_data.js` in den Quellen): alle Kurven, Faktoren und Obergrenzen, kommentiert.
+- **Spielerstärke:** abnehmender Ertrag für Attribute; Krit-Chance und -Schaden, Lebensraub (auch pro Sekunde, gegen
+  Bosse halbiert), Abklingzeitverkürzung, Tempo, Ausweichen und Rüstung (weiche Kurve) mit weichen und harten Grenzen;
+  prozentuale Schadensboni aus Talenten, Verzauberungen und Unikaten bilden einen gemeinsamen, gedeckelten Pool.
+- **Ausbau-Obergrenze** zusätzlich an den Story-Fortschritt gekoppelt (Bosse aus Buch I und II), bestehende Stufen bleiben.
+- **Tränke:** 3 Ladungen (+1 mit Lioras Rezept), auffüllen an sicheren Orten, Wegsteinen, Checkpoints und beim
+  Dungeon-Eingang; im Bosskampf längere Abklingzeit. Ladungen am Trank-Slot.
+- **Anti-Grind:** Erfahrung, Edelsteine und Beute sinken mit dem Stufenabstand (ab +3 deutlich, ab +7 fast nichts);
+  Regions-Ermüdung; geleerte Rudel bleiben 10 Minuten leer; Tagesaufträge, Arena und Boss-Revanchen mit abnehmendem
+  Ertrag pro Tag. Eine Stunde Grinden in einer frühen Region bringt etwa 1–2 Stufen.
+- **Stufenbänder:** Gegner folgen der Spielerstufe teilweise innerhalb ihres Regions-/Dungeonbands; neue Bosse werden bei
+  Überstufe deutlich kürzer (≈0,6× bei +5), ihr Schaden bleibt spürbar. Weltstufen skalieren Gegner und Belohnung
+  stärker als den Spieler.
+- **Zielwerte (gleiche Stufe):** normaler Gegner ~2–3 s, Brute ~6–8 s, ein normaler Treffer ~7–8 % der Lebenspunkte;
+  alte Bosse ~1–2 Minuten, neue Bosse ~1:20 bis 5:00 (Seraphiel). Quests sind die wichtigste Erfahrungsquelle; wer schon
+  über dem nächsten Story-Meilenstein liegt, bekommt weniger Quest-Erfahrung.
+- **Alte Spielstände** behalten Stufe, Gegenstände und Fortschritt; einmalig wird angeboten, Talente und Attribute kostenlos
+  neu zu verteilen (auch später über den Charakterbildschirm oder `/rebalance`).
+- **Admin:** `/balance report [klasse] [stufe]`, `/balance boss [id]`, `/balance grind [region] [minuten] [stufe]`,
+  `/balance story` – Tabellen in Deutsch und Englisch. `/god`, `/onehit`, `/damage`, `/level` bleiben unveränderte Cheats.
 
 ## Einstellungen
 
@@ -386,10 +457,11 @@ angemeldet ist – im Supabase-Profil (`profiles.settings`, `keybindings`, `lang
 
 - **Charakter-Creator:** Geschlecht, Haut, je 8 Frisuren, Haar- und Augenfarbe, Gesicht, Bart, Narben & Tattoos, Kleidung und Farbe,
   Name, Zufallsknopf, drehbare Live-Vorschau. Klassen: Krieger, Magier, Waldläufer, Schurke.
-- **Welt:** 9 Regionen über Brücken verbunden, 12 Dungeons inklusive Void Arena und 9 Boss-Arenen, Tag-/Nachtzyklus, Wetter und Musik je Region.
-- **Kampf und Magie:** 13 Waffentypen mit eigenen Kombos und Spezialangriffen, 18 legendäre Unikate, 16 Zauber in 4 Schulen,
-  Talentbäume, Runen, Element-Kombos.
-- **Quests:** 47 Quests mit Hauptgeschichte (Prolog, sieben Akte, Finale, Epilog mit Seraphiel), Nebenquests, Kopfgeldern, Sammel-, Eskort- und
+- **Welt:** 9 Regionen über Brücken verbunden, 12 Dungeons inklusive Void Arena und 10 Boss-Arenen, Tag-/Nachtzyklus, Wetter und Musik je Region.
+- **Kampf und Magie:** 13 Waffentypen mit eigenen Kombos und Spezialangriffen, 21 legendäre Unikate, 16 Zauber in 4 Schulen,
+  Talentbäume (je Klasse drei Kampfzweige + Bewegung), Runen, Element-Kombos.
+- **Quests:** 89 Quests mit Hauptgeschichte (Buch I: Prolog, sieben Akte, Finale gegen Orin; Buch II: acht Akte und Finale gegen Seraphiel), Nebenquests, Kopfgeldern, Sammel-, Eskort- und
   Tagesaufträgen; Dialoge mit Porträts und Entscheidungen.
 - **Rätsel:** 10 Rätseltypen mit mehrstufigen Hinweisen und Geheimräumen, darunter 18 Zahnradgetriebe in 7 Varianten.
+- **Kodex (L):** 67 Lore-/Boss-Einträge, 28 Erfolge, 29 Bestzeiten (Parkour, Wettläufe), 10 Fähigkeiten.
 - **Weltkarte (M):** zoombare Pixel-Art-Karte der Himmelsinseln mit Detailstufen, Nebel des Krieges, Filtern, Questmarkern und Waypoint-Schnellreise.
