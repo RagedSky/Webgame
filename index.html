@@ -19531,7 +19531,8 @@ const BOSS2_AI = {
       return clamp(1 + 0.8 * (gear / (b.level + 7) - 1) + 0.02 * (D.level - b.level), 0.85, 1.7);
     },
     onEnrage(b) { b.meleeImmune = true; b.cds.blink = 2; Music.play('bossSeraphiel2'); UI.toast(t('boss2.seraphiel.meleeImmune'), '#ffd27a'); },
-    blink(b, P) { b.setCd('blink', 15); const s = Game.world.randomFloor(b.room, Math.random, { avoid: P, minD: 8 }); if (s) { B2X.teleportTo(b, s.x, s.z, [0xffd27a, 0x9a4aff]); UI.toast(t('boss2.seraphiel.blink'), '#ffd27a'); } },
+    // Ziel weit weg vom Spieler und sichtbar weit weg von der alten Position
+    blink(b, P) { b.setCd('blink', 15); let s = null; for (let k = 0; k < 8; k++) { const c = Game.world.randomFloor(b.room, Math.random, { avoid: P, minD: 8 }); if (!s || dist(c.x, c.z, b.x, b.z) > dist(s.x, s.z, b.x, b.z)) s = c; if (dist(s.x, s.z, b.x, b.z) >= 6) break; } if (s) { B2X.teleportTo(b, s.x, s.z, [0xffd27a, 0x9a4aff]); UI.toast(t('boss2.seraphiel.blink'), '#ffd27a'); } },
     think(b, dt, sm, P) {
       const S = BOSS2_AI.seraphiel;
       if (b.phase >= 1 && b.ready('reality')) { b.setCd('reality', 35, 30); b.start(S.reality(b, P)); return; }
