@@ -81,32 +81,94 @@ bleiben als Sicherung erhalten. Spielstände der ersten Version (`voxelgruft_sav
 - **Neue Sprache hinzufügen:** in `I18N.LANGS` eintragen, dann `I18N.add('xx', {…})` für die Oberfläche und
   `I18N.addContent('xx', {…})` für die Inhalte. Fehlende Einträge fallen auf Englisch und danach auf Deutsch zurück.
 
-## Steuerung (frei belegbar)
+## Steuerung (frei belegbar, auch mit Tastenkombinationen)
 
-Einstellungen › Steuerung: Für jede Aktion gibt es eine Primär- und eine Sekundärbelegung (Taste oder Maustaste) und eine
-Gamepad-Belegung. Doppelte Belegungen werden angezeigt und können getauscht oder abgebrochen werden. Dazu gibt es die
-Voreinstellungen „WASD“ und „Pfeiltasten“, das Gamepad-Layout (Gamepad API, Standardbelegung) und „Auf Standard zurücksetzen“.
-Tooltips, Hinweise, HUD und die Hilfe zeigen immer die aktuell belegten Tasten.
+Einstellungen › Steuerung: Für jede Aktion gibt es eine Primär- und eine Sekundärbelegung und eine Gamepad-Belegung.
+Belegt werden können einzelne Tasten, Maustasten, Modifikatoren allein (z. B. Shift) und **Kombinationen** wie
+„Shift + A“, „Strg + Leertaste“, „Alt + 1“ oder „Rechtsklick + E“ (am Gamepad z. B. „LB + A“). Bei der Aufnahme werden alle
+gedrückten Tasten live angezeigt; gespeichert wird beim Loslassen, Esc bricht ab, Entf löscht.
+
+- **Vorrang:** Die spezifischere Kombination gewinnt (Shift + A löst seine Aktion aus, A allein nicht). Bewegung wird nie
+  blockiert – wer mit Shift sprintet, läuft mit A weiter nach links.
+- **Konflikte:** Nur identische Belegungen gelten als Konflikt (tauschen oder abbrechen). Überschneidungen, die gleichzeitig
+  wirken (z. B. Shift-Kombination und Sprinten), werden als Hinweis angezeigt.
+- **Browser-Kürzel** wie Strg + W/T/N/R/L/…, F5, F11, F12, Alt + F4, Alt + ←/→ und Cmd/Windows-Kombinationen werden mit
+  Begründung abgelehnt. `preventDefault` greift mit Strg/Alt/Meta nur bei genau belegten Kombinationen.
+- **Tastaturlayouts:** Erkennung über `event.code`, Beschriftung über die Keyboard-API bzw. aus den tatsächlich gedrückten
+  Tasten gelernt (QWERTZ, AZERTY, QWERTY).
+- **Migration:** Belegungen der Vorversion bleiben erhalten; unveränderte alte Standards werden zu den neuen Standards.
+- Spielgefühl in derselben Ansicht: Sprinten halten oder umschalten, Kamera automatisch zentrieren, Schwenk-Empfindlichkeit, Kamera-Zoom.
 
 | Aktion | Standard | Gamepad |
 |---|---|---|
 | Bewegen | W A S D / Pfeiltasten | linker Stick |
-| Zielen | Maus | rechter Stick (sonst automatische Zielwahl) |
+| Springen (in der Luft erneut: Doppelsprung ab Stufe 6) | Leertaste | A (in Reichweite: Interagieren) |
+| Sprinten (Ausdauer) | Shift | L3 (umschalten) |
+| Zielen | Maus | rechter Stick im Kampf (sonst automatische Zielwahl) |
 | Angriff (Kombo) | Linksklick | RT |
-| Spezialangriff | Umschalt / C | RB |
+| Spezialangriff | C | RB |
 | Fernkampf | Rechtsklick / F | LT |
-| Ausweichen | Leertaste | B |
+| Ausweichrolle | V | B |
 | Zauber-Slots 1–4 | 1 2 3 4 | Steuerkreuz |
 | Artefakte | Q E R | LB, X, RS |
 | Heiltrank | H | Y |
 | Interagieren | E | A |
-| Inventar · Zauber & Talente · Quest-Log · Weltkarte | I · K · J · M | Back · – · – · LS (LB/RB wechseln die Menüs) |
+| Kamera schwenken | mittlere Maustaste halten + ziehen · Num 8/4/2/6 | rechter Stick (außerhalb des Kampfes) |
+| Kamera zentrieren · Zoom | Num 5 / Z · Mausrad / + − | Stick loslassen |
+| Inventar · Zauber & Talente · Quest-Log · Weltkarte | I · K · J · M | Back · – · – · – (LB/RB wechseln die Menüs) |
 | Rätsel-Hinweis | T | – |
 | Navigationsanzeige ein/aus | N | – |
 | Pause | Esc / P | Start |
 
 Mit dem Gamepad lassen sich auch alle Menüs bedienen: Steuerkreuz bewegt den Fokus, A bestätigt, B geht zurück.
-Esc öffnet immer das Pausemenü. Auf Touch-Geräten gibt es einen virtuellen Joystick und Aktionstasten.
+Esc öffnet immer das Pausemenü. Auf Touch-Geräten gibt es einen virtuellen Joystick und Aktionstasten (inkl. SPRUNG und
+SPRINT); zwei Finger schwenken die Kamera, auseinander/zusammen zoomt.
+
+## Kamera, HUD-Größe
+
+- **Kamera-Schwenk:** Umsehen, ohne die Figur zu bewegen – begrenzt auf 13 Kacheln um die Figur und die Welt. Beim
+  Loslassen fährt die Kamera sanft zurück (abschaltbar), im Kampf und bei Bosskämpfen immer; in Dialogen und
+  Zwischensequenzen ist der Schwenk gesperrt. Zoom 70–145 %, wird gespeichert.
+- **HUD-Größe (Einstellungen › Anzeige):** 50–200 % mit Live-Vorschau und „Standard“-Knopf. Skaliert werden Leisten,
+  Hotbar, Minikarte, Quest-Tracker, Kompass, Navigationsanzeige, Boss-Leiste, Schadenszahlen, Tooltips und Meldungen;
+  alles bleibt an seinem Rand verankert, Vergrößerungen werden auf den verfügbaren Platz begrenzt (im Hochformat bricht
+  die Hotbar in mehrere Reihen um).
+
+## Springen, Sprinten, Sprungpassagen
+
+- Sprung mit sichtbarer Höhe (Schatten bleibt am Boden), kurzer Luftkontrolle und Doppelsprung ab Stufe 6. Sprinten
+  (+45 % Tempo) verbraucht Ausdauer, ein Ring neben der Figur erscheint nur bei Bedarf. Die Rolle bricht den Sprint ab,
+  ein Sprung aus dem Sprint reicht weiter.
+- Über Gruben, Lava, Gift, Leere und Abgründe kommt man nur im Sprung; wer hineinfällt, verliert kurz Leben (Lava/Gift mehr)
+  und erscheint am letzten sicheren Punkt.
+- **Jede Region** hat zwei optionale Passagen: Baumstämme über Wasser, Trittsteine über Lava/Gift, Void-Brücken (verschwinden
+  im Takt), bröckelnde Steine, bewegliche und schwebende Plattformen – zu Inseln mit Schatztruhen; auf der zweiten Insel
+  öffnet sich die Truhe erst, wenn man drei schwebende **Sprungschalter** im Sprung berührt.
+- **Jeder Dungeon** (außer der Arena) hat einen Pflicht-Sprungraum: ein Abgrund mit Plattformketten von allen Türen zu
+  einer Mittelinsel mit überspringbaren Hindernissen.
+- Bodenangriffe (Druckwellen, Stachelfallen, Feuer-/Säureflächen) lassen sich überspringen; Geschosse fliegen unter einem
+  hohen Sprung hindurch. Navigationsanzeige und Weltkarte kennen die Sprungpassagen.
+
+## Ausrüstung: Aufwertungsstufe, Obergrenze, Aufstieg
+
+Jede Waffe und jedes Item steigt beim Schmied Stufe um Stufe. Die Obergrenze hängt von der Seltenheit ab (Gewöhnlich +3,
+Selten +5, Episch +7, Legendär +9, Unikat +10) und vom Spielerlevel (Stufe/3 + 3). Ist sie erreicht, zeigt der Tooltip
+„Max. Stufe“ und der Knopf erklärt, was fehlt. **Aufstieg** (bis zu 3×, je +2) kostet Aufstiegssplitter, die Bosse und
+Wächter fallen lassen. Tooltips, Inventar und Schmied zeigen Stufe, Obergrenze und eine Vorschau der nächsten Stufe.
+Alte Gegenstände werden beim Laden passend eingestuft (keine Stufe geht verloren).
+
+## Zahnrad-Rätsel
+
+18 Zahnradgetriebe, mindestens zwei in jeder Region (11 optional in der Oberwelt, 7 in Dungeons). Regeln: klein + groß
+nebeneinander greifen, zwei große verklemmen, zwei kleine berühren sich nicht; diagonal greifen nur zwei große. Jeder
+Kontakt kehrt die Drehrichtung um, ein Ring mit widersprüchlichen Richtungen blockiert.
+
+- **Varianten:** Kette (Antrieb → Ziel), Drehrichtung (Ring über dem Ziel), Übersetzung (langsam/normal/schnell), fehlende
+  Zahnräder (in der Umgebung einsammeln), Kupplungshebel + Druckplatte (kehrt die Richtung um), Zeitlimit (Kurbel drehen,
+  dann rechtzeitig zum Hebel laufen) und mehrstufige Getriebe. Höhere Stufen bringen größere Raster und festgerostete Räder.
+- **Regionsthemen:** Messing, Rost (Dampf, Funken), Moosstein, Lava, Kristall, Eis, Void (schwebende Räder) und Astral.
+- **Belohnungen:** Truhen, Türen (zweimal vor dem Boss), Abkürzungsportale, Geheimkammern und der Geheimraum im Kristallschlund.
+- Drei Hinweisstufen je Variante (T), gelöste Rätsel bleiben gespeichert; Marker auf Welt- und Minikarte (Filter „Rätsel“).
 
 ## Weltkarte (M)
 
@@ -159,5 +221,5 @@ angemeldet ist – im Supabase-Profil (`profiles.settings`, `keybindings`, `lang
   Talentbäume, Runen, Element-Kombos.
 - **Quests:** 43 Quests mit Hauptgeschichte (Prolog, sieben Akte, Finale), Nebenquests, Kopfgeldern, Sammel-, Eskort- und
   Tagesaufträgen; Dialoge mit Porträts und Entscheidungen.
-- **Rätsel:** 10 Rätseltypen mit mehrstufigen Hinweisen und Geheimräumen.
+- **Rätsel:** 10 Rätseltypen mit mehrstufigen Hinweisen und Geheimräumen, darunter 18 Zahnradgetriebe in 7 Varianten.
 - **Weltkarte (M):** zoombare Pixel-Art-Karte der Himmelsinseln mit Detailstufen, Nebel des Krieges, Filtern, Questmarkern und Waypoint-Schnellreise.
