@@ -209,6 +209,26 @@ Kontakt kehrt die Drehrichtung um, ein Ring mit widersprüchlichen Richtungen bl
   Ein Klick auf eine Quest im Quest-Log springt auf der Karte zum Ziel.
 - **Gesperrte Orte** erklären im Tooltip, was fehlt (Quest, Stufe, Story-Fortschritt).
 
+### Entdeckt-Status (dauerhaft gespeichert)
+
+Was man entdeckt hat, steht im Spielstand in einer eigenen Struktur `discovered` (mit Versionsfeld `v`):
+besuchte **Regionen**, entdeckte **Orte** (Lager, Stadt, Portalhügel …), aktivierte **Waypoints**, entdeckte **Dungeons** und
+der aufgedeckte **Nebel** je Region (eine Bitmaske, 1 Bit je Kartenfeld). Das Startgebiet Ehbergten mit Lager, Stadt und
+Portalhügel ist ab Spielbeginn entdeckt.
+
+- **Speichern:** Jede Speicherung nimmt den gerade aufgedeckten Nebel mit; neue Entdeckungen werden nach kurzer Pause
+  gespeichert (1,5 s Ruhe, spätestens nach 6 s, ein neuer Ort nach 0,4 s), außerdem beim Schließen, Neuladen oder Verbergen
+  der Seite. Fehlgeschlagene Speicherversuche erscheinen mit Hinweis in der Konsole und unter `/debug log`.
+- **Laden:** Nebel und Orte gehören fest zu dem Spielstand, aus dem sie geladen wurden – Titelbildschirm, Slot-Wechsel oder
+  ein neuer Charakter können sie nicht überschreiben. Geschrieben wird immer in denselben Slot (Gast bzw. Konto), aus dem
+  gelesen wurde.
+- **Cloud:** Beim Abgleich gewinnt wie bisher der neuere Stand; entdeckte Bereiche beider Seiten werden dabei aber vereinigt –
+  auch nach Offline-Spielen oder wenn ein Cloud-Stand gar keine Entdeckungen enthält. Ein bewusstes Zurücksetzen
+  (`/lock map`, `/lock waypoints`, neuer Spielstand) bekommt eine neue „Generation“ und wird durch eine Vereinigung nicht aufgehoben.
+- **Alte Spielstände** (auch aus der Zeit vor der Umbenennung) werden übernommen: Was dort entdeckt war, bleibt entdeckt.
+  Fehlt der Entdeckt-Status oder ist er kaputt, wird er einmalig aus dem Fortschritt abgeleitet (besuchte Regionen,
+  aktivierte Waypoints, angenommene/abgeschlossene Quests, besiegte Bosse, aktuelle Position).
+
 ### Waypoints (Schnellreise)
 
 - 19 Waypoints, auf der Karte immer sichtbar und nie verdeckt: aktiviert (leuchtend, anklickbar), unentdeckt (grau mit „?“,
@@ -272,7 +292,7 @@ falsche Argumente werden mit Syntax und Beispiel erklärt. Mehrere Befehle in ei
 
 **Nur Admin** – Quests, Rätsel, System: `/quest start|complete|reset|list|completeall`, `/puzzle solve|reset|list`,
 `/flag set|get|del|list`, `/difficulty <0–2>`, `/savereset`, `/backup [list]`, `/restore [n]`, `/undo`, `/seed [set <zahl>]`,
-`/debug <fps|trefferzonen|ki|pfade|koordinaten|aus>`, `/cheats on|off`.
+`/debug <fps|trefferzonen|ki|pfade|koordinaten|aus|protokoll>`, `/cheats on|off`.
 
 Befehle nutzen die Systeme des Spiels: Quest-Belohnungen, Stufenaufstiege, Benachrichtigungen, Karten-Haken und
 Waypoint-Effekte laufen genauso wie beim normalen Spielen.
