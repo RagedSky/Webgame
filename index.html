@@ -15778,13 +15778,18 @@ const Game = {
   showTitle(instant) {
     const go = () => {
       this.clearLevel(); const keep = Profile.data; if (!this.hasSave) Profile.data = null;
-      const w = ZoneGen.generate('ehbergten'); w.dataRef = null; this.world = w; this.region = 'ehbergten'; // Kulisse: gehört zu keinem Spielstand, ihr Nebel wird nie gespeichert R.scene.add(w.group); R.setTheme(w.B); Lights.setTorches(w.torches); UI.buildMapCanvas(w);
+      // Kulisse: gehört zu keinem Spielstand, ihr Nebel wird nie gespeichert
+      const w = ZoneGen.generate('ehbergten'); w.dataRef = null; this.world = w; this.region = 'ehbergten';
+      R.scene.add(w.group); R.setTheme(w.B); Lights.setTorches(w.torches); UI.buildMapCanvas(w);
       this.spawnNPCs(); Profile.data = keep && this.hasSave ? keep : Profile.data;
+      // Kamera: Schwenk-Offset auf 0, direkt auf die Kreisbahn um die Stadt (kein Gleiten vom letzten Ort)
+      CamCtl.reset(); R.introZoom = 1; const town = REGIONS.ehbergten.pois.town, ot = this.time * 0.08; R.updateCamera(0, town.x + 0.5 + Math.cos(ot) * 10, town.y + 0.5 + Math.sin(ot) * 10, true);
       Weather.set('leaves'); this.dayTime = 0.72; this.setState('title'); UI.showHud(false);
       $('btnContinue').classList.toggle('hidden', !this.hasSave);
       this.titleTexts(); AccountUI.renderBar(); SyncStatus.render();
       UI.showScreen('scrStart'); Music.play('menu');
       const cb = this.afterTitle; this.afterTitle = null; if (cb) cb();
+      SceneGuard.arm('title');
     };
     if (instant) go(); else UI.fade(go);
   },
@@ -15848,30 +15853,36 @@ const Game = {
   hideScene(hide) {
     for (const o of R.scene.children) { if (o.isLight || o === Sky.dome || o === R.sun.target) continue; if (hide) { o.userData.wasVis = o.visible; o.visible = false; } else if (o.userData.wasVis !== undefined) { o.visible = o.userData.wasVis; delete o.userData.wasVis; } }
   },
-  resumeFromCreator() { this.hideScene(false); const w = this.world; R.setTheme(w.B); Lights.setTorches(w.torches); UI.showHud(true); Music.play(REGIONS[this.region].music); this.refreshTouchUI(); if (this.player) R.updateCamera(0, this.player.x, this.player.z, true); },
+  resumeFromCreator() { this.hideScene(false); SceneGuard.arm('creator'); const w = this.world; R.setTheme(w.B); Lights.setTorches(w.torches); UI.showHud(true); Music.play(REGIONS[this.region].music); this.refreshTouchUI(); if (this.player) R.updateCamera(0, this.player.x, this.player.z, true); },
   /* ---------------- Hauptschleife ---------------- */
   frame() {
     const now = performance.now(); let dt = Math.min(0.05, (now - this.last) / 1000); this.last = now; if (!(dt > 0)) dt = 0.016;
-    this.handleKeys();
+    RenderGuard.run('input', () => this.handleKeys());
     let gdt = dt;
     if (this.hitStop > 0) { this.hitStop -= dt; gdt = dt * 0.06; }
     if (this.slowMo > 0) { this.slowMo -= dt; gdt *= 0.35; }
     Shaders.time.value += dt;
-    if (this.state === 'creator') { Creator.update(dt); Particles.update(dt); R.render(); Input.endFrame(); return; }
-    if (this.state === 'title') this.updateTitle(dt);
-    else if (this.state === 'dialog') this.updateAmbient(dt, true);
-    else if (!this.isPaused()) this.update(gdt, dt);
-    else if (this.player) { R.updateCamera(dt, this.player.x, this.player.z); if (this.overlay === 'map') WorldMap.update(dt); }
-    Dialog.update(dt);
-    R.render();
+    // Jede Phase einzeln geschützt: ein Fehler (mit Kontext in der Konsole) hält das Zeichnen der Welt nicht an
+    if (this.state === 'creator') { RenderGuard.run('creator', () => { Creator.update(dt); Particles.update(dt); }); RenderGuard.render(); Input.endFrame(); return; }
+    RenderGuard.run('update:' + this.state, () => {
+      if (this.state === 'title') this.updateTitle(dt);
+      else if (this.state === 'dialog') this.updateAmbient(dt, true);
+      else if (!this.isPaused()) this.update(gdt, dt);
+      else if (this.player) { R.updateCamera(dt, this.player.x, this.player.z); if (this.overlay === 'map') WorldMap.update(dt); }
+    });
+    RenderGuard.run('dialog', () => Dialog.update(dt));
+    RenderGuard.run('sceneGuard', () => SceneGuard.tick());
+    RenderGuard.render();
     Input.endFrame();
   },
   isPaused() { return this.paused || !!this.overlay || ['victory', 'gameover', 'credits'].includes(this.state); },
   updateTitle(dt) {
     const w = this.world; if (!w) return; this.time += dt; const t = this.time * 0.08, town = REGIONS.ehbergten.pois.town;
-    this.dayTime = 0.7 + Math.sin(this.time * 0.02) * 0.06; Sky.update(this.dayTime, w.B);
-    w.update(dt); for (const n of this.npcs) n.update(dt); Particles.update(dt); FX.update(dt); Weather.update(dt);
-    const cx = town.x + 0.5 + Math.cos(t) * 10, cz = town.y + 0.5 + Math.sin(t) * 10; R.updateCamera(dt, cx, cz); Lights.update(dt, cx, cz, this.time, 0);
+    const G = RenderGuard, cx = town.x + 0.5 + Math.cos(t) * 10, cz = town.y + 0.5 + Math.sin(t) * 10;
+    this.dayTime = 0.7 + Math.sin(this.time * 0.02) * 0.06; G.run('sky', () => Sky.update(this.dayTime, w.B));
+    G.run('world', () => w.update(dt)); G.run('npcs', () => { for (const n of this.npcs) n.update(dt); });
+    G.run('fx', () => { Particles.update(dt); FX.update(dt); }); G.run('weather', () => Weather.update(dt));
+    G.run('camera', () => R.updateCamera(dt, cx, cz)); G.run('lights', () => Lights.update(dt, cx, cz, this.time, 0));
   },
   // Welt läuft weiter (Dialoge), Spieler und Gegner ruhen
   updateAmbient(dt, sky) {
@@ -15884,28 +15895,32 @@ const Game = {
   update(dt, realDt) {
     this.time += dt; const w = this.world, P = this.player, D = Profile.data; if (!w || !P) return;
     D.stats.playTime += realDt;
-    if (w.outdoor) { this.dayTime = (this.dayTime + dt / 480 * Cheat.timescale) % 1; Sky.update(this.dayTime, w.B); }
-    w.update(dt); P.update(dt);
-    w.updateFlow(P.x, P.z, dt);
-    for (const e of this.enemies) e.update(dt);
-    this.enemies = this.enemies.filter(e => !e.removed);
-    this.allies = this.allies.filter(a => a.update(dt));
-    this.effects = this.effects.filter(f => f(dt));
-    for (const n of this.npcs) n.update(dt);
-    if (this.escort) this.escort.update(dt);
-    this.pushFromNPCs(P);
-    Projectiles.update(dt); Pickups.update(dt);
-    if (w.isDungeon) this.updateRooms(dt); else this.updateZone(dt);
-    this.revealT -= dt; if (this.revealT <= 0) { this.revealT = 0.2; if (w.reveal(P.x, P.z, w.isZone ? 11 : 7.5) && w.isZone) Discover.onReveal(); }
-    if (this.state === 'play') this.updateInteract();
-    if (this.state === 'dead') { this.deadT += realDt; if (this.deadT > 2.2) this.showGameOver(); }
-    Particles.update(dt); Tele.update(dt); FX.update(dt); DmgNum.update(realDt); Weather.update(dt);
-    Lights.update(dt, P.x, P.z, this.time, this.playerLight());
-    CamCtl.update(realDt); R.updateCamera(realDt, P.x, P.z);
-    UI.update(realDt);
-    this.weatherT -= realDt; if (this.weatherT <= 0 && w.isZone) this.rollWeather();
-    this.autosaveT -= realDt; if (this.autosaveT <= 0) { this.autosaveT = 30; this.saveNow(); }
-    Nav.update(realDt); JumpTut.update(realDt); CamTut.update(realDt); Cmd.tick(realDt);
+    const G = RenderGuard;
+    if (w.outdoor) { this.dayTime = (this.dayTime + dt / 480 * Cheat.timescale) % 1; G.run('sky', () => Sky.update(this.dayTime, w.B)); }
+    // Spielablauf; Darstellung (Effekte, Wetter, Licht, Kamera, HUD) läuft auch nach einem Fehler hier weiter
+    G.run('sim', () => {
+      w.update(dt); P.update(dt);
+      w.updateFlow(P.x, P.z, dt);
+      for (const e of this.enemies) e.update(dt);
+      this.enemies = this.enemies.filter(e => !e.removed);
+      this.allies = this.allies.filter(a => a.update(dt));
+      this.effects = this.effects.filter(f => f(dt));
+      for (const n of this.npcs) n.update(dt);
+      if (this.escort) this.escort.update(dt);
+      this.pushFromNPCs(P);
+      Projectiles.update(dt); Pickups.update(dt);
+      if (w.isDungeon) this.updateRooms(dt); else this.updateZone(dt);
+      this.revealT -= dt; if (this.revealT <= 0) { this.revealT = 0.2; if (w.reveal(P.x, P.z, w.isZone ? 11 : 7.5) && w.isZone) Discover.onReveal(); }
+      if (this.state === 'play') this.updateInteract();
+      if (this.state === 'dead') { this.deadT += realDt; if (this.deadT > 2.2) this.showGameOver(); }
+    });
+    G.run('fx', () => { Particles.update(dt); Tele.update(dt); FX.update(dt); DmgNum.update(realDt); }); G.run('weather', () => Weather.update(dt));
+    G.run('lights', () => Lights.update(dt, P.x, P.z, this.time, this.playerLight()));
+    G.run('camera', () => { CamCtl.update(realDt); R.updateCamera(realDt, P.x, P.z); });
+    G.run('hud', () => UI.update(realDt));
+    G.run('weatherRoll', () => { this.weatherT -= realDt; if (this.weatherT <= 0 && w.isZone) this.rollWeather(); });
+    G.run('autosave', () => { this.autosaveT -= realDt; if (this.autosaveT <= 0) { this.autosaveT = 30; this.saveNow(); } });
+    G.run('nav', () => { Nav.update(realDt); JumpTut.update(realDt); CamTut.update(realDt); Cmd.tick(realDt); });
     this.autoQuality(realDt);
   },
   // Automatische Qualitätsanpassung: bleibt die Bildrate in den ersten Sekunden deutlich unter 30, eine Stufe herunter
@@ -16155,7 +16170,7 @@ const Game = {
     UI.hideBoss(); UI.prompt(null); UI.hideHint(); this.encounter = null; this.curRoom = null; this.safeZone = false; this.hitStop = 0; this.slowMo = 0; this.paused = false; this.nearInteract = null; this.spawnedQ = {}; this.questMarks = [];
   },
   loadWorld(w, px, pz) {
-    this.world = w; R.scene.add(w.group); R.setTheme(w.B); Lights.setTorches(w.torches); UI.buildMapCanvas(w);
+    this.world = w; R.scene.add(w.group); R.setTheme(w.B); Lights.setTorches(w.torches); UI.buildMapCanvas(w); SceneGuard.arm('loadWorld');
     const D = Profile.data, old = this.player;
     this.player = new Player(px, pz); if (old) this.player.arrows = old.arrows; else this.player.arrows = D.arrows || 30;
     CamCtl.reset(); R.introZoom = 1.35; R.updateCamera(0, px, pz, true); UI.refreshHud();
@@ -16714,6 +16729,136 @@ const MapExtra = {
     return r;
   };
   WM.tipHtml = function (h) { if (h && h.type === 'extra') { const m = h.m; try { return m.tip ? m.tip() : `<div class="tn">${Rich.html(m.label || '')}</div>`; } catch (e) { return ''; } } return _tip.call(this, h); };
+})();
+/* ============================== DARSTELLUNG: FEHLERSCHUTZ UND SZENEN-WÄCHTER ==================== */
+// RenderGuard: jede Phase des Bildes (Eingabe, Spielablauf, Himmel, Effekte, Wetter, Licht, Kamera, HUD, Zeichnen)
+// läuft einzeln geschützt. Fehler werden NICHT verschluckt: console.error mit Kontext (Ebene, Zustand, Region,
+// Anzahl), Eintrag im Debug-Log (/debug log) – derselbe Fehler höchstens alle 5 s, damit die Konsole lesbar bleibt.
+// SceneGuard: prüft nach jedem Szenenwechsel (und danach jede Sekunde), ob die Welt wirklich gezeichnet wird
+// (Zeichenfläche, Kamera, Welt in der Szene, Nebel, Welt-Meshes im Sichtfeld). Ist sie leer, werden Kamera und
+// Szene zurückgesetzt und – falls das nicht reicht – die Szene neu aufgebaut; Hinweis im Debug-Log.
+const RenderGuard = {
+  errs: {}, postFails: 0,
+  run(layer, fn) { try { return fn(); } catch (e) { this.report(layer, e); return undefined; } },
+  report(layer, e) {
+    const r = this.errs[layer] || (this.errs[layer] = { n: 0, at: -1e9, msg: '' }), now = performance.now(), msg = String((e && e.message) || e);
+    r.n++;
+    if (msg === r.msg && now - r.at < 5000) return;
+    r.at = now; r.msg = msg;
+    const ctx = { layer, state: Game.state, region: Game.region || null, dungeon: Game.dungeon || null, count: r.n };
+    try { console.error('[Aetherfall · Darstellung] Ebene „' + layer + '“ fehlgeschlagen', ctx, e); } catch { /* keine Konsole */ }
+    DebugLog.list.push({ at: Date.now(), kind: 'render', msg: layer + ' · ' + Game.state + ' · ' + r.n + '×', err: msg.slice(0, 200) });
+    if (DebugLog.list.length > DebugLog.max) DebugLog.list.shift();
+  },
+  // Zeichnen mit Rückfallebene: scheitert die Nachbearbeitung (Bloom), wird die Szene direkt gezeichnet
+  render() {
+    try { R.render(); this.postFails = 0; return; } catch (e) { this.report('post', e); this.postFails++; }
+    try { R.renderer.setRenderTarget(null); R.renderer.render(R.scene, R.camera); } catch (e) { this.report('scene', e); }
+    if (this.postFails >= 3 && Post.enabled) { Post.enabled = false; DebugLog.add('render', 'Nachbearbeitung nach wiederholten Fehlern abgeschaltet – Szene wird direkt gezeichnet'); }
+  },
+};
+
+const SceneGuard = {
+  armN: 0, reason: 'start', at: 0, bad: 0, last: null, list: null, listOf: null, listN: -1, fr: null, m4: null, repairs: 0,
+  // nach einem Szenenwechsel die nächsten Bilder engmaschig prüfen
+  arm(reason) { this.armN = 4; this.reason = reason || 'scene'; this.bad = 0; this.at = performance.now(); },
+  // Takt in echter Zeit (nicht in Spielzeit: die ist pro Bild gedeckelt und liefe bei wenigen Bildern pro Sekunde zu langsam)
+  tick() {
+    if (this.armN > 0) { this.armN--; this.check(); return; }
+    const now = performance.now(); if (now - this.at < 1000) return; this.at = now; this.check();
+  },
+  relevant() { const s = Game.state; return s === 'title' || s === 'play' || s === 'dialog' || s === 'dead'; },
+  fin(...v) { return v.every(Number.isFinite); },
+  camOk() {
+    const c = R.camera, p = c.position, C = CamCtl;
+    if (!this.fin(p.x, p.y, p.z, R.camTarget.x, R.camTarget.z, R.introZoom, R.camDist, c.aspect) || R.camDist <= 0 || !(c.aspect > 0) || !(c.far > c.near)) return false;
+    return this.fin(C.zoomEff, C.zoom, C.yaw, C.el, C.off.x, C.off.z, C.frame.x, C.frame.z) && C.zoomEff > 0;
+  },
+  // Blickpunkt: auf dem Titel die Kreisbahn um die Stadt, im Spiel die Figur, sonst der Startpunkt der Welt
+  focus() {
+    const G = Game, w = G.world;
+    if (G.state === 'title') { const town = REGIONS.ehbergten.pois.town, ot = G.time * 0.08; return { x: town.x + 0.5 + Math.cos(ot) * 10, z: town.y + 0.5 + Math.sin(ot) * 10 }; }
+    if (G.player && this.fin(G.player.x, G.player.z)) return { x: G.player.x, z: G.player.z };
+    return w && w.spawn ? { x: w.spawn.x, z: w.spawn.z } : { x: 0, z: 0 };
+  },
+  resetCam() {
+    const C = CamCtl, f = this.focus();
+    C.reset();
+    if (!this.fin(C.zoom, C.zoomT, C.zoomEff) || C.zoomEff <= 0) C.zoom = C.zoomT = C.zoomEff = 1;
+    if (!this.fin(C.yaw, C.yawT)) C.yaw = C.yawT = 0;
+    if (!this.fin(C.el, C.elT)) C.el = C.elT = CAM_EL0;
+    if (!this.fin(R.camDist) || R.camDist <= 0 || !(R.camera.aspect > 0)) R.resize();
+    R.introZoom = 1; R.camTarget.x = f.x; R.camTarget.z = f.z;
+    R.updateCamera(0, f.x, f.z, true);
+  },
+  // Welt-Meshes, die Three.js tatsächlich zeichnen würde: sichtbar, mit sichtbarem Material, im Sichtfeld
+  meshes(w) {
+    let n = 0; w.group.traverse(() => n++);
+    if (this.listOf !== w || this.listN !== n) { this.list = []; w.group.traverse(o => { if (o.isMesh || o.isInstancedMesh) this.list.push(o); }); this.listOf = w; this.listN = n; }
+    return this.list;
+  },
+  view(w) {
+    if (!this.fr) { this.fr = new THREE.Frustum(); this.m4 = new THREE.Matrix4(); }
+    const c = R.camera; c.updateMatrixWorld(); c.matrixWorldInverse.copy(c.matrixWorld).invert();
+    this.fr.setFromProjectionMatrix(this.m4.multiplyMatrices(c.projectionMatrix, c.matrixWorldInverse));
+    w.group.updateMatrixWorld();
+    let total = 0, inView = 0;
+    for (const o of this.meshes(w)) {
+      let v = true; for (let p = o; p && v; p = p.parent) { if (!p.visible) v = false; if (p === w.group) break; }
+      if (!v || !o.geometry) continue;
+      const ms = Array.isArray(o.material) ? o.material : [o.material];
+      if (!ms.some(m => m && m.visible !== false && !(m.transparent && m.opacity < 0.02))) continue;
+      total++;
+      if (o.frustumCulled === false || this.fr.intersectsObject(o)) { inView++; if (inView >= 3) break; }
+    }
+    return { total, inView };
+  },
+  check() {
+    if (!this.relevant() || !R.renderer) return;
+    const G = Game, w = G.world, fix = [];
+    const cv = R.renderer.domElement;
+    if ((cv.width < 2 || cv.height < 2) && innerWidth > 0 && innerHeight > 0) { R.resize(); fix.push('canvas'); }
+    if (!this.camOk()) { this.resetCam(); fix.push('camera'); }
+    if (!w || !w.group) { if (G.state === 'title') this.rebuild('noWorld'); else if (fix.length) this.log(fix); return; }
+    if (w.group.parent !== R.scene) { R.scene.add(w.group); R.setTheme(w.B); Lights.setTorches(w.torches); fix.push('detached'); }
+    if (!w.group.visible && w.group.userData.wasVis === undefined) { w.group.visible = true; fix.push('hidden'); }
+    const f = R.scene.fog; if (f && !(this.fin(f.near, f.far) && f.far > f.near && f.near >= 0)) { R.setTheme(w.B); fix.push('fog'); }
+    const v = this.view(w);
+    if (v.total && v.inView) this.bad = 0;
+    else {
+      this.bad++; const why = v.total ? 'culled' : 'empty';
+      if (this.bad === 1) { this.resetCam(); fix.push(why); }
+      else if (this.bad >= 3) { this.rebuild(why); return; }
+    }
+    if (fix.length) this.log(fix);
+  },
+  log(fix) { this.repairs++; DebugLog.add('render', 'Szene repariert (' + this.reason + ', ' + Game.state + '): ' + fix.join(', ')); },
+  // Neuaufbau höchstens einmal pro Welt (kein Endlos-Kreislauf); Dungeons nicht (Fortschritt im Raum bliebe sonst nicht erhalten)
+  rebuild(why) {
+    const G = Game, w = G.world, key = w || 'none';
+    if (this.last === key) return; this.last = key; this.bad = 0;
+    if (G.state === 'title') { DebugLog.add('render', 'Welt leer gezeichnet (' + why + ') – Titelszene wird neu aufgebaut'); G.showTitle(true); return; }
+    if (w && w.isZone && G.player && Profile.data) {
+      const P = G.player; DebugLog.add('render', 'Welt leer gezeichnet (' + why + ') – ' + G.region + ' wird neu aufgebaut');
+      G.enterRegion(G.region, { pos: { x: P.x, z: P.z }, instant: true });
+      return;
+    }
+    DebugLog.add('render', 'Welt leer gezeichnet (' + why + ') – Kamera zurückgesetzt');
+  },
+  // Nebel: der Blickpunkt soll nie ganz im Nebel verschwinden (Hochformat, weit herausgezoomt, Nebelwetter)
+  fitFog() {
+    const f = R.scene.fog, B = R.theme; if (!f || !B || !this.fin(f.near, f.far)) return;
+    if (!B.outdoor) { f.near = B.fogNear; f.far = B.fogFar; }
+    const c = R.camera.position, cd = Math.hypot(c.x - R.camTarget.x, c.y - 0.4, c.z - R.camTarget.z), band = f.far - f.near;
+    if (!(cd > 0) || !(band > 0)) return;
+    const shift = (cd - f.near) - 0.72 * band;
+    if (shift > 0) { f.near += shift; f.far += shift; }
+  },
+};
+(() => {
+  const _cam = R.updateCamera;
+  R.updateCamera = function (...a) { const r = _cam.apply(this, a); RenderGuard.run('fog', () => SceneGuard.fitFog()); return r; };
+  addEventListener('resize', () => SceneGuard.arm('resize'));
 })();
 /* ============================== AUTH (Clerk) ============================= */
 // Anmeldung über Clerk (offizielles clerk-js Browser-Script, siehe BOOT.loadClerk). Eigene, übersetzte Oberfläche

@@ -447,6 +447,22 @@ Stufenobergrenze liegt jetzt bei **100** (Gegenstandsstufe bis 120).
 - **Admin:** `/balance report [klasse] [stufe]`, `/balance boss [id]`, `/balance grind [region] [minuten] [stufe]`,
   `/balance story` – Tabellen in Deutsch und Englisch. `/god`, `/onehit`, `/damage`, `/level` bleiben unveränderte Cheats.
 
+## Darstellung und Fehlerschutz
+
+- **Titelbildschirm:** Hinter dem Menü dreht die Kamera eine Runde über Lager und Stadt Ehbergten (Boden, Gebäude,
+  Bäume, Licht, Wetter, NPCs). Die Kulisse gehört zu keinem Spielstand; ihr Nebel des Krieges wird nie gespeichert.
+- **Jede Phase einzeln geschützt:** Eingabe, Spielablauf, Himmel, Effekte, Wetter, Licht, Kamera, HUD und das Zeichnen
+  laufen getrennt. Ein Fehler in einer Phase hält die anderen nicht an. Er erscheint in der Konsole
+  (`[Aetherfall · Darstellung] Ebene „…“` mit Zustand, Region und Anzahl) und im Debug-Log (`/debug log`). Scheitert
+  die Nachbearbeitung (Bloom) dreimal, wird die Szene direkt gezeichnet.
+- **Szenen-Wächter:** Nach jedem Szenenwechsel und danach jede Sekunde prüft das Spiel Zeichenfläche, Kamera
+  (keine NaN-Werte, Schwenk-Offset), Welt in der Szene, Nebel und ob Welt-Meshes im Sichtfeld liegen.
+  - Ist etwas falsch, setzt es Kamera und Szene zurück.
+  - Wird die Welt trotzdem leer gezeichnet, baut es die Szene neu auf (Titel oder Region).
+  - Jede Reparatur steht im Debug-Log.
+- **Nebel und Kameraabstand:** Auch im Hochformat, ganz herausgezoomt und bei Nebelwetter verschwindet die Umgebung der
+  Figur nie ganz im Nebel.
+
 ## Einstellungen
 
 Tabs **Allgemein** (Sprache, Weltstufe, Tipps & Tutorials) · **Steuerung** · **Grafik** · **Audio** · **Anzeige**
