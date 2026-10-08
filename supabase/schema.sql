@@ -5,7 +5,8 @@
 --      in den Clerk-Session-Tokens).
 --   2. Supabase-Dashboard → Authentication → Sign In / Providers → Third-Party Auth →
 --      „Clerk“ hinzufügen und die Domain der Clerk-Instanz eintragen.
---   3. Dieses Skript im SQL-Editor ausführen.
+--   3. Dieses Skript im SQL-Editor ausführen (neues Projekt).
+--      Bestehendes Projekt mit 3 Slots: supabase/migrate_save_slots.sql ausführen (ohne Datenverlust).
 -- Im Spiel stehen nur der Clerk Publishable Key und Supabase-URL + Publishable/Anon Key.
 -- Die Zeilen gehören über user_id = auth.jwt()->>'sub' (Clerk-User-ID) ihrem Besitzer;
 -- Row Level Security erlaubt nur Lesen/Schreiben/Löschen der eigenen Zeilen.
@@ -25,7 +26,7 @@ create table if not exists public.profiles (
 create table if not exists public.savegames (
   id          bigint generated always as identity primary key,
   user_id     text not null default (auth.jwt() ->> 'sub'),
-  slot        smallint not null check (slot between 1 and 3),
+  slot        smallint not null constraint savegames_slot_check check (slot between 1 and 5),  -- = CONFIG.saveSlots im Spiel
   character   jsonb not null default '{}'::jsonb,   -- Name, Klasse, Aussehen, Stufe, Talente, Zauber
   progress    jsonb not null default '{}'::jsonb,   -- Flags, Rätsel/Truhen/Geheimnisse, Weltstufe, Statistik
   quests      jsonb not null default '{}'::jsonb,   -- Queststände, verfolgte Quest
@@ -35,7 +36,8 @@ create table if not exists public.savegames (
   revision    integer not null default 1 check (revision > 0),  -- für die Konflikterkennung
   version     integer not null default 3,                       -- Format-Version des Spielstands
   updated_at  timestamptz not null default now(),
-  unique (user_id, slot)
+  deleted_at  timestamptz,                                        -- Löschmarker (gelöschter Slot, kehrt nicht zurück)
+  constraint savegames_user_id_slot_key unique (user_id, slot)
 );
 
 -- updated_at bei jeder Änderung eines Spielstands setzen

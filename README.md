@@ -22,7 +22,7 @@ const CONFIG = {
   supabaseUrl: '',              // https://<projekt>.supabase.co
   supabaseKey: '',              // Publishable- oder Anon-Key
   autosaveSeconds: 60,          // Cloud-Autosave-Intervall
-  saveSlots: 3,                 // Speicherslots (1–3)
+  saveSlots: 5,                 // manuelle Speicherslots (Supabase-Check-Constraint passend setzen)
 };
 ```
 
@@ -39,7 +39,10 @@ zeigt eine Warnung unter Einstellungen › Konto. Einen versehentlich veröffent
 2. **Clerk mit Supabase verbinden:** im Clerk-Dashboard „Connect with Supabase“ ausführen. Das setzt den Claim `role: authenticated`
    in den Session-Tokens.
 3. **Supabase:** unter *Authentication › Third-Party Auth* Clerk als Anbieter hinzufügen. Danach im SQL-Editor
-   [`supabase/schema.sql`](supabase/schema.sql) ausführen. Dasselbe SQL steht auch als nicht ausgeführter Codeblock am Ende von `index.html`.
+   [`supabase/schema.sql`](supabase/schema.sql) ausführen (neues Projekt). Ein bestehendes Projekt mit 3 Slots stellt
+   [`supabase/migrate_save_slots.sql`](supabase/migrate_save_slots.sql) auf 5 Slots um: idempotent, ohne Datenverlust, in einer
+   Transaktion (Slot-Bereich 1–5, Unique `(user_id, slot)`, Spalte `deleted_at` als Löschmarker, vollständige RLS-Policies).
+   Beide Skripte stehen auch als nicht ausgeführte Codeblöcke am Ende von `index.html`.
    Es legt `profiles` und `savegames` an, mit Row Level Security: Nutzer lesen, schreiben und löschen nur ihre eigenen Zeilen
    (`user_id = auth.jwt()->>'sub'`).
    Die Spalte `profiles.is_admin` (Admin-Befehle der Konsole) kann nur der Datenbank-Besitzer setzen, nie der Spieler selbst.
@@ -54,7 +57,27 @@ Der Supabase-Client bekommt das Clerk-Session-Token als `accessToken`
   Zweitfaktor per E-Mail-Code oder App, Abmelden. Eine eigene, übersetzte Oberfläche nutzt die Clerk-API.
 - **Gastmodus:** Spielen ohne Konto mit lokalem Speicher. Nach Registrierung oder Anmeldung bietet das Spiel an, die Gast-Spielstände
   ins Konto zu übernehmen.
-- **3 Speicherslots** je Konto bzw. für den Gastmodus, mit Übersicht (Charakter, Stufe, Region, Spielzeit, Quests, Sync-Status).
+- **5 Speicherslots** je Konto bzw. für den Gastmodus (Anzahl nur über `CONFIG.saveSlots`) plus eine **automatische Sicherung**
+  als eigene Karte (rollende Kopie des zuletzt automatisch gespeicherten Stands mit Herkunfts-Slot).
+- **Spielstand-Menü** im Hauptmenü und im Pausemenü. Jede Karte zeigt:
+  - Slotnummer, Porträt und Name
+  - Klasse, Stufe, Region, Schwierigkeit
+  - Story-Fortschritt in %, Spielzeit, letzte Speicherung
+  - Cheats-Kennzeichen und Sync-Status (lokal, synchron, Upload ausstehend, nur in der Cloud, Fehler)
+
+  Aktionen je Slot: Laden, Hier speichern bzw. Überschreiben, Kopieren, Umbenennen, Sicherungen, Löschen. Bedienbar mit Maus,
+  Touch, Tastatur (Enter/Esc, Strg+Z) und Gamepad (A/B). Das Menü skaliert mit der HUD-Größe und passt ins Hochformat.
+- **Überschreiben** eines belegten Slots: Vergleich „Aktuell im Slot“ ↔ „Neuer Stand“ (Charakter, Stufe, Region, Spielzeit).
+  - Vorher wird der alte Stand automatisch gesichert (Menü › Sicherungen oder `/restore`).
+  - Der neue Stand gewinnt auch in der Cloud, ohne Konfliktdialog.
+  - Wird der gerade gespielte Slot überschrieben, geht es mit dem neuen Stand weiter.
+- **Löschen** mit Slot-Details und Sicherheitsabfrage: Knopf gedrückt halten (Maus, Touch, Enter/Leertaste, Gamepad A).
+  - 10 Sekunden lang lässt sich das Löschen rückgängig machen, danach ist es endgültig.
+  - Angemeldet bleibt ein Löschmarker, bis die Cloud das Löschen bestätigt hat. So kehrt der Slot weder nach F5 noch nach
+    Ab-/Anmelden oder Offline-Phasen als „Geisterstand“ zurück.
+  - Wer den gerade gespielten Slot löscht, kehrt ohne Speichern ins Hauptmenü zurück.
+- **Fehler** erscheinen in der Sprache des Spielers: Netzwerk, fehlende Berechtigung, Slot von der Tabelle noch nicht erlaubt,
+  Speicher voll. Der Stand bleibt dabei unverändert. Ein Vorgang gilt erst als abgeschlossen, wenn das Schreiben bestätigt ist.
 - **Cloud-Autosave** alle `autosaveSeconds` Sekunden und sofort bei wichtigen Ereignissen (Quest abgeschlossen, Boss besiegt,
   Stufenaufstieg, Regionswechsel, Hauptmenü). Dazu „Jetzt speichern“ im Pausemenü.
 - **Konflikte:** Wurde nur eine Seite verändert, gewinnt automatisch der neuere Stand. Wurde ein Slot auf diesem Gerät und in der
@@ -342,7 +365,8 @@ Waypoint-Effekte laufen genauso wie beim normalen Spielen.
   Bestätigt wird mit den Knöpfen im Chat oder `/confirm` bzw. `/cancel`; eine Rückfrage verfällt nach 45 Sekunden oder
   sobald ein anderer Spielstand geladen ist. `/savereset` und `/lock all` fragen zweimal.
 - **Automatische Sicherung** vor `/unlock all`, `/lock`, `/savereset`, `/clearinv`, `/giveall`, `/quest completeall` und
-  `/restore` (die letzten 3 je Slot, lokal); `/backup` sichert von Hand, `/restore [n]` stellt wieder her.
+  `/restore` (die letzten 3 je Slot, lokal); `/backup` sichert von Hand, `/backup list [slot]` zeigt die Sicherungen eines Slots (1–5), `/restore [n]` stellt wieder her. Vor jedem
+  Überschreiben im Spielstand-Menü wird ebenfalls gesichert.
   `/undo` macht die letzten 5 Admin-Befehle rückgängig, die den Spielstand geändert haben (nur im selben Spielstand).
 - **Grenzen:** Stufe 1–100, Gegenstandsstufe bis 120, höchstens 50 Stück je `/give`, Edelsteine bis 9.999.999, 30 Gegner je
   `/spawn` (150 gleichzeitig), Faktoren wie oben. Ungültige Eingaben ergeben eine Fehlermeldung, nie einen Absturz.

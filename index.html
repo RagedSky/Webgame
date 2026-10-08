@@ -26,7 +26,7 @@ const CONFIG = {
   supabaseUrl: 'https://omnviivimjbjgdoblewn.supabase.co',            // https://<projekt>.supabase.co
   supabaseKey: 'sb_publishable_8B3JGbczUmMcBidmGTc5TA_oTRRnS7X',            // Publishable- oder Anon-Key
   autosaveSeconds: 60,          // Cloud-Autosave-Intervall in Sekunden
-  saveSlots: 3,                 // Anzahl der Speicherslots (1–3, passend zur Tabelle savegames)
+  saveSlots: 5,                 // Anzahl der manuellen Speicherslots (Supabase: Check-Constraint der Tabelle savegames passend setzen, siehe supabase/schema.sql)
   chatRealtime: false,          // Mehrspieler-Chat über Supabase Realtime (Broadcast-Kanal „aetherfall-chat“) – vorbereitet, aus
 };
 </script>
@@ -687,6 +687,35 @@ body.touch #hintBox{transform-origin:50% 100%}
 #btnCamReset{margin:6px 0 4px}
 /* Hochformat: Hotbar in zwei Reihen statt winzig skaliert */
 @media (max-aspect-ratio:1/1){ #slotRow{flex-wrap:wrap;justify-content:center;max-width:330px;row-gap:12px} #slotRow .slotSep{display:none} }
+
+/* ---------- Spielstand-Menü: Slots + Autosave, Dialoge (skaliert mit der HUD-Größe über --ms, nie größer als der Bildschirm) ---------- */
+#scrConfirm{z-index:87}
+#slotsBox{zoom:var(--ms,1);width:min(840px,calc((100vw - 24px) / var(--ms,1)));max-width:none;min-width:0;max-height:calc((100vh - 24px) / var(--ms,1));padding:24px 26px;gap:10px}
+#scrDlg .menuBox{zoom:var(--ms,1);max-height:calc((100vh - 24px) / var(--ms,1));max-width:min(640px,calc((100vw - 24px) / var(--ms,1)))!important}
+.slList{margin:6px 0}
+.slCard{grid-template-columns:64px minmax(0,1fr) minmax(150px,auto)}
+.slCard.active{border-color:var(--gold);box-shadow:0 0 0 2px rgba(255,208,96,.25)}
+.slCard.auto{border-style:dashed;border-color:#6e8cc8;background:rgba(40,52,80,.35)}
+.slCard .slMid{min-width:0}
+.slCard .slBtns{display:flex;flex-direction:column;gap:5px}
+.slCard .slBtns .btn{margin:0;min-width:150px}
+.slCard .slBtns .btn.small{padding:6px 8px}
+.slBadge.act{color:var(--gold)}.slBadge.err{color:#ff8a6a}
+.slStory{display:inline-block;width:56px;height:8px;background:#120c08;border:1px solid var(--edgeDk);vertical-align:middle;margin-right:2px}
+.slStory i{display:block;height:100%;background:var(--gold)}
+.slMsg{min-height:1.2em;font-size:17px;line-height:1.2}
+.slMsg.ok{color:var(--green)}.slMsg.warn{color:#ffb648}.slMsg.err{color:#ff8a6a}.slMsg.info{color:var(--muted)}
+.holdBtn{position:relative;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+.holdBtn .holdFill{position:absolute;left:0;top:0;bottom:0;width:0;background:rgba(255,255,255,.3);pointer-events:none}
+.holdBtn .holdTxt{position:relative;pointer-events:none}
+.cfCards.one{grid-template-columns:1fr}
+#dlgBody2 .crInput{width:100%;margin-top:8px;box-sizing:border-box}
+@media (max-width:640px){
+  #slotsBox{padding:14px 12px}
+  .slCard{grid-template-columns:48px minmax(0,1fr)}
+  .slCard .slBtns{grid-column:1/-1;flex-direction:row;flex-wrap:wrap}
+  .slCard .slBtns .btn{min-width:0;flex:1 1 30%}
+}
 </style>
 </head>
 <body>
@@ -792,6 +821,7 @@ body.touch #hintBox{transform-origin:50% 100%}
     <button class="btn" id="btnSettingsPause" data-i18n="html.menu.settings">Einstellungen</button>
     <button class="btn" id="btnHelpPause" data-i18n="html.menu.controls">Steuerung</button>
     <button class="btn" id="btnSaveNow" data-i18n="slots.saveNow">Jetzt speichern</button>
+    <button class="btn" id="btnSlotsPause" data-i18n="slots.menu">Spielstände</button>
     <button class="btn" id="btnSoundPause">Ton: an</button>
     <button class="btn red" id="btnAbandon" data-i18n="html.pause.abandon">Dungeon verlassen</button>
     <button class="btn" id="btnMainMenu" data-i18n="html.pause.mainMenu">Hauptmenü</button>
@@ -1023,9 +1053,10 @@ body.touch #hintBox{transform-origin:50% 100%}
 
 <!-- ============================ Spielstände ============================ -->
 <div id="scrSlots" class="screen hidden">
-  <div class="panel menuBox" style="max-width:760px">
+  <div class="panel menuBox" id="slotsBox">
     <div class="h2" id="slTitle" data-i18n="slots.title">SPIELSTÄNDE</div>
     <div class="note" id="slSub"></div>
+    <div id="slMsg" class="slMsg" role="status" aria-live="polite"></div>
     <div id="slList" class="slList"></div>
     <div class="syncNote" id="slSync"></div>
     <button class="btn gold" id="btnSlotsBack" data-back="1" data-i18n="slots.back">Zurück</button>
@@ -6454,6 +6485,95 @@ I18N.addContent('en', {
   'TALENTS.rogue.3.name': 'Movement', 'TALENTS.rogue.3.list.mv1.name': 'Long Breath', 'TALENTS.rogue.3.list.mv2.name': 'Storm Runner', 'TALENTS.rogue.3.list.mv3.name': 'Battering Ram', 'TALENTS.rogue.3.list.mv4.name': 'Meteor Fall',
   'ENCH.stamina.name': 'Stamina', 'ENCH.stride.name': 'Storm Stride', 'ENCH.charge.name': 'Onrush',
   'PUZZLE_INFO.airplates.name': 'Air Plates', 'PUZZLE_INFO.lasers.name': 'Laser Corridor', 'PUZZLE_INFO.highswitch.name': 'High Switches', 'PUZZLE_INFO.torchrun.name': 'Torch Run',
+});
+// Spielstand-Menü: Slots, Autosave, Überschreiben, Löschen mit Rückgängig, Kopieren, Umbenennen, Sicherungen, Cloud-Fehler (x_slots.js)
+I18N.add('de', {
+  'slots.titleSave': 'SPIELSTÄNDE – SPEICHERN', 'slots.count': '{n} Speicherslots + automatische Sicherung.',
+  'slots.tier': 'Schwierigkeit: {name}', 'slots.story': 'Story {p}',
+  'slots.bActive': '▶ aktiv', 'slots.bDelPending': '⟳ Löschen in der Cloud ausstehend',
+  'slots.bErr.range': '⚠ nur lokal – Cloud erlaubt diesen Slot noch nicht', 'slots.bErr.perm': '⚠ Cloud: keine Berechtigung', 'slots.bErr.schema': '⚠ Cloud-Tabelle veraltet',
+  'slots.deletedName': 'gelöscht („{name}“)', 'slots.undoInfo': 'Noch kurz rückgängig zu machen (auch mit Strg+Z).',
+  'slots.saveHere': 'Hier speichern', 'slots.saveActive': 'Speichern', 'slots.copy': 'Kopieren', 'slots.rename': 'Umbenennen', 'slots.backups': 'Sicherungen ({n})',
+  'slots.autoTitle': 'Automatische Sicherung (aus Slot {n})', 'slots.autoLoad': 'Laden (in Slot {n})',
+  'save.cloud.later': 'Slot {n} ist lokal gespeichert – die Cloud wird abgeglichen, sobald sie erreichbar ist.',
+  'save.cloud.busy': 'Slot {n}: Übertragung in die Cloud …', 'save.cloud.ok': 'Slot {n} ist in der Cloud gesichert.',
+  'save.err.cloud.net': 'Slot {n}: Cloud nicht erreichbar (Netzwerk). Der Stand bleibt lokal gespeichert und wird später übertragen.',
+  'save.err.cloud.perm': 'Slot {n}: Die Cloud hat die Änderung abgelehnt (fehlende Berechtigung). Bitte neu anmelden oder die Supabase-Richtlinien prüfen – lokal bleibt alles erhalten.',
+  'save.err.cloud.range': 'Slot {n}: Die Cloud-Datenbank erlaubt diesen Slot noch nicht (SQL-Update für 5 Slots nötig). Der Stand bleibt lokal gespeichert.',
+  'save.err.cloud.schema': 'Slot {n}: Die Cloud-Tabelle passt nicht zu dieser Version (SQL-Update nötig). Der Stand bleibt lokal gespeichert.',
+  'save.err.cloud.conflict': 'Slot {n}: In der Cloud gibt es einen anderen Stand – bitte im Dialog wählen, welcher bleibt.',
+  'save.err.cloud.unknown': 'Slot {n}: Unbekannter Cloud-Fehler. Der Stand bleibt lokal gespeichert und wird erneut versucht.',
+  'save.err.quota': 'Speichern fehlgeschlagen: Der Browser-Speicher ist voll. Der bisherige Stand bleibt unverändert.',
+  'save.err.backup': 'Die Sicherung des alten Stands ist fehlgeschlagen (Speicher voll) – es wurde nichts überschrieben.',
+  'save.err.verify': 'Slot {n} konnte nicht bestätigt geschrieben werden – der bisherige Stand bleibt unverändert.',
+  'save.err.load': 'Spielstand {n} konnte nicht gelesen werden.',
+  'save.ow.title': 'SLOT {n} ÜBERSCHREIBEN?', 'save.ow.text': 'Slot {n} ist belegt. Der neue Stand ersetzt den bisherigen.',
+  'save.ow.current': 'Aktuell im Slot', 'save.ow.new': 'Neuer Stand', 'save.ow.newChar': 'Neuer Charakter',
+  'save.ow.backup': 'Vorher wird automatisch eine Sicherung des bisherigen Stands angelegt (Spielstand-Menü › Sicherungen oder /restore).',
+  'save.ow.confirm': 'Überschreiben', 'save.ow.activeWarn': 'Du spielst gerade in Slot {n}. Danach geht es mit dem neuen Stand weiter.',
+  'save.ow.ok': 'Slot {n} wurde überschrieben (Sicherung angelegt).', 'save.ow.reloaded': 'Slot {n} wurde überschrieben – du spielst jetzt mit dem neuen Stand.',
+  'save.saveAs.ok': 'In Slot {n} gespeichert – du spielst jetzt in Slot {n} weiter (Slot {old} bleibt erhalten).',
+  'save.load.title': 'SLOT {n} LADEN?', 'save.load.text': 'Dein Fortschritt in Slot {cur} wird gespeichert, dann wird Slot {n} („{name}“) geladen.',
+  'save.copy.title': 'SLOT {n} KOPIEREN', 'save.copy.text': 'In welchen Slot soll der Stand kopiert werden?', 'save.copy.to': 'Nach Slot {n}',
+  'save.ren.title': 'SLOT {n} UMBENENNEN', 'save.ren.text': 'Neuer Name des Charakters (höchstens {max} Zeichen):', 'save.ren.ok': 'Umbenennen',
+  'save.ren.empty': 'Der Name darf nicht leer sein.', 'save.ren.done': 'Slot {n} heißt jetzt „{name}“.',
+  'save.bk.title': 'SICHERUNGEN VON SLOT {n}', 'save.bk.text': 'Die letzten {max} Sicherungen dieses Slots (vor Überschreiben, Wiederherstellen und von /backup). Wähle eine zum Wiederherstellen:',
+  'save.del.title': 'SLOT {n} LÖSCHEN?', 'save.del.text': 'Slot {n} wird gelöscht. {s} Sekunden lang kannst du das rückgängig machen, danach ist es endgültig.',
+  'save.del.activeWarn': 'Das ist der Slot, den du gerade spielst. Nach dem Löschen geht es zurück ins Hauptmenü (ohne zu speichern).',
+  'save.del.cloudNote': 'Angemeldet: Der Slot wird nach Ablauf der Frist auch in der Cloud gelöscht – offline beim nächsten Abgleich.',
+  'save.del.holdText': 'Zur Sicherheit: Knopf gedrückt halten (Maus, Touch, Enter/Leertaste oder A am Gamepad).',
+  'save.del.hold': 'Gedrückt halten zum Löschen', 'save.del.holdHint': 'Zum Löschen den Knopf gedrückt halten.',
+  'save.del.done': 'Slot {n} gelöscht – Rückgängig ist noch kurz möglich.', 'save.del.undo': 'Rückgängig ({s} s)', 'save.del.undone': 'Slot {n} wiederhergestellt.',
+  'save.del.cloudOk': 'Slot {n} ist auch in der Cloud gelöscht.', 'save.del.cloudLater': 'Slot {n}: Löschen in der Cloud folgt beim nächsten Abgleich.',
+  'save.del.newer': 'Slot {n}: Ein anderes Gerät hat danach gespeichert – dieser neuere Stand bleibt erhalten.', 'save.del.retry': 'Das Löschen wird später erneut versucht.',
+  'cmd.backup.reason.overwrite': 'vor dem Überschreiben', 'cmd.backup.reason.restore': 'vor dem Wiederherstellen', 'cmd.backup.reason.cloudDeleted': 'in der Cloud gelöscht', 'cmd.backup.reason.import': 'vor der Übernahme',
+  'cmd.backup.badSlot': 'Slot muss zwischen 1 und {max} liegen.', 'cmd.backup.listOf': 'Sicherungen von Slot {n}:',
+  'cmd.backup.otherSlot': 'Wiederherstellen: im Spielstand-Menü › Sicherungen (oder den Slot laden und /restore).',
+  'cmd.backup.desc': 'Lokale Sicherung des laufenden Slots erstellen (/backup list [slot] zeigt die Sicherungen eines Slots).',
+});
+I18N.add('en', {
+  'slots.titleSave': 'SAVE SLOTS – SAVE', 'slots.count': '{n} save slots + automatic backup.',
+  'slots.tier': 'Difficulty: {name}', 'slots.story': 'Story {p}',
+  'slots.bActive': '▶ active', 'slots.bDelPending': '⟳ cloud deletion pending',
+  'slots.bErr.range': '⚠ local only – the cloud does not allow this slot yet', 'slots.bErr.perm': '⚠ cloud: no permission', 'slots.bErr.schema': '⚠ cloud table outdated',
+  'slots.deletedName': 'deleted (“{name}”)', 'slots.undoInfo': 'Can still be undone for a moment (also with Ctrl+Z).',
+  'slots.saveHere': 'Save here', 'slots.saveActive': 'Save', 'slots.copy': 'Copy', 'slots.rename': 'Rename', 'slots.backups': 'Backups ({n})',
+  'slots.autoTitle': 'Automatic backup (from slot {n})', 'slots.autoLoad': 'Load (into slot {n})',
+  'save.cloud.later': 'Slot {n} is saved locally – the cloud will be synced as soon as it is reachable.',
+  'save.cloud.busy': 'Slot {n}: uploading to the cloud …', 'save.cloud.ok': 'Slot {n} is backed up in the cloud.',
+  'save.err.cloud.net': 'Slot {n}: cloud unreachable (network). The save stays stored locally and will be uploaded later.',
+  'save.err.cloud.perm': 'Slot {n}: the cloud rejected the change (missing permission). Please sign in again or check the Supabase policies – nothing is lost locally.',
+  'save.err.cloud.range': 'Slot {n}: the cloud database does not allow this slot yet (SQL update for 5 slots required). The save stays stored locally.',
+  'save.err.cloud.schema': 'Slot {n}: the cloud table does not match this version (SQL update required). The save stays stored locally.',
+  'save.err.cloud.conflict': 'Slot {n}: the cloud holds a different save – please choose in the dialog which one to keep.',
+  'save.err.cloud.unknown': 'Slot {n}: unknown cloud error. The save stays stored locally and will be retried.',
+  'save.err.quota': 'Saving failed: the browser storage is full. The previous save is unchanged.',
+  'save.err.backup': 'Backing up the old save failed (storage full) – nothing was overwritten.',
+  'save.err.verify': 'Slot {n} could not be written and verified – the previous save is unchanged.',
+  'save.err.load': 'Save {n} could not be read.',
+  'save.ow.title': 'OVERWRITE SLOT {n}?', 'save.ow.text': 'Slot {n} is occupied. The new save replaces the current one.',
+  'save.ow.current': 'Currently in the slot', 'save.ow.new': 'New save', 'save.ow.newChar': 'New character',
+  'save.ow.backup': 'A backup of the current save is created first (Save Slots › Backups or /restore).',
+  'save.ow.confirm': 'Overwrite', 'save.ow.activeWarn': 'You are playing in slot {n} right now. You will continue with the new save.',
+  'save.ow.ok': 'Slot {n} was overwritten (backup created).', 'save.ow.reloaded': 'Slot {n} was overwritten – you are now playing the new save.',
+  'save.saveAs.ok': 'Saved to slot {n} – you now continue in slot {n} (slot {old} is kept).',
+  'save.load.title': 'LOAD SLOT {n}?', 'save.load.text': 'Your progress in slot {cur} is saved first, then slot {n} (“{name}”) is loaded.',
+  'save.copy.title': 'COPY SLOT {n}', 'save.copy.text': 'Which slot should the save be copied to?', 'save.copy.to': 'To slot {n}',
+  'save.ren.title': 'RENAME SLOT {n}', 'save.ren.text': 'New character name (at most {max} characters):', 'save.ren.ok': 'Rename',
+  'save.ren.empty': 'The name must not be empty.', 'save.ren.done': 'Slot {n} is now called “{name}”.',
+  'save.bk.title': 'BACKUPS OF SLOT {n}', 'save.bk.text': 'The last {max} backups of this slot (before overwriting, restoring and from /backup). Pick one to restore:',
+  'save.del.title': 'DELETE SLOT {n}?', 'save.del.text': 'Slot {n} will be deleted. You can undo this for {s} seconds, after that it is permanent.',
+  'save.del.activeWarn': 'This is the slot you are playing right now. After deleting you return to the main menu (without saving).',
+  'save.del.cloudNote': 'Signed in: the slot is also deleted in the cloud once the undo time has passed – when offline, at the next sync.',
+  'save.del.holdText': 'For safety: hold the button down (mouse, touch, Enter/Space or A on a gamepad).',
+  'save.del.hold': 'Hold to delete', 'save.del.holdHint': 'Hold the button down to delete.',
+  'save.del.done': 'Slot {n} deleted – you can still undo it for a moment.', 'save.del.undo': 'Undo ({s} s)', 'save.del.undone': 'Slot {n} restored.',
+  'save.del.cloudOk': 'Slot {n} is deleted in the cloud as well.', 'save.del.cloudLater': 'Slot {n}: deletion in the cloud follows at the next sync.',
+  'save.del.newer': 'Slot {n}: another device saved afterwards – that newer save is kept.', 'save.del.retry': 'Deleting will be retried later.',
+  'cmd.backup.reason.overwrite': 'before overwriting', 'cmd.backup.reason.restore': 'before restoring', 'cmd.backup.reason.cloudDeleted': 'deleted in the cloud', 'cmd.backup.reason.import': 'before import',
+  'cmd.backup.badSlot': 'Slot must be between 1 and {max}.', 'cmd.backup.listOf': 'Backups of slot {n}:',
+  'cmd.backup.otherSlot': 'To restore: Save Slots › Backups (or load the slot and use /restore).',
+  'cmd.backup.desc': 'Create a local backup of the current slot (/backup list [slot] shows the backups of a slot).',
 });
 // Buch II: Oberfläche (Kodex, Karte, Tracker), Akte, Rätsel der Zwillinge, Aschenschmied, Erfolge, Ersatztexte der Fähigkeiten
 I18N.add('de', {
@@ -14197,7 +14317,10 @@ I18N.onChange(() => Dialog.relang());
 // Alte Schlüssel (Voxelgruft) werden beim ersten Start übernommen und bleiben als Sicherung erhalten.
 const STORE = { settings: 'aetherfall_settings', muted: 'aetherfall_muted', meta: 'aetherfall_meta', slot: 'aetherfall_slot_' };
 const LEGACY = { save: 'voxelgruft_save_v2', saveV1: 'voxelgruft_save_v1', settings: 'voxelgruft_settings', muted: 'voxelgruft_muted' };
-const SLOT_COUNT = Math.max(1, Math.min(3, CFG.saveSlots || 3)); // die Tabelle savegames erlaubt Slot 1–3
+// Anzahl der manuellen Slots: einzig aus CONFIG.saveSlots (Standard 5). SAVE_SLOTS_MAX schützt nur vor Tippfehlern;
+// die Cloud-Tabelle savegames erlaubt die Slots über ihren Check-Constraint (supabase/schema.sql).
+const SAVE_SLOTS_MAX = 20;
+const SLOT_COUNT = Math.max(1, Math.min(SAVE_SLOTS_MAX, Math.floor(+CFG.saveSlots || 5)));
 const SAVE_VERSION = 3;
 const INV_MAX = 60;
 // Hinweise zu Speicher- und Ladeproblemen (statt sie stillschweigend zu verschlucken): Konsole + /debug log
@@ -14298,8 +14421,10 @@ const Profile = {
   create(o) {
     const d = this.fresh(o); if (o.v1) { this.applyV1(d, o.v1); if (Loot.relabelAll) Loot.relabelAll(d); }
     if (Loot.migrateCaps) Loot.migrateCaps(d); // Ausbau-Obergrenzen (auch für übernommene V1-Gegenstände)
-    const prev = Slots.read(this.slot);
-    this.data = d; this.dataOwner = this.owner; this.rec = Slots.wrap(d, { rev: prev ? prev.rev + 1 : 1, base: prev ? prev.base : 0, dirty: true, cloudGone: prev ? prev.cloudGone : false });
+    const prev = Slots.read(this.slot), cloudRow = typeof Cloud !== 'undefined' && Cloud.rows[this.slot] && !Cloud.rows[this.slot].deleted;
+    // ein belegter Slot wird bewusst überschrieben: der neue Stand gewinnt auch in der Cloud (kein Konfliktdialog)
+    this.data = d; this.dataOwner = this.owner; this.gone = 0;
+    this.rec = Slots.wrap(d, { rev: prev ? prev.rev + 1 : 1, base: prev ? prev.base : 0, dirty: true, cloudGone: prev ? prev.cloudGone : false, force: !!(prev || cloudRow) });
     this.save(true); return d;
   },
   // Übernahme eines Spielstands aus Version 1: Stufe, Erfahrung, Edelsteine, Ausrüstung, Attribute, Statistik
@@ -14346,9 +14471,9 @@ const Profile = {
   },
   // Slot laden (Standard: zuletzt benutzter Slot des aktuellen Besitzers)
   load(n) {
-    const slot = n || Slots.last() || 1, rec = Slots.read(slot);
+    const slot = n || Slots.best() || 1, rec = Slots.read(slot); // ohne Angabe: zuletzt benutzter, sonst jüngster belegter Slot
     const d = rec && this.validate(rec.data); if (!d) { if (rec) DebugLog.add('load', 'Slot ' + slot + ' (' + this.owner + ') konnte nicht gelesen werden'); return false; }
-    this.slot = slot; this.rec = rec; this.data = d; this.dataOwner = this.owner; Slots.setLast(slot);
+    this.slot = slot; this.rec = rec; this.data = d; this.dataOwner = this.owner; this.gone = 0; Slots.setLast(slot);
     if (typeof Loot !== 'undefined' && Loot.relabelAll) Loot.relabelAll(d);
     if (typeof Quests !== 'undefined' && Quests.cleanTrack) Quests.cleanTrack();
     return true;
@@ -14357,6 +14482,7 @@ const Profile = {
   // Lokal speichern; die Cloud-Synchronisation folgt verzögert (Autosave) oder sofort bei wichtigen Ereignissen
   save(important) {
     if (!this.data) return; this.dirty = false;
+    if (this.gone && this.gone === this.slot) return; // gelöschter Slot: nie wieder automatisch beschreiben
     // aufgedeckten Nebel der laufenden Zone mitnehmen (sonst stünde nur der Stand des letzten Autosaves im Spielstand)
     try { if (typeof Game !== 'undefined' && Game.storeFog) Game.storeFog(); } catch (e) { DebugLog.add('save', 'Nebel nicht übernommen', e); }
     const rec = this.rec || Slots.wrap(this.data, { rev: 0, base: 0 });
@@ -14366,8 +14492,9 @@ const Profile = {
     const owner = this.dataOwner || this.owner, same = owner === this.owner;
     if (!same) DebugLog.add('save', 'Anmeldung hat gewechselt – speichere weiter in ' + owner + ' Slot ' + this.slot);
     let ok = false; try { ok = Slots.write(this.slot, rec, owner); } catch (e) { DebugLog.add('save', 'Slot ' + this.slot + ' nicht gespeichert', e); }
+    if (!ok && typeof SaveOps !== 'undefined' && SaveOps.makeRoom(owner)) { try { ok = Slots.write(this.slot, rec, owner); } catch { ok = false; } }
     if (!ok) { this.canSave = false; DebugLog.add('save', 'Slot ' + this.slot + ' konnte nicht lokal gespeichert werden'); if (!this.failWarned && typeof UI !== 'undefined' && UI.toast) { this.failWarned = true; try { UI.toast(t('save.failed'), '#ff8a6a'); } catch (e) { /* HUD noch nicht bereit */ } } }
-    else this.failWarned = false;
+    else { this.failWarned = false; this.canSave = !!this.storage(); if (typeof SaveOps !== 'undefined') SaveOps.autoCopy(rec, owner, this.slot, !!important); }
     if (same) Slots.setLast(this.slot);
     if (same && typeof Cloud !== 'undefined') Cloud.onLocalSave(this.slot, !!important);
   },
@@ -14390,12 +14517,22 @@ const Slots = {
   read(n, owner) { const r = Profile.getJSON(this.key(n, owner)); return r && r.data ? r : null; },
   write(n, rec, owner) { rec.slot = n; return Profile.set(this.key(n, owner), JSON.stringify(rec)); },
   remove(n, owner) { Profile.del(this.key(n, owner)); },
+  // getrennter Autosave-Slot je Besitzer (rollende Kopie des zuletzt automatisch gesicherten Stands, mit Herkunfts-Slot)
+  readAuto(owner) { return this.read('auto', owner); },
+  writeAuto(rec, owner) { return Profile.set(this.key('auto', owner), JSON.stringify(rec)); },
   list(owner) { const out = []; for (let n = 1; n <= SLOT_COUNT; n++) out.push({ n, rec: this.read(n, owner) }); return out; },
   wrap(data, o) { return Object.assign({ ver: SAVE_VERSION, data, rev: 1, base: 0, dirty: true, savedAt: Date.now(), summary: this.summary(data) }, o || {}); },
   summary(d) {
     if (!d) return null;
     const done = d.quests ? Object.values(d.quests).filter(q => q && (q.st === 'done' || (q.times || 0) > 0)).length : 0;
-    return { name: d.name, cls: d.cls, level: d.level, region: d.region, playTime: Math.round((d.stats && d.stats.playTime) || 0), quests: done, gems: d.gems, hero: d.hero, won: !!(d.flags && d.flags.gameWon), cheats: !!d.cheats_used };
+    return { name: d.name, cls: d.cls, level: d.level, region: d.region, playTime: Math.round((d.stats && d.stats.playTime) || 0), quests: done, gems: d.gems, hero: d.hero, won: !!(d.flags && d.flags.gameWon), cheats: !!d.cheats_used,
+      tier: d.tier || 0, story: this.story(d), created: d.created || 0 };
+  },
+  // Story-Fortschritt in Prozent: erledigte Hauptquests (Buch I und II) an allen Hauptquests
+  story(d) {
+    const main = typeof QUESTS !== 'undefined' ? QUESTS.filter(q => q.type === 'main') : []; if (!main.length || !d || !d.quests) return 0;
+    const done = main.filter(q => { const s = d.quests[q.id]; return s && (s.st === 'done' || (s.times || 0) > 0); }).length;
+    return Math.round(done / main.length * 100);
   },
   last() { const m = Profile.meta(); const n = m.lastSlot && m.lastSlot[Profile.owner]; return n >= 1 && n <= SLOT_COUNT ? n : null; },
   setLast(n) { const m = Profile.meta(); m.lastSlot = Object.assign(m.lastSlot || {}, { [Profile.owner]: n }); Profile.setMeta(m); },
@@ -15717,12 +15854,16 @@ const Game = {
   bindMenus() {
     $('btnSlots').onclick = () => { AudioSys.play('click'); SlotUI.open('load', 'scrStart'); };
     $('btnSaveNow').onclick = () => { AudioSys.play('click'); this.manualSave(); };
+    $('btnSlotsPause').onclick = () => { AudioSys.play('click'); SlotUI.open('save', 'scrPause'); };
     I18N.onChange(() => { if (this.state === 'title') this.refreshTitle(); SlotUI.refresh(); SyncStatus.render(); if (!$('scrSettings').classList.contains('hidden')) SetTabs.render(); if (!$('scrLogin').classList.contains('hidden')) LoginUI.render(); if (!$('scrHelp').classList.contains('hidden')) Keys.renderHelp(); });
   },
   manualSave() {
     if (!Profile.data) return;
-    this.saveNow(true); UI.toast(t(Cloud.active() ? 'cloud.savedCloud' : 'cloud.saved'), '#9fd0ff');
-    if (Cloud.active()) Cloud.flush().then(() => SyncStatus.render());
+    this.saveNow(true);
+    const n = Profile.slot, rec = Slots.read(n), ok = !!rec && rec.rev === (Profile.rec && Profile.rec.rev);
+    if (!ok) { SlotUI.msg(t('save.err.quota'), 'err'); SyncStatus.render(); return; }
+    SlotUI.msg(t('cloud.saved'), 'ok'); // im Spiel als Meldung, im Spielstand-Menü in dessen Statuszeile
+    if (Cloud.active()) SaveOps.cloudAfter(n, 'cloud.savedCloud').then(() => SyncStatus.render());
     SyncStatus.render();
   },
   /* ---------------- Konto & Cloud ---------------- */
@@ -15952,6 +16093,7 @@ const Game = {
       else if (!$('scrConfirm').classList.contains('hidden')) UI.closeConfirm();
       else if (!$('scrHelp').classList.contains('hidden')) UI.showScreen(UI.helpReturn);
       else if (!$('scrSettings').classList.contains('hidden')) { Profile.saveSettings(); UI.showScreen(UI.setReturn); }
+      else if (SlotUI.visible()) SlotUI.back();
       else if (this.overlay) this.closeOverlay();
       else if (this.paused) this.resume();
       else if (this.state === 'play') this.pause();
@@ -20234,9 +20376,23 @@ const SAVE_PARTS = {
   quests: ['quests', 'tracked'],
   map: ['region', 'pos', 'discovered'], // discovered: Regionen, Orte, Waypoints, Dungeons, Nebel (ältere Zeilen: map.fog)
 };
+// ---------- Löschmarker (lokal, je Konto): ein gelöschter Slot darf aus der Cloud nicht zurückkehren ----------
+// meta.tomb[besitzer][slot] = { at, rev, due } · rev = Cloud-Revision, die gelöscht werden soll · due = Ende des Rückgängig-Fensters.
+// Erst wenn die Cloud das Löschen bestätigt hat, verschwindet der Marker; bis dahin wird nichts heruntergeladen.
+const Tomb = {
+  all(owner) { const m = Profile.meta(); return (m.tomb && m.tomb[owner || Profile.owner]) || {}; },
+  get(n, owner) { return this.all(owner)[n] || null; },
+  set(n, v, owner) { const m = Profile.meta(), o = owner || Profile.owner; m.tomb = m.tomb || {}; m.tomb[o] = Object.assign(m.tomb[o] || {}, { [n]: v }); Profile.setMeta(m); },
+  clear(n, owner) { const m = Profile.meta(), o = owner || Profile.owner; if (m.tomb && m.tomb[o] && m.tomb[o][n]) { delete m.tomb[o][n]; Profile.setMeta(m); } },
+  due(n, owner) { const x = this.get(n, owner); return !!x && Date.now() >= (x.due || 0); },
+  slots(owner) { return Object.keys(this.all(owner)).map(Number).filter(n => n >= 1 && n <= SLOT_COUNT); },
+};
 const Cloud = {
   sb: null, state: 'off', err: null, rows: {}, pending: new Set(), profileDue: 0, timer: 0, lastSync: 0, backoff: 0, nextTry: 0, busy: false,
   offline: null, conflictOpen: false, listeners: [], due: 0, deferred: new Set(),
+  soft: null,      // Spalte savegames.deleted_at vorhanden (Löschmarker in der Cloud)? null = noch unbekannt
+  slotErrs: {},    // letzter Cloud-Fehler je Slot ('range' | 'perm' | 'schema' | 'unknown'), Anzeige in der Slot-Übersicht
+  errShown: {},    // Fehlermeldung je Slot und Art nur einmal pro Sitzung als Hinweis
   configured() { return BOOT.supabaseConfig() !== null; },
   active() { return !!(this.sb && Auth.user && this.state !== 'off'); },
   onChange(fn) { this.listeners.push(fn); },
@@ -20270,7 +20426,27 @@ const Cloud = {
     if (pend) return t('cloud.st.pending', { n: pend });
     return this.lastSync ? t('cloud.st.synced', { time: I18N.date(this.lastSync) }) : t('cloud.st.ready');
   },
-  pendingCount() { let n = 0; for (const s of Slots.list()) if (s.rec && s.rec.dirty && !this.deferred.has(s.n)) n++; return n; },
+  pendingCount() { let n = 0; for (const s of Slots.list()) if (s.rec && s.rec.dirty && !this.deferred.has(s.n)) n++; return n + Tomb.slots().filter(k => !Slots.read(k)).length; },
+  // Fehler einordnen: Netzwerk, fehlende Berechtigung (RLS/Token), Slot von der Tabelle nicht erlaubt (Check-Constraint), Schema, sonstiges
+  errKind(e) {
+    const code = String((e && e.code) || ''), msg = String((e && (e.message || e.details)) || e || '');
+    if (this.isNetErr(e)) return 'net';
+    if (code === '23514' || /slot_check|check constraint/i.test(msg)) return 'range';
+    if (['42501', '401', '403', 'PGRST301', 'PGRST302'].includes(code) || /row-level security|permission denied|JWT|not authorized|forbidden/i.test(msg)) return 'perm';
+    if (code === '42703' || code === 'PGRST204' || code === '42P01') return 'schema';
+    return 'unknown';
+  },
+  colMissing(err) { return !!err && (err.code === '42703' || err.code === 'PGRST204') && /deleted_at/.test(String(err.message || '')); },
+  live(n) { const C = this.rows[n]; return C && !C.deleted ? C : null; },
+  rowMeta(r) { return { slot: r.slot, revision: r.revision, version: r.version, updated_at: r.updated_at, summary: r.summary, deleted: !!r.deleted_at, deleted_at: r.deleted_at || null }; },
+  // Fehler eines einzelnen Slots: Netzwerk → weiterreichen (ganzer Abgleich offline); sonst merken, einmal melden, andere Slots weiter abgleichen
+  slotErr(n, e) {
+    const kind = this.errKind(e); if (kind === 'net') return false;
+    this.slotErrs[n] = kind; DebugLog.add('cloud', 'Slot ' + n + ': ' + kind, e);
+    const k = n + ':' + kind; if (!this.errShown[k]) { this.errShown[k] = true; try { UI.toast(escapeHtml(t('save.err.cloud.' + kind, { n })), '#ff8a6a'); } catch { /* HUD nicht bereit */ } }
+    return true;
+  },
+  async idle(ms = 15000) { const t0 = performance.now(); while (this.busy && performance.now() - t0 < ms) await new Promise(r => setTimeout(r, 120)); },
   // ---------- Aufteilen in die Tabellenspalten ----------
   toRow(slot, rec) {
     const d = rec.data, row = { user_id: Auth.user.id, slot, version: SAVE_VERSION, summary: Slots.summary(d), progress: {} };
@@ -20330,13 +20506,17 @@ const Cloud = {
   },
   // ---------- Spielstände ----------
   async listRows() {
-    const rows = this.check(await this.sb.from('savegames').select('slot, revision, version, updated_at, summary').eq('user_id', Auth.user.id));
-    this.rows = {}; for (const r of rows || []) this.rows[r.slot] = r;
+    const base = 'slot, revision, version, updated_at, summary', q = c => this.sb.from('savegames').select(c).eq('user_id', Auth.user.id);
+    let res = null;
+    if (this.soft !== false) { res = await q(base + ', deleted_at'); if (res.error && this.colMissing(res.error)) { this.soft = false; res = null; } else if (!res.error) this.soft = true; }
+    if (!res) res = await q(base);
+    const rows = this.check(res);
+    this.rows = {}; for (const r of rows || []) this.rows[r.slot] = this.rowMeta(r);
     return this.rows;
   },
   async fetchRow(slot) {
     const rows = this.check(await this.sb.from('savegames').select('*').eq('user_id', Auth.user.id).eq('slot', slot).limit(1));
-    const r = rows && rows[0]; if (r) this.rows[slot] = { slot, revision: r.revision, version: r.version, updated_at: r.updated_at, summary: r.summary }; else delete this.rows[slot];
+    const r = rows && rows[0]; if (r) { if ('deleted_at' in r) this.soft = true; this.rows[slot] = this.rowMeta(r); } else delete this.rows[slot];
     return r || null;
   },
   storeDownloaded(slot, row) {
@@ -20349,19 +20529,33 @@ const Cloud = {
     return true;
   },
   // Hochladen mit optimistischer Sperre: Update nur, wenn die Cloud-Revision noch die Basis ist
+  // force: bewusst überschrieben (neuer Charakter, Speichern in einen belegten Slot, Kopie, Sicherung, /restore) –
+  // der lokale Stand ersetzt die Cloud-Zeile ohne Konfliktdialog. Eine gelöschte Zeile (deleted_at) wird wiederbelebt.
+  // Fehler (Netz, Berechtigung, Slot nicht erlaubt) werden geworfen; 0 geänderte Zeilen ohne Konflikt = fehlende Berechtigung.
   async upload(slot, rec, force) {
-    const row = this.toRow(slot, rec), known = this.rows[slot];
+    const row = this.toRow(slot, rec); if (this.soft) row.deleted_at = null;
+    const uid = Auth.user.id, isDup = e => e && (e.code === '23505' || /duplicate/i.test(e.message || ''));
+    const denied = () => Object.assign(new Error('savegames: keine Zeile geändert (Berechtigung)'), { code: '42501' });
+    const ins = async () => { row.revision = 1; const r = await this.sb.from('savegames').insert(row).select('revision, updated_at'); if (r.error && this.colMissing(r.error)) { this.soft = false; delete row.deleted_at; return ins(); } return r; };
+    const upd = async rev => { row.revision = rev + 1; const r = await this.sb.from('savegames').update(row).eq('user_id', uid).eq('slot', slot).eq('revision', rev).select('revision, updated_at'); if (r.error && this.colMissing(r.error)) { this.soft = false; delete row.deleted_at; return upd(rev); } return r; };
+    const none = r => !r.error && (!r.data || !r.data.length);
+    const known = this.rows[slot];
     let res;
-    if (!known && !force) {
-      row.revision = 1;
-      res = await this.sb.from('savegames').insert(row).select('revision, updated_at');
-      if (res.error && (res.error.code === '23505' || /duplicate/i.test(res.error.message || ''))) return 'conflict';
+    if (!known) {
+      res = await ins();
+      if (isDup(res.error)) {
+        if (!force) return 'conflict';
+        const cur = await this.fetchRow(slot); if (!cur) return 'conflict';
+        res = await upd(cur.revision); if (none(res)) throw denied();
+      }
     } else {
-      const baseRev = force ? (known ? known.revision : 0) : rec.base;
-      row.revision = baseRev + 1;
-      res = await this.sb.from('savegames').update(row).eq('user_id', Auth.user.id).eq('slot', slot).eq('revision', baseRev).select('revision, updated_at');
-      if (!res.error && (!res.data || !res.data.length)) {
-        if (!known || force) { row.revision = 1; res = await this.sb.from('savegames').insert(row).select('revision, updated_at'); if (res.error && res.error.code === '23505') return 'conflict'; }
+      const baseRev = force || known.deleted ? known.revision : rec.base;
+      res = await upd(baseRev);
+      if (none(res)) {
+        const cur = await this.fetchRow(slot);
+        if (!cur) { res = await ins(); if (isDup(res.error)) return 'conflict'; }
+        else if (cur.revision === baseRev) throw denied();                 // Zeile unverändert da → Update wurde verweigert (RLS)
+        else if (force || cur.deleted_at) { res = await upd(cur.revision); if (none(res)) throw denied(); } // erzwungen oder gelöschte Zeile: auf die aktuelle Revision
         else return 'conflict';
       }
     }
@@ -20369,20 +20563,59 @@ const Cloud = {
     if (!r) return 'conflict';
     // Nur übernehmen, wenn lokal nicht inzwischen weitergespielt wurde
     const cur = Slots.read(slot);
-    if (cur && cur.rev === rec.rev) { cur.base = r.revision; cur.dirty = false; cur.cloudAt = Date.parse(r.updated_at) || Date.now(); Slots.write(slot, cur); if (Profile.slot === slot && Profile.rec) { Profile.rec.base = r.revision; Profile.rec.dirty = false; } }
-    else if (cur) { cur.base = r.revision; Slots.write(slot, cur); if (Profile.slot === slot && Profile.rec) Profile.rec.base = r.revision; }
-    this.rows[slot] = { slot, revision: r.revision, updated_at: r.updated_at, summary: row.summary };
+    if (cur && cur.rev === rec.rev) { cur.base = r.revision; cur.dirty = false; cur.force = false; cur.cloudAt = Date.parse(r.updated_at) || Date.now(); Slots.write(slot, cur); if (Profile.slot === slot && Profile.rec) { Profile.rec.base = r.revision; Profile.rec.dirty = false; Profile.rec.force = false; } }
+    else if (cur) { cur.base = r.revision; cur.force = false; Slots.write(slot, cur); if (Profile.slot === slot && Profile.rec) { Profile.rec.base = r.revision; Profile.rec.force = false; } }
+    this.rows[slot] = { slot, revision: r.revision, updated_at: r.updated_at, summary: row.summary, deleted: false, deleted_at: null };
+    delete this.slotErrs[slot];
     return 'ok';
   },
-  async removeCloud(slot) {
-    if (!this.active()) return;
-    try { this.check(await this.sb.from('savegames').delete().eq('user_id', Auth.user.id).eq('slot', slot)); delete this.rows[slot]; } catch (e) { this.fail(e); }
+  // Kopfdaten einer Zeile (ohne Spielstand), auch gelöschte (deleted_at)
+  async fetchMeta(slot) {
+    const base = 'slot, revision, version, updated_at, summary', q = c => this.sb.from('savegames').select(c).eq('user_id', Auth.user.id).eq('slot', slot).limit(1);
+    let res = null;
+    if (this.soft !== false) { res = await q(base + ', deleted_at'); if (res.error && this.colMissing(res.error)) { this.soft = false; res = null; } else if (!res.error) this.soft = true; }
+    if (!res) res = await q(base);
+    const rows = this.check(res), r = rows && rows[0];
+    if (r) this.rows[slot] = this.rowMeta(r); else delete this.rows[slot];
+    return r ? this.rowMeta(r) : null;
+  },
+  // Slot in der Cloud löschen (nach Ablauf des Rückgängig-Fensters). Mit deleted_at: Löschmarker in der Zeile (andere Geräte
+  // erkennen das Löschen), sonst echte Löschung. Optimistische Sperre über die Revision: hat ein anderes Gerät danach
+  // gespeichert, gewinnt dieser neuere Stand ('newer'). Liefert 'ok' | 'newer' | 'later'; Fehler werden geworfen.
+  async removeCloud(slot, again) {
+    if (!this.active()) return 'later';
+    const tomb = Tomb.get(slot), cur = await this.fetchMeta(slot);
+    if (!cur || cur.deleted) { Tomb.clear(slot); return 'ok'; }
+    if (tomb && cur.revision > (tomb.rev || 0)) { Tomb.clear(slot); DebugLog.add('cloud', 'Slot ' + slot + ': nach dem Löschen anderswo gespeichert – neuerer Stand bleibt'); return 'newer'; }
+    const uid = Auth.user.id;
+    let res = this.soft
+      ? await this.sb.from('savegames').update({ deleted_at: new Date().toISOString(), revision: cur.revision + 1 }).eq('user_id', uid).eq('slot', slot).eq('revision', cur.revision).select('revision, deleted_at')
+      : await this.sb.from('savegames').delete().eq('user_id', uid).eq('slot', slot).eq('revision', cur.revision).select('slot');
+    if (res.error && this.soft && this.colMissing(res.error)) { this.soft = false; return this.removeCloud(slot, again); }
+    const data = this.check(res);
+    if (!data || !data.length) {
+      const now = await this.fetchMeta(slot);
+      if (now && !now.deleted && now.revision === cur.revision) throw Object.assign(new Error('savegames: nichts gelöscht (Berechtigung)'), { code: '42501' });
+      if (!again) return this.removeCloud(slot, true);
+    }
+    Tomb.clear(slot); delete this.slotErrs[slot];
+    if (this.soft) this.rows[slot] = Object.assign({}, cur, { revision: cur.revision + 1, deleted: true, deleted_at: new Date().toISOString() }); else delete this.rows[slot];
+    return 'ok';
   },
   // Einen Slot abgleichen; liefert 'ok' | 'conflict' | 'offline'
   async syncSlot(slot, opts) {
     const o = opts || {};
+    // gelöschter Slot: während des Rückgängig-Fensters nichts tun, danach in der Cloud löschen (kein Geisterstand)
+    if (Tomb.get(slot)) { if (!Tomb.due(slot)) return 'ok'; const r = await this.removeCloud(slot); if (r !== 'newer') return 'ok'; }
     const L = Slots.read(slot), C = this.rows[slot];
     if (!L && !C) return 'ok';
+    if (L && L.force) { const r = await this.upload(slot, L, true); return r === 'ok' ? 'ok' : 'conflict'; }  // bewusst überschrieben: gewinnt
+    if (C && C.deleted) {
+      if (!L) return 'ok';
+      if (!L.dirty) { Slots.remove(slot); return 'ok'; }                                     // anderswo gelöscht
+      if ((L.savedAt || 0) > (Date.parse(C.deleted_at) || 0)) { await this.upload(slot, L, true); return 'ok'; } // danach hier weitergespielt: neuerer Stand gewinnt
+      Backup.put(slot, Profile.owner, L.data, 'cloudDeleted'); Slots.remove(slot); return 'ok';  // älter als das Löschen: als Sicherung behalten
+    }
     if (L && !C) {
       if (L.base > 0 && !L.dirty) { Slots.remove(slot); return 'ok'; }           // anderswo gelöscht
       const r = await this.upload(slot, L); if (r === 'conflict') { await this.fetchRow(slot); return this.syncSlot(slot, o); }
@@ -20413,11 +20646,15 @@ const Cloud = {
       await this.listRows();
       for (let n = 1; n <= SLOT_COUNT; n++) {
         if (this.deferred.has(n)) continue;
-        if (Game.inGame() && Profile.slot === n) {
-          const L = Slots.read(n); if (L && L.dirty && this.rows[n] && this.rows[n].revision === L.base) await this.upload(n, L);
-          continue;
-        }
-        await this.syncSlot(n, o);
+        try {
+          if (Game.inGame() && Profile.slot === n && Profile.data) {
+            const L = Slots.read(n), C = this.rows[n];
+            if (L && (L.force || (C && C.deleted))) await this.upload(n, L, true);
+            else if (L && L.dirty && (!C || C.revision === L.base)) await this.upload(n, L);
+            continue;
+          }
+          await this.syncSlot(n, o);
+        } catch (e) { if (!this.slotErr(n, e)) throw e; }
       }
       this.lastSync = Date.now(); this.backoff = 0; this.setState('idle');
       this.pending.clear();
@@ -20444,23 +20681,55 @@ const Cloud = {
     if (!this.active() || this.busy) return;
     this.due = 0;
     const slots = [...this.pending]; for (const s of Slots.list()) if (s.rec && s.rec.dirty && !slots.includes(s.n)) slots.push(s.n);
+    for (const k of Tomb.slots()) if (Tomb.due(k) && !slots.includes(k)) slots.push(k);
     if (!slots.length && !this.profileDue) return;
     this.busy = true; this.setState('syncing');
     try {
       if (this.profileDue) await this.pushProfile();
       if (!Object.keys(this.rows).length) await this.listRows();
       for (const n of slots) {
-        const L = Slots.read(n); if (!L || !L.dirty || this.deferred.has(n)) { this.pending.delete(n); continue; }
-        const C = this.rows[n];
-        if (!C || C.revision === L.base) {
-          const r = await this.upload(n, L);
-          if (r === 'conflict') { await this.fetchRow(n); if (!quick) this.raiseConflict(n); }
-        } else if (!quick) this.raiseConflict(n);
-        this.pending.delete(n);
+        try {
+          if (Tomb.get(n)) { if (Tomb.due(n)) await this.removeCloud(n); this.pending.delete(n); continue; }
+          const L = Slots.read(n); if (!L || !L.dirty || this.deferred.has(n)) { this.pending.delete(n); continue; }
+          const C = this.rows[n];
+          if (L.force || (C && C.deleted)) await this.upload(n, L, true);
+          else if (!C || C.revision === L.base) {
+            const r = await this.upload(n, L);
+            if (r === 'conflict') { await this.fetchRow(n); if (!quick) this.raiseConflict(n); }
+          } else if (!quick) this.raiseConflict(n);
+          this.pending.delete(n);
+        } catch (e) { if (!this.slotErr(n, e)) throw e; this.pending.delete(n); }
       }
       this.lastSync = Date.now(); this.backoff = 0; this.setState('idle');
     } catch (e) { this.fail(e); }
     this.busy = false;
+  },
+  // Einen Slot sofort abgleichen (Spielstand-Menü, „Jetzt speichern“): Ergebnis für die Rückmeldung an den Spieler.
+  // { ok: true } erst, wenn die Cloud den Stand (bzw. das Löschen) bestätigt hat; sonst { ok: false, kind } – lokal bleibt alles erhalten.
+  async flushSlot(n) {
+    if (!this.active()) return { ok: true, local: true };
+    await this.idle(); this.busy = true; this.setState('syncing');
+    let out;
+    try {
+      if (!Object.keys(this.rows).length) await this.listRows();
+      if (Tomb.get(n)) { const r = await this.removeCloud(n); out = { ok: r !== 'newer', newer: r === 'newer' }; }
+      else {
+        const L = Slots.read(n), C = this.rows[n]; let r = 'ok';
+        if (L && (L.force || (C && C.deleted))) r = await this.upload(n, L, true);
+        else if (L && L.dirty && (!C || C.revision === L.base)) r = await this.upload(n, L);
+        else if (L && L.dirty) r = 'conflict';
+        if (r === 'conflict') { await this.fetchRow(n); out = { ok: false, kind: 'conflict' }; }
+        else out = { ok: true };
+      }
+      this.pending.delete(n); this.lastSync = Date.now(); this.backoff = 0; this.setState('idle');
+    } catch (e) {
+      const kind = this.errKind(e); out = { ok: false, kind };
+      if (kind === 'net') this.fail(e); else { this.slotErrs[n] = kind; this.errShown[n + ':' + kind] = true; DebugLog.add('cloud', 'Slot ' + n + ': ' + kind, e); this.setState('idle'); }
+    }
+    this.busy = false;
+    if (out.kind === 'conflict') this.raiseConflict(n);
+    try { SlotUI.refresh(); SyncStatus.render(); } catch { /* UI */ }
+    return out;
   },
   // Konflikt während des Spiels: Spiel pausiert, Auswahl, danach weiter oder Cloud-Stand laden
   async raiseConflict(n) {
@@ -20554,7 +20823,9 @@ const SyncUI = {
         const cur = Slots.read(n);
         if (cur) { const ok = await Modal.show(t('cloud.overwriteTitle'), `<div class="note">${escapeHtml(t('cloud.overwriteText', { n, name: (cur.summary && cur.summary.name) || '?' }))}</div>`, [{ label: t('cloud.overwrite'), value: true, cls: 'red' }, { label: t('keys.cancel'), value: false, back: true }]); if (!ok) continue; }
         const known = Cloud.rows[n];
-        Slots.write(n, Object.assign({}, g.rec, { rev: (cur ? cur.rev : 0) + 1, base: known ? known.revision : 0, dirty: true, savedAt: Date.now() }));
+        if (cur && !Backup.put(n, Profile.owner, cur.data, 'overwrite')) { UI.toast(escapeHtml(t('save.err.backup')), '#ff8a6a'); continue; }
+        Tomb.clear(n);
+        Slots.write(n, Object.assign({}, g.rec, { rev: (cur ? cur.rev : 0) + 1, base: known ? known.revision : 0, dirty: true, force: true, savedAt: Date.now() }));
         try { const r = await Cloud.upload(n, Slots.read(n), true); if (r === 'ok') UI.toast(t('cloud.imported', { n })); } catch (e) { Cloud.fail(e); UI.toast(t('cloud.importLater'), '#ffb648'); }
       }
       const m2 = Profile.meta(); m2.imported = m2.imported || {}; m2.imported[Auth.user.id] = Object.assign(m2.imported[Auth.user.id] || {}, { [g.n]: 1 }); Profile.setMeta(m2);
@@ -20841,7 +21112,8 @@ const Cmd = {
   applyData(d) {
     // die Cheat-Markierung lässt sich nicht durch Zurückholen eines älteren Stands entfernen
     const old = Profile.data && Profile.data.cheats_used; if (old && !d.cheats_used) d.cheats_used = old;
-    Profile.data = d; if (Profile.rec) Profile.rec.data = d; Profile.dirty = true;
+    // bewusst ersetzt (/restore, /undo): dieser Stand gewinnt beim nächsten Cloud-Abgleich, kein Konfliktdialog
+    Profile.data = d; if (Profile.rec) { Profile.rec.data = d; Profile.rec.force = true; } Profile.dirty = true;
     try { Game.attachWorldData(); } catch (e) { DebugLog.add('discover', 'Zone nicht an den neuen Stand gebunden', e); } // Nebel der Zone genau wie im Stand
     this.refreshAll(); try { Profile.save(); } catch (e) { DebugLog.add('save', 'Speichern nach Ersetzen des Stands', e); }
   },
@@ -20888,20 +21160,31 @@ const Cmd = {
 };
 
 /* ---------- Sicherungen des Spielstands (lokal, je Konto und Slot, die letzten CMD_LIMITS.backups) ---------- */
+// Ohne Slot-Angabe gilt der laufende Slot (Admin-Befehle); das Spielstand-Menü sichert beliebige Slots (vor dem Überschreiben).
 const Backup = {
-  key() { return 'aetherfall_backup_' + (Profile.owner || 'guest') + '_' + (Profile.slot || 1); },
-  list() { try { const a = JSON.parse(Profile.get(this.key()) || '[]'); return Array.isArray(a) ? a : []; } catch (e) { return []; } },
+  key(n, owner) { return 'aetherfall_backup_' + (owner || Profile.owner || 'guest') + '_' + (n || Profile.slot || 1); },
+  list(n, owner) { try { const a = JSON.parse(Profile.get(this.key(n, owner)) || '[]'); return Array.isArray(a) ? a : []; } catch (e) { return []; } },
+  // Sicherung eines beliebigen Stands schreiben; liefert true nur, wenn sie wirklich im Speicher steht (sonst Platz schaffen, einmal erneut)
+  put(n, owner, D, reason, note) {
+    if (!D) return false;
+    const a = this.list(n, owner); a.push({ at: Date.now(), reason, note: String(note || '').slice(0, 80), name: D.name, level: D.level, data: JSON.stringify(D) });
+    while (a.length > CMD_LIMITS.backups) a.shift();
+    const k = this.key(n, owner), v = JSON.stringify(a);
+    let ok = Profile.set(k, v);
+    if (!ok && typeof SaveOps !== 'undefined' && SaveOps.makeRoom(owner, k)) ok = Profile.set(k, v);
+    if (!ok) DebugLog.add('save', 'Sicherung von Slot ' + n + ' fehlgeschlagen (Speicher voll)');
+    return ok;
+  },
   make(reason, note) {
     const D = Profile.data; if (!D) return false;
     try { Game.storeFog(); } catch (e) { /* ohne Zone */ }
     try {
-      const a = this.list(); a.push({ at: Date.now(), reason, note: String(note || '').slice(0, 80), name: D.name, level: D.level, data: JSON.stringify(D) });
-      while (a.length > CMD_LIMITS.backups) a.shift();
-      Profile.set(this.key(), JSON.stringify(a)); if (reason === 'auto') Chat.add('sys', t('cmd.backup.auto')); return true;
+      if (!this.put(Profile.slot || 1, Profile.dataOwner || Profile.owner, D, reason, note)) throw new Error('quota');
+      if (reason === 'auto') Chat.add('sys', t('cmd.backup.auto')); return true;
     } catch (e) { DebugLog.add('save', 'Sicherung fehlgeschlagen', e); Chat.add('err', t('cmd.backup.fail')); return false; }
   },
-  restore(i) {
-    const a = this.list(); const b = a[i == null ? a.length - 1 : i]; if (!b) return null;
+  restore(i, n, owner) {
+    const a = this.list(n, owner); const b = a[i == null ? a.length - 1 : i]; if (!b) return null;
     let d = null; try { d = Profile.validate(JSON.parse(b.data)); } catch (e) { d = null; }
     return d ? { d, b } : null;
   },
@@ -21088,7 +21371,13 @@ Cmd.register({ name: 'undo', aliases: ['rückgängig'], cat: 'system', perm: 'ad
   run() { Cmd.undo(); } });
 Cmd.register({ name: 'backup', aliases: ['sichern'], cat: 'system', perm: 'admin', undo: false, cheat: false, args: [{ n: 'note', t: 'text', rest: true, opt: true }],
   run(a, c) {
-    if (a.note === 'list' || a.note === 'liste') { const L = Backup.list(); if (!L.length) c.fail('cmd.restore.none'); L.forEach((b, i) => c.info(`${i + 1}. ${I18N.date(b.at)} · ${b.name} · ${t('slots.level', { n: b.level })} · ${t('cmd.backup.reason.' + b.reason)}${b.note ? ' · ' + b.note : ''}`)); c.hint(t('cmd.restore.how')); return; }
+    // /backup list [slot] – Sicherungen des laufenden oder eines anderen Slots (1 … SLOT_COUNT)
+    const lm = /^(list|liste)(?:\s+(\d+))?$/i.exec(String(a.note || '').trim());
+    if (lm) {
+      const n = lm[2] ? +lm[2] : Profile.slot; if (!(n >= 1 && n <= SLOT_COUNT)) c.fail('cmd.backup.badSlot', { max: SLOT_COUNT });
+      const L = Backup.list(n); if (!L.length) c.fail('cmd.restore.none'); c.info(t('cmd.backup.listOf', { n }));
+      L.forEach((b, i) => c.info(`${i + 1}. ${I18N.date(b.at)} · ${b.name} · ${t('slots.level', { n: b.level })} · ${t('cmd.backup.reason.' + b.reason)}${b.note ? ' · ' + b.note : ''}`)); c.hint(t(n === Profile.slot ? 'cmd.restore.how' : 'cmd.backup.otherSlot')); return;
+    }
     if (!Backup.make('manual', a.note)) c.fail('cmd.backup.fail'); return t('cmd.backup.ok', { n: Backup.list().length, max: CMD_LIMITS.backups });
   } });
 Cmd.register({ name: 'restore', aliases: ['wiederherstellen'], cat: 'system', perm: 'admin', cheat: false, save: false, args: [{ n: 'index', t: 'int', min: 1, max: CMD_LIMITS.backups, opt: true }],
@@ -22275,7 +22564,7 @@ Cmd.register({ name: 'savereset', aliases: ['resetsave'], cat: 'system', perm: '
     const D = c.D, nd = Profile.fresh({ name: D.name, cls: D.cls, hero: D.hero });
     if (D.cheats_used) nd.cheats_used = D.cheats_used; // Cheat-Markierung bleibt am Slot
     Game.closeOverlay(); if (Dialog.open_) Dialog.close(); CmdWorld.pend = null;
-    Profile.data = nd; if (Profile.rec) Profile.rec.data = nd; Profile.dirty = true;
+    Profile.data = nd; if (Profile.rec) { Profile.rec.data = nd; Profile.rec.force = true; } Profile.dirty = true; // neuer Stand gewinnt in der Cloud
     Game.dungeonReturn = null; Game.creditsShown = false; Game.encounter = null;
     Cmd.refreshAll();
     Game.startNewGame(); // wie ein neues Spiel: Lager von Ehbergten, Prolog
@@ -25316,66 +25605,8 @@ const Occlude = {
     const w = Game.world; if (w && w.wallTorches) for (const tq of w.wallTorches) tq.g.visible = tq.nx * v.x + tq.nz * v.z < 0.45;
   },
 };
-/* ============================== MENÜS: SLOTS · KONTO · EINSTELLUNGS-TABS ======== */
-const SlotUI = {
-  mode: 'load', ret: 'scrStart',
-  open(mode, ret) {
-    this.mode = mode || 'load'; this.ret = ret || 'scrStart'; UI.showScreen('scrSlots'); this.render();
-    $('btnSlotsBack').onclick = () => { AudioSys.play('click'); UI.showScreen(this.ret); Game.refreshTitle(); };
-    if (Cloud.active()) Cloud.listRows().then(() => this.render()).catch(e => { Cloud.fail(e); this.render(); });
-  },
-  visible() { return !$('scrSlots').classList.contains('hidden'); },
-  refresh() { if (this.visible()) this.render(); },
-  time(sec) { const m = Math.floor((sec || 0) / 60), h = Math.floor(m / 60); return h ? t('slots.hm', { h, m: m % 60 }) : t('slots.m', { m }); },
-  info(n) {
-    const rec = Slots.read(n), C = Cloud.active() ? Cloud.rows[n] : null;
-    const sum = rec ? (rec.summary || Slots.summary(rec.data)) : C ? C.summary : null;
-    let badge = null;
-    if (Cloud.active() || (Auth.user && Cloud.configured())) {
-      if (rec && C && !rec.dirty && rec.base === C.revision) badge = ['cloud', t('slots.bSynced')];
-      else if (rec && rec.dirty) badge = ['pend', t('slots.bPending')];
-      else if (!rec && C) badge = ['cloud', t('slots.bCloudOnly')];
-      else if (rec && C && C.revision !== rec.base) badge = ['pend', t('slots.bCloudNewer')];
-      else if (rec) badge = ['local', t('slots.bLocal')];
-    } else if (rec) badge = ['local', t('slots.bLocal')];
-    const at = rec ? rec.savedAt : C ? Date.parse(C.updated_at) : 0;
-    return { rec, C, sum, badge, at };
-  },
-  render() {
-    $('slTitle').textContent = t(this.mode === 'new' ? 'slots.titleNew' : 'slots.title');
-    $('slSub').textContent = Auth.user ? t('slots.subCloud', { name: Auth.user.name }) : Cloud.offline ? t('slots.subOffline', { name: Cloud.offline.name }) : t('slots.subGuest');
-    $('btnSlotsBack').textContent = t('slots.back');
-    const L = $('slList'); L.innerHTML = '';
-    for (let n = 1; n <= SLOT_COUNT; n++) {
-      const I = this.info(n), S = I.sum, card = document.createElement('div'); card.className = 'slCard' + (S ? '' : ' empty');
-      const cv = document.createElement('canvas'); cv.width = cv.height = 32;
-      if (S && S.hero) Portraits.draw(cv, { look: S.hero }); else { const g = cv.getContext('2d'); g.fillStyle = '#22180f'; g.fillRect(0, 0, 32, 32); g.fillStyle = '#6e4c2c'; g.font = '16px monospace'; g.textAlign = 'center'; g.fillText(String(n), 16, 21); }
-      const mid = document.createElement('div');
-      if (S) {
-        const cls = CLASSES[S.cls] ? CLASSES[S.cls].name : '', reg = REGIONS[S.region] ? REGIONS[S.region].short : '';
-        mid.innerHTML = `<div class="slName">${escapeHtml(t('slots.slotN', { n }))} · ${escapeHtml(S.name || '?')}${I.badge ? ` <span class="slBadge ${I.badge[0]}">${escapeHtml(I.badge[1])}</span>` : ''}</div>`
-          + `<div class="slMeta">${escapeHtml(cls)} · ${escapeHtml(t('slots.level', { n: S.level || 1 }))} · ${escapeHtml(reg)}${S.won ? ' · ★' : ''}${S.cheats ? ` <span class="slBadge cheat">${escapeHtml(t('slots.cheats'))}</span>` : ''}</div>`
-          + `<div class="slMeta">${escapeHtml(t('slots.playTime', { time: this.time(S.playTime) }))} · ${escapeHtml(t('slots.questsDone', { n: S.quests || 0 }))}</div>`
-          + `<div class="slMeta">${escapeHtml(t('slots.saved', { time: I.at ? I18N.date(I.at) : '—' }))}</div>`;
-      } else mid.innerHTML = `<div class="slName">${escapeHtml(t('slots.slotN', { n }))}</div><div class="slMeta">${escapeHtml(t('slots.empty'))}</div>`;
-      const bt = document.createElement('div'); bt.className = 'slBtns';
-      const mk = (key, cls, fn) => { const b = document.createElement('button'); b.className = 'btn ' + cls; b.textContent = t(key); b.onclick = () => { AudioSys.play('click'); fn(); }; bt.appendChild(b); return b; };
-      if (S && this.mode !== 'new') mk('slots.load', 'gold', () => Game.loadSlot(n));
-      if (S && this.mode === 'new') mk('slots.overwrite', 'gold', () => UI.confirm(t('slots.overwriteTitle'), t('slots.overwriteText', { n, name: S.name || '?' }), () => Game.newGameInSlot(n)));
-      if (!S) mk('slots.newGame', 'gold', () => Game.newGameInSlot(n));
-      if (S) mk('slots.delete', 'red', () => UI.confirm(t('slots.deleteTitle'), t('slots.deleteText', { n, name: S.name || '?' }), () => this.del(n)));
-      card.append(cv, mid, bt); L.appendChild(card);
-    }
-    const sy = $('slSync'); sy.textContent = Cloud.label(); sy.className = 'syncNote ' + Cloud.state;
-  },
-  async del(n) {
-    Slots.remove(n); await Cloud.removeCloud(n);
-    if (Profile.slot === n && Game.state !== 'play') { Profile.data = null; Profile.rec = null; }
-    UI.showScreen('scrSlots'); this.render(); Game.refreshTitle();
-    UI.toast(t('slots.deleted', { n }));
-  },
-};
-
+/* ============================== MENÜS: KONTO · EINSTELLUNGS-TABS ======== */
+// Spielstand-Menü (SlotUI): x_slots.js
 const AccountUI = {
   // Leiste im Startmenü
   renderBar() {
@@ -25491,6 +25722,397 @@ const SetTabs = {
     }
   },
 };
+/* ============================== SPIELSTÄNDE: SLOTS, AUTOSAVE, ÜBERSCHREIBEN, LÖSCHEN ===================== */
+// Anzahl der manuellen Slots: SLOT_COUNT (aus CONFIG.saveSlots). Dazu ein getrennter Autosave-Slot je Besitzer.
+// Alle Änderungen an Slots laufen über SaveOps: vor jedem Überschreiben eine Sicherung des alten Stands (Backup, auch über
+// /restore und im Menü wiederherstellbar), geschrieben gilt erst, was wirklich im Speicher steht; Fehler in der Sprache des
+// Spielers. Löschen: 10 s Rückgängig (Papierkorb im Arbeitsspeicher), danach endgültig – angemeldet mit Löschmarker (Tomb),
+// damit der Slot nicht aus der Cloud zurückkehrt. Bewusstes Überschreiben gewinnt in der Cloud (rec.force, kein Konfliktdialog).
+const SAVE_UNDO_MS = 10000, SAVE_HOLD_MS = 1200, SAVE_AUTO_MS = 45000, NAME_MAX = 16;
+const SaveOps = {
+  trash: new Map(), autoAt: 0,
+  isAccount(owner) { return String(owner || Profile.owner || '').startsWith('u_'); },
+  clone(d) { return JSON.parse(JSON.stringify(d)); },
+  // Daten eines Slots: lokal oder (angemeldet, nur in der Cloud) nachgeladen
+  async dataOf(n) {
+    const L = Slots.read(n); if (L) return Profile.validate(this.clone(L.data));
+    if (Cloud.active() && Cloud.live(n) && !Tomb.get(n)) { const row = await Cloud.fetchRow(n); if (row) return Profile.validate(Cloud.fromRow(row)); }
+    return null;
+  },
+  // localStorage voll: zuerst die Autosave-Kopie, dann die ältesten Sicherungen (je Slot bleibt die jüngste) – liefert true, wenn Platz frei wurde
+  makeRoom(owner, keepKey) {
+    const o = owner || Profile.owner;
+    try {
+      const ak = Slots.key('auto', o);
+      if (ak !== keepKey && Profile.get(ak)) { Profile.del(ak); DebugLog.add('save', 'Speicher voll – Autosave-Kopie entfernt'); return true; }
+      let best = null;
+      for (let n = 1; n <= SLOT_COUNT; n++) {
+        const k = Backup.key(n, o), L = Backup.list(n, o), keep = k === keepKey ? 0 : 1;
+        if (L.length > keep && (!best || L[0].at < best.at)) best = { k, n, at: L[0].at, L };
+      }
+      if (!best) return false;
+      best.L.shift(); if (best.L.length) Profile.set(best.k, JSON.stringify(best.L)); else Profile.del(best.k);
+      DebugLog.add('save', 'Speicher voll – älteste Sicherung von Slot ' + best.n + ' entfernt'); return true;
+    } catch (e) { DebugLog.add('save', 'Platz schaffen fehlgeschlagen', e); return false; }
+  },
+  // rollende Autosave-Kopie (getrennter Slot): beim automatischen Speichern höchstens alle 45 s, bei wichtigen Ereignissen öfter
+  autoCopy(rec, owner, n, important) {
+    const now = Date.now(); if (now - this.autoAt < (important ? 5000 : SAVE_AUTO_MS)) return;
+    this.autoAt = now;
+    try { if (!Slots.writeAuto(Object.assign({}, rec, { from: n, autoAt: now, dirty: false, force: false }), owner)) DebugLog.add('save', 'Autosave-Kopie übersprungen (Speicher voll)'); }
+    catch (e) { DebugLog.add('save', 'Autosave-Kopie fehlgeschlagen', e); }
+  },
+  // Stand in Slot n schreiben (Überschreiben, Kopieren, Wiederherstellen, Speichern unter): alter Stand zuerst als Sicherung,
+  // dann schreiben und nachlesen. Liefert { ok, rec } oder { ok: false, err: 'backup' | 'quota' | 'verify' } – der alte Stand bleibt dann.
+  write(n, data, o = {}) {
+    const owner = Profile.owner, prev = Slots.read(n), C = Cloud.rows[n];
+    if (prev && o.backup !== false && !Backup.put(n, owner, prev.data, o.reason || 'overwrite')) return { ok: false, err: 'backup' };
+    const rec = Slots.wrap(data, { rev: (prev ? prev.rev : 0) + 1, base: prev ? prev.base : (C ? C.revision : 0), dirty: true, force: !!(prev || (C && !C.deleted) || Tomb.get(n)), savedAt: Date.now() });
+    let ok = Slots.write(n, rec); if (!ok && this.makeRoom(owner)) ok = Slots.write(n, rec);
+    if (!ok) return { ok: false, err: 'quota' };
+    const back = Slots.read(n); if (!back || back.rev !== rec.rev) return { ok: false, err: 'verify' };
+    this.dropTrash(n); Tomb.clear(n); if (Profile.gone === n) Profile.gone = 0;
+    if (Cloud.active()) Cloud.pending.add(n);
+    return { ok: true, rec: back };
+  },
+  // nach einer lokalen Änderung: angemeldet sofort hochladen und das Ergebnis melden (lokal bleibt alles, auch bei Fehlern)
+  async cloudAfter(n, okKey) {
+    if (!this.isAccount()) return { ok: true };
+    if (!Cloud.active()) { SlotUI.msg(t('save.cloud.later', { n }), 'warn'); return { ok: false, kind: 'net' }; }
+    SlotUI.msg(t('save.cloud.busy', { n }), 'info');
+    const r = await Cloud.flushSlot(n);
+    if (r.ok) SlotUI.msg(t(okKey || 'save.cloud.ok', { n }), 'ok');
+    else SlotUI.msg(t('save.err.cloud.' + (r.kind || 'unknown'), { n }), r.kind === 'net' ? 'warn' : 'err');
+    return r;
+  },
+  // ---------- Löschen mit Rückgängig ----------
+  remove(n) {
+    const owner = Profile.owner, rec = Slots.read(n), C = Cloud.live(n), acct = this.isAccount(owner);
+    if (!rec && !C) return false;
+    const active = Game.inGame() && Profile.slot === n && !!Profile.data;
+    if (Profile.slot === n) Profile.gone = n;                      // dieser Slot wird nie wieder automatisch beschrieben
+    Slots.remove(n, owner);
+    const m = Profile.meta(); if (m.lastSlot && m.lastSlot[owner] === n) { delete m.lastSlot[owner]; Profile.setMeta(m); }
+    const until = Date.now() + SAVE_UNDO_MS;
+    if (acct) Tomb.set(n, { at: Date.now(), rev: Math.max(rec ? rec.base || 0 : 0, C ? C.revision : 0), due: until }, owner);
+    this.dropTrash(n);
+    this.trash.set(n, { rec, cloud: C ? Object.assign({}, C) : null, owner, until, timer: setTimeout(() => this.finalize(n, owner), SAVE_UNDO_MS) });
+    if (active) {
+      // laufender Slot: zurück ins Hauptmenü (ohne zu speichern), dort mit Rückgängig-Knopf
+      Game.toMainMenu(() => { Profile.data = null; Profile.rec = null; Game.reloadTitleSave(); SlotUI.open('load', 'scrStart'); SlotUI.msg(t('save.del.done', { n }), 'ok'); });
+    } else {
+      if (Profile.slot === n && !Game.inGame()) { Profile.data = null; Profile.rec = null; }
+      if (Game.state === 'title') Game.reloadTitleSave();
+    }
+    SlotUI.refresh(); SlotUI.msg(t('save.del.done', { n }), 'ok'); SlotUI.tickUndo();
+    return true;
+  },
+  undo(n) {
+    const T = this.trash.get(n); if (!T) return false;
+    if (T.rec && !Slots.write(n, T.rec, T.owner)) { SlotUI.msg(t('save.err.quota'), 'err'); return false; }
+    clearTimeout(T.timer); this.trash.delete(n);
+    Tomb.clear(n, T.owner); if (Profile.gone === n) Profile.gone = 0;
+    if (Game.state === 'title') Game.reloadTitleSave();
+    SlotUI.refresh(); SlotUI.msg(t('save.del.undone', { n }), 'ok');
+    return true;
+  },
+  undoLast() { let b = null; for (const [n, T] of this.trash) if (!b || T.until > b.T.until) b = { n, T }; return b ? this.undo(b.n) : false; },
+  dropTrash(n) { const T = this.trash.get(n); if (T) { clearTimeout(T.timer); this.trash.delete(n); } },
+  // nach dem Rückgängig-Fenster: lokal endgültig; angemeldet in der Cloud löschen (offline: Löschmarker bleibt, Abgleich später)
+  async finalize(n, owner) {
+    this.dropTrash(n); SlotUI.refresh();
+    if (!this.isAccount(owner) || owner !== Profile.owner || !Tomb.get(n, owner)) return;
+    if (!Cloud.active()) { SlotUI.msg(t('save.del.cloudLater', { n }), 'warn'); return; }
+    const r = await Cloud.flushSlot(n);
+    if (r.ok) SlotUI.msg(t('save.del.cloudOk', { n }), 'ok');
+    else if (r.newer) { SlotUI.msg(t('save.del.newer', { n }), 'warn'); Cloud.syncAll(); }
+    else SlotUI.msg(t('save.err.cloud.' + (r.kind || 'unknown'), { n }) + ' ' + t('save.del.retry'), r.kind === 'net' ? 'warn' : 'err');
+  },
+};
+
+/* ---------- Dialoge (gemeinsames Dialogfenster #scrDlg): Maus, Touch, Tastatur (Enter/Esc), Gamepad (A/B) ---------- */
+const SlotDlg = {
+  open(title, html, buttons, setup) {
+    const p = Modal.queue.then(() => new Promise(res => {
+      const box = $('scrDlg'), row = $('dlgBtns2'); let done = false;
+      const finish = v => { if (done) return; done = true; box.classList.add('hidden'); document.removeEventListener('keydown', onKey, true); res(v); };
+      const back = buttons.find(b => b.back), onKey = e => {
+        if (box.classList.contains('hidden')) return;
+        // Esc schließt nur den Dialog – die Taste wird verbraucht, damit das Spiel nicht zusätzlich das Menü dahinter schließt
+        if (e.key === 'Escape') { e.preventDefault(); Input.down.delete('Escape'); finish(back ? back.value : null); }
+        else if (e.key === 'Enter' && document.activeElement && document.activeElement.tagName === 'INPUT') { const d = buttons.find(b => b.def && !b.hold); if (d) { e.preventDefault(); finish(d.value); } }
+      };
+      $('dlgTitle2').textContent = title; $('dlgBody2').innerHTML = html; row.innerHTML = '';
+      let focusEl = null;
+      for (const b of buttons) {
+        const x = document.createElement('button'); x.className = 'btn ' + (b.cls || ''); if (b.back) x.dataset.back = '1'; if (b.key) x.dataset.key = b.key;
+        if (b.hold) { x.classList.add('holdBtn'); x.innerHTML = `<span class="holdFill"></span><span class="holdTxt">${escapeHtml(b.label)}</span>`; this.hold(x, SAVE_HOLD_MS, () => finish(b.value)); }
+        else { x.textContent = b.label; x.onclick = () => { AudioSys.play('click'); finish(b.value); }; }
+        row.appendChild(x); if (b.focus) focusEl = x;
+      }
+      box.classList.remove('hidden'); document.addEventListener('keydown', onKey, true);
+      if (setup) try { setup($('dlgBody2'), v => finish(v)); } catch (e) { DebugLog.add('ui', 'Dialog', e); }
+      const f = focusEl || row.querySelector('[data-back]'); if (f) try { f.focus({ preventScroll: true }); } catch { /* alt */ }
+    }));
+    Modal.queue = p.catch(() => {});
+    return p;
+  },
+  // „Gedrückt halten“: Maus/Touch (Zeiger), Tastatur (Enter/Leertaste auf dem Knopf), Gamepad (A halten, Knopf im Fokus).
+  // Gemessen in echter Zeit über einen Timer (unabhängig von der Bildrate); Loslassen vor Ablauf setzt zurück.
+  hold(btn, ms, done) {
+    let since = 0, ptr = false, key = false, fired = false, iv = 0;
+    const pad = () => Keys.navEl === btn && Input.pad && Input.pad.held && Input.pad.held.has('Pad0');
+    const step = () => {
+      if (fired) return;
+      if (!btn.isConnected) { clearInterval(iv); return; }
+      const now = performance.now(), on = ptr || key || pad();
+      if (on && !since) since = now; if (!on) since = 0;
+      const p = on ? now - since : 0, f = btn.querySelector('.holdFill'); if (f) f.style.width = Math.min(100, p / ms * 100).toFixed(1) + '%';
+      if (p >= ms) { fired = true; clearInterval(iv); AudioSys.play('click'); done(); }
+    };
+    const release = which => { step(); if (which === 'ptr') ptr = false; else key = false; step(); };
+    btn.addEventListener('pointerdown', e => { ptr = true; try { btn.setPointerCapture(e.pointerId); } catch { /* ohne Capture */ } e.preventDefault(); step(); });
+    for (const ev of ['pointerup', 'pointercancel', 'lostpointercapture']) btn.addEventListener(ev, () => { if (ptr) release('ptr'); });
+    btn.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { key = true; e.preventDefault(); step(); } });
+    btn.addEventListener('keyup', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (key) release('key'); } });
+    btn.addEventListener('blur', () => { key = false; });
+    btn.addEventListener('click', e => { e.preventDefault(); if (!fired && !since) SlotUI.msg(t('save.del.holdHint'), 'info'); });
+    iv = setInterval(step, 40);
+  },
+  card(s, where, at) { return SyncUI.card(s ? Object.assign({}, s, { at: at || s.at }) : null, where); },
+  // Vergleich „Aktuell im Slot“ ↔ „Neuer Stand“ vor dem Überschreiben
+  compare(n, cur, next, extra) {
+    const html = `<div class="note">${escapeHtml(t('save.ow.text', { n }))}</div>${extra ? `<div class="warnBox">${escapeHtml(extra)}</div>` : ''}`
+      + `<div class="cfCards">${this.card(cur, t('save.ow.current'))}${this.card(next, t('save.ow.new'))}</div><div class="note">${escapeHtml(t('save.ow.backup'))}</div>`;
+    return this.open(t('save.ow.title', { n }), html, [{ label: t('save.ow.confirm'), value: true, cls: 'red', key: 'dlg:ok' }, { label: t('keys.cancel'), value: false, back: true, focus: true, key: 'dlg:cancel' }]);
+  },
+};
+
+/* ---------- Spielstand-Menü (Hauptmenü: laden/neu · Pausemenü: speichern) ---------- */
+const SlotUI = {
+  mode: 'load', ret: 'scrStart', undoT: 0,
+  open(mode, ret) {
+    this.mode = mode || 'load'; this.ret = ret || 'scrStart'; UI.showScreen('scrSlots'); this.fit(); this.render();
+    $('btnSlotsBack').onclick = () => this.back();
+    if (Cloud.active()) Cloud.listRows().then(() => this.render()).catch(e => { Cloud.fail(e); this.render(); });
+  },
+  back() { AudioSys.play('click'); UI.showScreen(this.ret); if (this.ret === 'scrStart') Game.refreshTitle(); },
+  visible() { return !$('scrSlots').classList.contains('hidden'); },
+  refresh() { if (this.visible()) this.render(); },
+  // mit der HUD-Größe skalieren, aber nie breiter oder höher als der Bildschirm
+  fit() { const s = clamp(typeof HudScale !== 'undefined' ? HudScale.user() : 1, 0.75, 1.5); document.documentElement.style.setProperty('--ms', s.toFixed(3)); },
+  msg(text, kind) { const el = $('slMsg'); if (!el) return; el.textContent = text || ''; el.className = 'slMsg ' + (kind || 'info'); if (Game.inGame() && !this.visible() && text) try { UI.toast(escapeHtml(text), kind === 'err' ? '#ff8a6a' : kind === 'warn' ? '#ffb648' : '#9fd0ff'); } catch { /* HUD */ } },
+  time(sec) { const m = Math.floor((sec || 0) / 60), h = Math.floor(m / 60); return h ? t('slots.hm', { h, m: m % 60 }) : t('slots.m', { m }); },
+  info(n) {
+    const rec = Slots.read(n), acct = SaveOps.isAccount(), tomb = acct ? Tomb.get(n) : null, C = acct ? Cloud.rows[n] : null, live = C && !C.deleted && !tomb ? C : null;
+    const sum = rec ? Object.assign({}, rec.summary || {}, Slots.summary(rec.data)) : live ? live.summary : null;
+    let badge = null; const err = Cloud.slotErrs[n];
+    if (acct) {
+      if (tomb) badge = ['pend', t('slots.bDelPending')];
+      else if (rec && (err === 'range' || err === 'perm' || err === 'schema')) badge = ['err', t('slots.bErr.' + err)];
+      else if (rec && (rec.dirty || rec.force)) badge = ['pend', t('slots.bPending')];
+      else if (rec && live && rec.base === live.revision) badge = ['cloud', t('slots.bSynced')];
+      else if (!rec && live) badge = ['cloud', t('slots.bCloudOnly')];
+      else if (rec && live && live.revision !== rec.base) badge = ['pend', t('slots.bCloudNewer')];
+      else if (rec) badge = ['local', t('slots.bLocal')];
+    } else if (rec) badge = ['local', t('slots.bLocal')];
+    const at = rec ? rec.savedAt : live ? Date.parse(live.updated_at) : 0;
+    return { rec, C: live, sum, badge, at, tomb };
+  },
+  active(n) { return Game.inGame() && Profile.slot === n && !!Profile.data; },
+  // Kartentext: Name, Klasse, Stufe, Region, Schwierigkeit, Story-Fortschritt, Spielzeit, Datum, Cheats, Sync
+  details(S, I, n) {
+    const cls = CLASSES[S.cls] ? CLASSES[S.cls].name : '', reg = REGIONS[S.region] ? REGIONS[S.region].short : '', tier = WORLD_TIERS[S.tier || 0] ? WORLD_TIERS[S.tier || 0].name : '';
+    const story = S.story == null ? '—' : S.story + ' %', badges = (this.active(n) ? ` <span class="slBadge act">${escapeHtml(t('slots.bActive'))}</span>` : '')
+      + (I.badge ? ` <span class="slBadge ${I.badge[0]}">${escapeHtml(I.badge[1])}</span>` : '') + (S.cheats ? ` <span class="slBadge cheat">${escapeHtml(t('slots.cheats'))}</span>` : '');
+    return `<div class="slName">${escapeHtml(t('slots.slotN', { n }))} · ${escapeHtml(S.name || '?')}${S.won ? ' ★' : ''}${badges}</div>`
+      + `<div class="slMeta">${escapeHtml(cls)} · ${escapeHtml(t('slots.level', { n: S.level || 1 }))} · ${escapeHtml(reg)} · ${escapeHtml(t('slots.tier', { name: tier }))}</div>`
+      + `<div class="slMeta"><span class="slStory"><i style="width:${S.story || 0}%"></i></span> ${escapeHtml(t('slots.story', { p: story }))} · ${escapeHtml(t('slots.playTime', { time: this.time(S.playTime) }))}</div>`
+      + `<div class="slMeta">${escapeHtml(t('slots.saved', { time: I.at ? I18N.date(I.at) : '—' }))}</div>`;
+  },
+  portrait(cv, S, label) {
+    if (S && S.hero) { try { Portraits.draw(cv, { look: S.hero }); return; } catch { /* Platzhalter */ } }
+    const g = cv.getContext('2d'); g.fillStyle = '#22180f'; g.fillRect(0, 0, 32, 32); g.fillStyle = '#6e4c2c'; g.font = '16px monospace'; g.textAlign = 'center'; g.fillText(String(label), 16, 21);
+  },
+  render() {
+    const keep = (Keys.navEl && Keys.navEl.dataset && Keys.navEl.dataset.key) || (document.activeElement && document.activeElement.dataset && document.activeElement.dataset.key) || null;
+    $('slTitle').textContent = t(this.mode === 'new' ? 'slots.titleNew' : this.mode === 'save' ? 'slots.titleSave' : 'slots.title');
+    $('slSub').textContent = (Auth.user ? t('slots.subCloud', { name: Auth.user.name }) : Cloud.offline ? t('slots.subOffline', { name: Cloud.offline.name }) : t('slots.subGuest')) + ' ' + t('slots.count', { n: SLOT_COUNT });
+    $('btnSlotsBack').textContent = t('slots.back');
+    const L = $('slList'); L.innerHTML = '';
+    if (this.mode !== 'new') this.autoCard(L);
+    for (let n = 1; n <= SLOT_COUNT; n++) this.card(L, n);
+    const sy = $('slSync'); sy.textContent = Cloud.label(); sy.className = 'syncNote ' + Cloud.state;
+    if (keep) { const el = L.querySelector(`[data-key="${keep}"]`) || $('slotsBox').querySelector(`[data-key="${keep}"]`); if (el) { if (Keys.navEl) Keys.focus(el); else try { el.focus({ preventScroll: true }); } catch { /* alt */ } } }
+  },
+  btns(parent) {
+    const bt = document.createElement('div'); bt.className = 'slBtns'; parent.appendChild(bt);
+    return (key, cls, fn, n, extra) => { const b = document.createElement('button'); b.className = 'btn ' + cls; b.textContent = t(key, extra); b.dataset.key = key + ':' + n; b.onclick = () => { AudioSys.play('click'); fn(); }; bt.appendChild(b); return b; };
+  },
+  card(L, n) {
+    const I = this.info(n), S = I.sum, T = SaveOps.trash.get(n), card = document.createElement('div');
+    card.className = 'slCard' + (S ? '' : ' empty') + (this.active(n) ? ' active' : ''); card.dataset.slot = n;
+    const cv = document.createElement('canvas'); cv.width = cv.height = 32; this.portrait(cv, S, n);
+    const mid = document.createElement('div'); mid.className = 'slMid';
+    card.append(cv, mid); L.appendChild(card);
+    const mk = this.btns(card), nb = Backup.list(n).length;
+    if (!S && T) {
+      const tn = T.rec ? (T.rec.summary || {}).name : T.cloud && T.cloud.summary ? T.cloud.summary.name : '?';
+      mid.innerHTML = `<div class="slName">${escapeHtml(t('slots.slotN', { n }))} · ${escapeHtml(t('slots.deletedName', { name: tn || '?' }))}</div><div class="slMeta">${escapeHtml(t('slots.undoInfo'))}</div>`;
+      const b = mk('save.del.undo', 'gold', () => SaveOps.undo(n), n, { s: Math.ceil((T.until - Date.now()) / 1000) }); b.dataset.undo = n;
+      return;
+    }
+    if (!S) {
+      mid.innerHTML = `<div class="slName">${escapeHtml(t('slots.slotN', { n }))}</div><div class="slMeta">${escapeHtml(t('slots.empty'))}${I.tomb ? ' · <span class="slBadge pend">' + escapeHtml(t('slots.bDelPending')) + '</span>' : ''}</div>`;
+      if (this.mode === 'save') mk('slots.saveHere', 'gold', () => this.saveHere(n), n);
+      else mk('slots.newGame', 'gold', () => Game.newGameInSlot(n), n);
+      if (nb && this.mode !== 'new') mk('slots.backups', '', () => this.backups(n), n, { n: nb });
+      return;
+    }
+    mid.innerHTML = this.details(S, I, n);
+    if (this.mode === 'new') { mk('slots.overwrite', 'red', () => this.overwriteNew(n, S, I), n); return; }
+    if (this.mode === 'save') {
+      if (this.active(n)) mk('slots.saveActive', 'gold', () => this.saveHere(n), n);
+      else { mk('slots.saveHere', 'gold', () => this.saveHere(n), n); mk('slots.load', '', () => this.loadInGame(n), n); }
+    } else mk('slots.load', 'gold', () => Game.loadSlot(n), n);
+    mk('slots.copy', 'small', () => this.copy(n), n);
+    mk('slots.rename', 'small', () => this.rename(n), n);
+    if (nb) mk('slots.backups', 'small', () => this.backups(n), n, { n: nb });
+    mk('slots.delete', 'red small', () => this.del(n), n);
+  },
+  autoCard(L) {
+    const A = Slots.readAuto(); if (!A || !A.data) return;
+    const S = Object.assign({}, A.summary || {}, Slots.summary(A.data)), card = document.createElement('div'); card.className = 'slCard auto';
+    const cv = document.createElement('canvas'); cv.width = cv.height = 32; this.portrait(cv, S, 'A');
+    const mid = document.createElement('div'); mid.className = 'slMid';
+    mid.innerHTML = this.details(S, { at: A.autoAt || A.savedAt, badge: ['local', t('slots.bLocal')] }, 0).replace(escapeHtml(t('slots.slotN', { n: 0 })), escapeHtml(t('slots.autoTitle', { n: A.from || '?' })));
+    card.append(cv, mid); L.appendChild(card);
+    const mk = this.btns(card);
+    mk('slots.autoLoad', 'gold', () => this.autoLoad(A), 'auto', { n: A.from || 1 });
+    mk('slots.copy', 'small', () => this.copy(0, A), 'auto');
+  },
+  // laufender Rückgängig-Countdown: nur die Knopftexte aktualisieren (Fokus bleibt)
+  tickUndo() {
+    clearInterval(this.undoT);
+    this.undoT = setInterval(() => {
+      if (!SaveOps.trash.size) { clearInterval(this.undoT); this.refresh(); return; }
+      for (const b of document.querySelectorAll('#slList [data-undo]')) { const T = SaveOps.trash.get(+b.dataset.undo); if (T) b.textContent = t('save.del.undo', { s: Math.max(0, Math.ceil((T.until - Date.now()) / 1000)) }); }
+    }, 250);
+  },
+  next() { const D = Profile.data; return D ? Object.assign(Slots.summary(D), { at: Date.now() }) : null; },
+  fresh() { return { name: t('save.ow.newChar'), cls: '', level: 1, region: 'ehbergten', playTime: 0, quests: 0, at: Date.now() }; },
+  // ---------- Aktionen ----------
+  async overwriteNew(n, S, I) {
+    if (!await SlotDlg.compare(n, Object.assign({}, S, { at: I.at }), this.fresh())) return;
+    const prev = Slots.read(n);
+    if (prev && !Backup.put(n, Profile.owner, prev.data, 'overwrite')) { this.msg(t('save.err.backup'), 'err'); return; }
+    Game.newGameInSlot(n);
+  },
+  // Pausemenü: laufenden Stand in Slot n speichern (eigener Slot: speichern; anderer: „Speichern unter“, danach dort weiterspielen)
+  async saveHere(n) {
+    if (!Profile.data) return;
+    if (this.active(n)) { Game.manualSave(); this.render(); return; }
+    Game.saveNow(true);
+    const I = this.info(n);
+    if (I.sum && !await SlotDlg.compare(n, Object.assign({}, I.sum, { at: I.at }), this.next())) return;
+    const r = SaveOps.write(n, SaveOps.clone(Profile.data), { reason: 'overwrite' });
+    if (!r.ok) { this.msg(t('save.err.' + r.err, { n }), 'err'); return; }
+    const old = Profile.slot; r.rec.data = Profile.data; Profile.slot = n; Profile.rec = r.rec; Slots.setLast(n);
+    this.render(); this.msg(t('save.saveAs.ok', { n, old }), 'ok');
+    SaveOps.cloudAfter(n).then(() => this.refresh());
+  },
+  async loadInGame(n) {
+    const S = this.info(n).sum;
+    const ok = await SlotDlg.open(t('save.load.title', { n }), `<div class="note">${escapeHtml(t('save.load.text', { n, name: (S && S.name) || '?', cur: Profile.slot }))}</div>`,
+      [{ label: t('slots.load'), value: true, cls: 'gold', key: 'dlg:ok' }, { label: t('keys.cancel'), value: false, back: true, focus: true, key: 'dlg:cancel' }]);
+    if (!ok) return;
+    Game.saveNow(true);
+    if (Cloud.active()) { const r = await Cloud.prepareLoad(n); if (r === 'conflict') Cloud.deferred.add(n); }
+    if (!Slots.read(n)) { this.msg(t('save.err.load', { n }), 'err'); return; }
+    Game.reloadSlot(n);
+  },
+  // Kopieren: Quelle n (0 = Autosave A) → Ziel wählen → ggf. Vergleich → schreiben (Sicherung des Ziels vorher)
+  async copy(from, A) {
+    const opts = [];
+    for (let k = 1; k <= SLOT_COUNT; k++) { if (k === from) continue; const I = this.info(k); opts.push({ label: t('save.copy.to', { n: k }) + ' · ' + (I.sum ? `${I.sum.name || '?'} (${t('slots.level', { n: I.sum.level || 1 })})` : t('slots.empty')), value: k, cls: I.sum ? '' : 'gold', key: 'dlg:to' + k }); }
+    opts.push({ label: t('keys.cancel'), value: 0, back: true, focus: true, key: 'dlg:cancel' });
+    const k = await SlotDlg.open(t('save.copy.title', { n: from || 'A' }), `<div class="note">${escapeHtml(t('save.copy.text'))}</div>`, opts);
+    if (!k) return;
+    if (Game.inGame() && Profile.data) Game.saveNow(true);
+    const data = A ? Profile.validate(SaveOps.clone(A.data)) : await SaveOps.dataOf(from);
+    if (!data) { this.msg(t('save.err.load', { n: from || 'A' }), 'err'); return; }
+    await this.putInto(k, data, Object.assign(Slots.summary(data), { at: Date.now() }));
+  },
+  // Stand in Slot k schreiben: Vergleich bei belegtem Slot, Warnung beim laufenden Slot (danach mit dem neuen Stand weiter)
+  async putInto(k, data, nextSum, reason) {
+    const I = this.info(k), act = this.active(k);
+    if ((I.sum || act) && !await SlotDlg.compare(k, I.sum ? Object.assign({}, I.sum, { at: I.at }) : null, nextSum, act ? t('save.ow.activeWarn', { n: k }) : '')) return false;
+    if (act) Game.saveNow(true);
+    const r = SaveOps.write(k, data, { reason: reason || 'overwrite' });
+    if (!r.ok) { this.msg(t('save.err.' + r.err, { n: k }), 'err'); return false; }
+    if (act) { Game.reloadSlot(k); this.msg(t('save.ow.reloaded', { n: k }), 'ok'); }
+    else { if (Profile.slot === k && !Game.inGame()) { Profile.data = null; Profile.rec = null; Game.reloadTitleSave(); } this.render(); this.msg(t('save.ow.ok', { n: k }), 'ok'); }
+    SaveOps.cloudAfter(k).then(() => this.refresh());
+    return true;
+  },
+  async rename(n) {
+    const I = this.info(n), cur = (I.sum && I.sum.name) || '';
+    let val = cur;
+    const ok = await SlotDlg.open(t('save.ren.title', { n }), `<div class="note">${escapeHtml(t('save.ren.text', { max: NAME_MAX }))}</div><input class="crInput" id="slRenInp" maxlength="${NAME_MAX}" value="${escapeHtml(cur)}">`,
+      [{ label: t('save.ren.ok'), value: true, cls: 'gold', def: true, key: 'dlg:ok' }, { label: t('keys.cancel'), value: false, back: true, key: 'dlg:cancel' }],
+      body => { const inp = body.querySelector('#slRenInp'); inp.addEventListener('input', () => { val = inp.value; }); setTimeout(() => { try { inp.focus(); inp.select(); } catch { /* alt */ } }, 30); });
+    const name = String(val || '').replace(/\s+/g, ' ').trim().slice(0, NAME_MAX);
+    if (!ok || name === cur) return;
+    if (!name) { this.msg(t('save.ren.empty'), 'err'); return; }
+    if (this.active(n)) { Profile.data.name = name; Game.saveNow(true); try { UI.refreshHud(); } catch { /* HUD */ } }
+    else {
+      const data = await SaveOps.dataOf(n); if (!data) { this.msg(t('save.err.load', { n }), 'err'); return; }
+      data.name = name; const prev = Slots.read(n), C = Cloud.rows[n];
+      const rec = Slots.wrap(data, { rev: (prev ? prev.rev : 0) + 1, base: prev ? prev.base : (C ? C.revision : 0), dirty: true, savedAt: prev ? prev.savedAt : Date.now() });
+      if (!Slots.write(n, rec)) { this.msg(t('save.err.quota'), 'err'); return; }
+      if (Profile.slot === n && !Game.inGame()) Game.reloadTitleSave();
+    }
+    this.render(); this.msg(t('save.ren.done', { n, name }), 'ok');
+    SaveOps.cloudAfter(n).then(() => this.refresh());
+  },
+  async backups(n) {
+    const L = Backup.list(n); if (!L.length) { this.msg(t('cmd.restore.none'), 'info'); return; }
+    const opts = L.map((b, i) => ({ label: `${I18N.date(b.at)} · ${b.name} · ${t('slots.level', { n: b.level })} · ${t('cmd.backup.reason.' + b.reason)}`, value: i + 1, key: 'dlg:b' + i })).reverse();
+    opts.push({ label: t('keys.cancel'), value: 0, back: true, focus: true, key: 'dlg:cancel' });
+    const i = await SlotDlg.open(t('save.bk.title', { n }), `<div class="note">${escapeHtml(t('save.bk.text', { max: CMD_LIMITS.backups }))}</div>`, opts);
+    if (!i) return;
+    const r = Backup.restore(i - 1, n); if (!r) { this.msg(t('save.err.load', { n }), 'err'); return; }
+    await this.putInto(n, r.d, Object.assign(Slots.summary(r.d), { at: r.b.at }), 'restore');
+  },
+  // Autosave laden: in den Herkunfts-Slot zurückschreiben (Vergleich, Sicherung), dann laden
+  async autoLoad(A) {
+    const n = A.from >= 1 && A.from <= SLOT_COUNT ? A.from : 1, cur = Slots.read(n);
+    const same = cur && cur.rev === A.rev && cur.data && A.data && cur.data.created === A.data.created;
+    if (!same) {
+      const data = Profile.validate(SaveOps.clone(A.data)); if (!data) { this.msg(t('save.err.load', { n: 'A' }), 'err'); return; }
+      if (!await this.putInto(n, data, Object.assign(Slots.summary(data), { at: A.autoAt || A.savedAt }), 'restore')) return;
+      if (this.active(n)) return; // bereits neu geladen
+    }
+    if (Game.inGame()) { if (!this.active(n)) { Game.saveNow(true); Game.reloadSlot(n); } else UI.showScreen(this.ret); }
+    else Game.loadSlot(n);
+  },
+  async del(n) {
+    const I = this.info(n), S = I.sum; if (!S) return;
+    const act = this.active(n), acct = SaveOps.isAccount();
+    const html = `<div class="note">${escapeHtml(t('save.del.text', { n, s: SAVE_UNDO_MS / 1000 }))}</div>`
+      + (act ? `<div class="warnBox">${escapeHtml(t('save.del.activeWarn', { n }))}</div>` : '')
+      + `<div class="cfCards one">${SlotDlg.card(S, t('slots.slotN', { n }), I.at)}</div>`
+      + (acct ? `<div class="note">${escapeHtml(t('save.del.cloudNote'))}</div>` : '')
+      + `<div class="note">${escapeHtml(t('save.del.holdText'))}</div>`;
+    const ok = await SlotDlg.open(t('save.del.title', { n }), html, [
+      { label: t('save.del.hold'), value: true, cls: 'red', hold: true, key: 'dlg:hold' },
+      { label: t('keys.cancel'), value: false, back: true, focus: true, key: 'dlg:cancel' }]);
+    if (!ok) return;
+    SaveOps.remove(n);
+  },
+};
+// Strg+Z im Spielstand-Menü: zuletzt gelöschten Slot zurückholen
+addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z') && SlotUI.visible() && $('scrDlg').classList.contains('hidden') && SaveOps.trash.size) { e.preventDefault(); SaveOps.undoLast(); } });
 /* =====================================================================
    BUCH II – STORY-DATEN: Akte, Quests, neuer Boss der Cinder Wastes, Lore, Kodex, Weltfolgen
    Logik: x_story1_logic.js · Kodex/Karte/Lore-Fundstücke: x_story2_ui.js · Aschenschmied (Modell/KI/Unikate): x_story3_ashsmith.js
@@ -27025,7 +27647,7 @@ BOOT.run();
 
 <!-- =====================================================================
      SUPABASE-SCHEMA (Codeblock, wird nicht ausgeführt) – im Supabase SQL-Editor ausführen.
-     Siehe auch supabase/schema.sql und README.md.
+     Siehe auch supabase/schema.sql (neues Projekt), supabase/migrate_save_slots.sql (bestehendes Projekt) und README.md.
      ===================================================================== -->
 <script type="text/plain" id="supabase-schema-sql">
 -- ===========================================================================
@@ -27035,7 +27657,8 @@ BOOT.run();
 --      in den Clerk-Session-Tokens).
 --   2. Supabase-Dashboard → Authentication → Sign In / Providers → Third-Party Auth →
 --      „Clerk“ hinzufügen und die Domain der Clerk-Instanz eintragen.
---   3. Dieses Skript im SQL-Editor ausführen.
+--   3. Dieses Skript im SQL-Editor ausführen (neues Projekt).
+--      Bestehendes Projekt mit 3 Slots: supabase/migrate_save_slots.sql ausführen (ohne Datenverlust).
 -- Im Spiel stehen nur der Clerk Publishable Key und Supabase-URL + Publishable/Anon Key.
 -- Die Zeilen gehören über user_id = auth.jwt()->>'sub' (Clerk-User-ID) ihrem Besitzer;
 -- Row Level Security erlaubt nur Lesen/Schreiben/Löschen der eigenen Zeilen.
@@ -27055,7 +27678,7 @@ create table if not exists public.profiles (
 create table if not exists public.savegames (
   id          bigint generated always as identity primary key,
   user_id     text not null default (auth.jwt() ->> 'sub'),
-  slot        smallint not null check (slot between 1 and 3),
+  slot        smallint not null constraint savegames_slot_check check (slot between 1 and 5),  -- = CONFIG.saveSlots im Spiel
   character   jsonb not null default '{}'::jsonb,   -- Name, Klasse, Aussehen, Stufe, Talente, Zauber
   progress    jsonb not null default '{}'::jsonb,   -- Flags, Rätsel/Truhen/Geheimnisse, Weltstufe, Statistik
   quests      jsonb not null default '{}'::jsonb,   -- Queststände, verfolgte Quest
@@ -27065,7 +27688,8 @@ create table if not exists public.savegames (
   revision    integer not null default 1 check (revision > 0),  -- für die Konflikterkennung
   version     integer not null default 3,                       -- Format-Version des Spielstands
   updated_at  timestamptz not null default now(),
-  unique (user_id, slot)
+  deleted_at  timestamptz,                                        -- Löschmarker (gelöschter Slot, kehrt nicht zurück)
+  constraint savegames_user_id_slot_key unique (user_id, slot)
 );
 
 -- updated_at bei jeder Änderung eines Spielstands setzen
@@ -27144,6 +27768,79 @@ create trigger profiles_protect_admin before insert or update on public.profiles
 revoke insert, update on public.profiles from authenticated;
 grant insert (user_id, display_name, language, settings, keybindings, created_at, updated_at) on public.profiles to authenticated;
 grant update (user_id, display_name, language, settings, keybindings, updated_at) on public.profiles to authenticated;
+</script>
+
+<!-- =====================================================================
+     SUPABASE-MIGRATION auf 5 Speicherslots (Codeblock, wird nicht ausgeführt) – für bestehende Projekte
+     einmal im Supabase SQL-Editor ausführen (idempotent, ohne Datenverlust). Siehe supabase/migrate_save_slots.sql.
+     ===================================================================== -->
+<script type="text/plain" id="supabase-migrate-sql">
+-- ===========================================================================
+-- Aetherfall: Dungeons – Migration der Tabelle savegames auf 5 Speicherslots
+-- Für bestehende Projekte: im Supabase-Dashboard → SQL Editor ausführen.
+--   · idempotent: darf beliebig oft laufen
+--   · ohne Datenverlust: vorhandene Spielstände (Slots 1–3) bleiben unverändert
+--   · alles in einer Transaktion: scheitert ein Schritt, wird nichts geändert
+-- Passt zu CONFIG.saveSlots = 5 im Spiel. Für eine andere Slot-Anzahl die Zahl 5 in Schritt 1 ersetzen.
+-- ===========================================================================
+begin;
+
+-- 1) Slot-Bereich 1–5: alle bisherigen CHECK-Constraints auf die Spalte slot (z. B. „slot between 1 and 3“) ersetzen
+do $$
+declare c record;
+begin
+  for c in
+    select con.conname
+    from pg_constraint con
+    join pg_attribute att on att.attrelid = con.conrelid and att.attnum = any (con.conkey)
+    where con.conrelid = 'public.savegames'::regclass and con.contype = 'c' and att.attname = 'slot'
+  loop
+    execute format('alter table public.savegames drop constraint %I', c.conname);
+  end loop;
+end $$;
+alter table public.savegames add constraint savegames_slot_check check (slot between 1 and 5);
+
+-- 2) Ein Spielstand je Konto und Slot: Unique (user_id, slot) – Grundlage für Überschreiben/Upsert
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint con
+    where con.conrelid = 'public.savegames'::regclass and con.contype in ('u', 'p')
+      and (select array_agg(att.attname::text order by att.attname)
+             from unnest(con.conkey) k join pg_attribute att on att.attrelid = con.conrelid and att.attnum = k) = array['slot', 'user_id']
+  ) then
+    if exists (select 1 from public.savegames group by user_id, slot having count(*) > 1) then
+      raise exception 'savegames enthält doppelte Zeilen je (user_id, slot) – bitte zuerst bereinigen. Es wurde nichts geändert.';
+    end if;
+    alter table public.savegames add constraint savegames_user_id_slot_key unique (user_id, slot);
+  end if;
+end $$;
+
+-- 3) Löschmarker: ein gelöschter Slot wird nicht sofort entfernt, sondern markiert – andere Geräte erkennen das Löschen,
+--    und kein Gerät lädt ihn als „Geisterstand“ wieder herunter. Das Spiel kommt auch ohne diese Spalte aus.
+alter table public.savegames add column if not exists deleted_at timestamptz;
+
+-- 4) Row Level Security: Lesen, Anlegen, Ändern und Löschen nur der eigenen Zeilen (Clerk-User-ID aus dem Token)
+alter table public.savegames enable row level security;
+drop policy if exists "savegames_select_own" on public.savegames;
+drop policy if exists "savegames_insert_own" on public.savegames;
+drop policy if exists "savegames_update_own" on public.savegames;
+drop policy if exists "savegames_delete_own" on public.savegames;
+create policy "savegames_select_own" on public.savegames for select to authenticated
+  using ((select auth.jwt() ->> 'sub') = user_id);
+create policy "savegames_insert_own" on public.savegames for insert to authenticated
+  with check ((select auth.jwt() ->> 'sub') = user_id);
+create policy "savegames_update_own" on public.savegames for update to authenticated
+  using ((select auth.jwt() ->> 'sub') = user_id)
+  with check ((select auth.jwt() ->> 'sub') = user_id);
+create policy "savegames_delete_own" on public.savegames for delete to authenticated
+  using ((select auth.jwt() ->> 'sub') = user_id);
+
+-- 5) Rechte: nur angemeldete Nutzer, kein anonymer Zugriff
+revoke all on public.savegames from anon;
+grant select, insert, update, delete on public.savegames to authenticated;
+
+commit;
 </script>
 </body>
 </html>
