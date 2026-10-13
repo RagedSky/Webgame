@@ -665,3 +665,15 @@ input[type='range'] {
 .loading .progress > div {
   transition: width 0.15s;
 }
+
+.hud-sighting {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, 24px);
+  padding: 4px 10px;
+  background: rgba(0, 0, 0, 0.45);
+  border-radius: 6px;
+  font-size: 12.5px;
+  white-space: nowrap;
+}

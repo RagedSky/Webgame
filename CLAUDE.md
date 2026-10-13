@@ -17,7 +17,7 @@ prozedural erzeugten Archiv-Einträgen pro seed-basiertem Sternsystem. Vollstän
 
 Im Spiel: **F3** Debug-Overlay, **Esc** Pause/zurück. Oberfläche: WASD, Maus, Leertaste, Shift, Strg, **V** Ansicht.
 Debug auf der Oberfläche: **T** Zeitraffer (halten), **Y** Wetter wechseln, **G** Flugmodus.
-Konsole: `__stellar.scenes.active.setTimeOfDay(0.5)` / `.forceWeather('rain', true)` in der Planetenszene.
+Konsole: `__stellar.scenes.active.setTimeOfDay(0.5)` / `.forceWeather('rain', true)` / `.spawnNearby(8)` in der Planetenszene.
 
 ## Konventionen
 
@@ -35,7 +35,7 @@ Konsole: `__stellar.scenes.active.setTimeOfDay(0.5)` / `.forceWeather('rain', tr
 - [x] **Phase 0 Setup:** Vite, TS, Three.js, ESLint, Vitest, Ordnerstruktur, CLAUDE.md, ARCHITECTURE.md, DECISIONS.md, GameLoop, Input, SceneManager, Debug-Overlay (FPS, Seed)
 - [x] **Phase 1 Universum-Generator:** Seed/PRNG, Sonnentypen, 3–10 Planeten, Planetenwerte, Archiv-Generator (400–600 Einträge), Startplanet-Garantie, Treibstoff-Formel, Unit-Tests, 3D-Systemansicht + Daten-Dump
 - [x] **Phase 2 Planetenoberfläche:** Chunk-Terrain, Biome, Himmel, Tag/Nacht, Wetter-Basis, Spieler-Controller, Wasser, Vegetation (Instancing)
-- [ ] **Phase 3 Kreaturen und Flora:** prozedurale Tiere/Pflanzen aus Familien, Verhalten (FSM), Spawn nach Bedingungen, Seltenheit
+- [x] **Phase 3 Kreaturen und Flora:** prozedurale Tiere/Pflanzen aus Familien, Verhalten (FSM), Spawn nach Bedingungen, Seltenheit
 - [ ] **Phase 4 Kamera und Katalog:** Foto-Modus, Bewertung, Archiv-UI, Fotospeicherung (IndexedDB), Hinweissystem, Mikroskop, Proben
 - [ ] **Phase 5 Überleben, Rohstoffe, Basis:** Sauerstoff/Energie, Sammeln, Crafting, Labor, Treibstoff-Synthese-Minispiel
 - [ ] **Phase 6 Schiffbau und Raumflug:** Baueditor, Upgrades, Start/Orbit/Landung, Treibstoffverbrauch
@@ -54,4 +54,7 @@ Konsole: `__stellar.scenes.active.setTimeOfDay(0.5)` / `.forceWeather('rain', tr
 - `src/scenes/PlanetScene.ts` – Planetenoberfläche (verdrahtet world/*)
 - `src/gen/terrain/TerrainModel.ts` – Höhenfeld/Biome (rein, testbar)
 - `src/world/terrain/TerrainManager.ts` – Quadtree-LOD-Chunks
+- `src/world/creatures/CreatureManager.ts` – Spawner, `CreatureBuilder.ts` – Genom → Mesh, `CreatureAI.ts` – Verhalten
+- `src/world/flora/FloraBuilder.ts` – Genom → Pflanzen-Geometrie, `src/world/Vegetation.ts` – Zellen/Batches
+- `src/gen/archive/conditions.ts` – Spawn-Bedingungen zur Laufzeit (rein)
 - `src/core/GameLoop.ts`, `src/core/SceneManager.ts`, `src/core/Input.ts`

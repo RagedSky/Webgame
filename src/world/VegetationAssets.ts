@@ -1,72 +1,14 @@
-import {
-  BufferAttribute,
-  BufferGeometry,
-  Color,
-  ConeGeometry,
-  CylinderGeometry,
-  DodecahedronGeometry,
-  DoubleSide,
-  Float32BufferAttribute,
-  IcosahedronGeometry,
-  MeshStandardMaterial,
-  OctahedronGeometry,
-  SphereGeometry,
-  type Material,
-} from 'three';
-import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { Random } from '@/math/Random';
+import type { BufferGeometry} from 'three';
+import { Color, ConeGeometry, CylinderGeometry, DodecahedronGeometry, DoubleSide, IcosahedronGeometry, MeshStandardMaterial, OctahedronGeometry, SphereGeometry, type Material } from 'three';
 import type { VegetationProfile } from '@/gen/terrain/VegetationProfiles';
+import { colorize, jitter, mergeParts, taperedQuad } from './geometry';
 
 export type PlantType = 'grass' | 'shrub' | 'tree' | 'rock';
 export type TreeStyle = VegetationProfile['treeStyle'];
 
-/** Fügt ein konstantes Vertex-Farbattribut hinzu (Instanzfarbe multipliziert später). */
-function colorize(geo: BufferGeometry, color: Color, gradient = 0): BufferGeometry {
-  const pos = geo.getAttribute('position');
-  const n = pos.count;
-  const arr = new Float32Array(n * 3);
-  let minY = Infinity;
-  let maxY = -Infinity;
-  for (let i = 0; i < n; i++) {
-    const y = pos.getY(i);
-    if (y < minY) minY = y;
-    if (y > maxY) maxY = y;
-  }
-  for (let i = 0; i < n; i++) {
-    const t = gradient > 0 && maxY > minY ? 1 - gradient * (1 - (pos.getY(i) - minY) / (maxY - minY)) : 1;
-    arr[i * 3] = color.r * t;
-    arr[i * 3 + 1] = color.g * t;
-    arr[i * 3 + 2] = color.b * t;
-  }
-  geo.setAttribute('color', new BufferAttribute(arr, 3));
-  return geo;
-}
-
-function jitter(geo: BufferGeometry, amount: number, seed: string): BufferGeometry {
-  const rng = new Random(seed);
-  const pos = geo.getAttribute('position') as BufferAttribute;
-  for (let i = 0; i < pos.count; i++) {
-    pos.setXYZ(i, pos.getX(i) + rng.float(-amount, amount), pos.getY(i) + rng.float(-amount, amount), pos.getZ(i) + rng.float(-amount, amount));
-  }
-  pos.needsUpdate = true;
-  geo.computeVertexNormals();
-  return geo;
-}
-
 const WHITE = new Color(1, 1, 1);
 const TRUNK = new Color(0.42, 0.28, 0.16);
 const STEM = new Color(0.85, 0.8, 0.72);
-
-function taperedQuad(width: number, height: number, tipWidth = 0): BufferGeometry {
-  const g = new BufferGeometry();
-  const w = width / 2;
-  const t = tipWidth / 2;
-  g.setAttribute('position', new Float32BufferAttribute([-w, 0, 0, w, 0, 0, t, height, 0, -t, height, 0], 3));
-  g.setAttribute('normal', new Float32BufferAttribute([0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1], 3));
-  g.setAttribute('uv', new Float32BufferAttribute([0, 0, 1, 0, 1, 1, 0, 1], 2));
-  g.setIndex([0, 1, 2, 0, 2, 3]);
-  return g;
-}
 
 function grassGeometry(): BufferGeometry {
   const blades: BufferGeometry[] = [];
@@ -75,9 +17,7 @@ function grassGeometry(): BufferGeometry {
     q.rotateY((i * Math.PI) / 3);
     blades.push(q);
   }
-  const merged = mergeGeometries(blades.map((b) => b.toNonIndexed()), false);
-  if (!merged) throw new Error('Gras-Geometrie konnte nicht zusammengeführt werden');
-  return colorize(merged, WHITE, 0.55);
+  return colorize(mergeParts(blades, 'grass'), WHITE, 0.55);
 }
 
 function shrubGeometry(): BufferGeometry {
@@ -95,12 +35,7 @@ function treeGeometry(style: TreeStyle): BufferGeometry {
       const trunk = new CylinderGeometry(0.12, 0.24, 2.4, 6);
       trunk.translate(0, 1.2, 0);
       parts.push(colorize(trunk, TRUNK));
-      const tiers: Array<[number, number, number]> = [
-        [1.5, 2.4, 2.7],
-        [1.15, 2.2, 4.0],
-        [0.8, 2.0, 5.2],
-      ];
-      for (const [r, h, y] of tiers) {
+      for (const [r, h, y] of [[1.5, 2.4, 2.7], [1.15, 2.2, 4.0], [0.8, 2.0, 5.2]] as Array<[number, number, number]>) {
         const c = new ConeGeometry(r, h, 7);
         c.translate(0, y, 0);
         parts.push(colorize(c, WHITE, 0.25));
@@ -144,12 +79,7 @@ function treeGeometry(style: TreeStyle): BufferGeometry {
       break;
     }
     case 'crystal': {
-      const tilts: Array<[number, number, number]> = [
-        [0, 0, 0],
-        [0.35, 1.2, 0.3],
-        [-0.3, 2.4, 0.2],
-      ];
-      tilts.forEach(([rx, ry, rz], i) => {
+      ([[0, 0, 0], [0.35, 1.2, 0.3], [-0.3, 2.4, 0.2]] as Array<[number, number, number]>).forEach(([rx, ry, rz], i) => {
         const o = new OctahedronGeometry(0.5, 0);
         o.scale(0.45 - i * 0.08, 2.2 - i * 0.5, 0.45 - i * 0.08);
         o.rotateX(rx);
@@ -161,13 +91,7 @@ function treeGeometry(style: TreeStyle): BufferGeometry {
       break;
     }
   }
-  // Primitive sind teils indiziert (Cylinder/Cone), teils nicht (Icosahedron): vereinheitlichen
-  const flat = parts.map((g) => (g.index ? g.toNonIndexed() : g));
-  const merged = mergeGeometries(flat, false);
-  if (!merged) throw new Error(`Baum-Geometrie (${style}) konnte nicht zusammengeführt werden`);
-  for (const g of parts) g.dispose();
-  merged.computeBoundingSphere();
-  return merged;
+  return mergeParts(parts, `tree ${style}`);
 }
 
 function rockGeometry(): BufferGeometry {
@@ -179,8 +103,8 @@ function rockGeometry(): BufferGeometry {
 }
 
 /**
- * Platzhalter-Pflanzen und Steine als Geometrien plus Materialien mit Wind-Shader.
- * Phase 3 ersetzt die Formen durch Arten aus dem Archiv (Asset-Registry bleibt gleich).
+ * Generische Platzhalter (Gras, Steine, Fallback-Bäume) und Materialien mit Wind-Shader.
+ * Arten-Pflanzen kommen aus `flora/FloraAssets` (gleiche Wind-Patches über `patchWind`).
  */
 export class VegetationAssets {
   readonly time = { value: 0 };
@@ -198,13 +122,7 @@ export class VegetationAssets {
     this.grass = grassGeometry();
     this.shrub = shrubGeometry();
     this.rock = rockGeometry();
-    this.trees = {
-      conifer: treeGeometry('conifer'),
-      broadleaf: treeGeometry('broadleaf'),
-      palm: treeGeometry('palm'),
-      fungus: treeGeometry('fungus'),
-      crystal: treeGeometry('crystal'),
-    };
+    this.trees = { conifer: treeGeometry('conifer'), broadleaf: treeGeometry('broadleaf'), palm: treeGeometry('palm'), fungus: treeGeometry('fungus'), crystal: treeGeometry('crystal') };
     this.grassMaterial = new MeshStandardMaterial({ vertexColors: true, side: DoubleSide, roughness: 0.9, metalness: 0 });
     this.plantMaterial = new MeshStandardMaterial({ vertexColors: true, roughness: 0.85, metalness: 0 });
     this.crystalMaterial = new MeshStandardMaterial({ vertexColors: true, roughness: 0.2, metalness: 0.1, emissive: new Color(0.25, 0.2, 0.5), emissiveIntensity: 0.6, transparent: true, opacity: 0.9 });
@@ -213,8 +131,8 @@ export class VegetationAssets {
     this.patchWind(this.plantMaterial, 0.35);
   }
 
-  /** Wind-Schwingen im Vertex-Shader (nur für Instanzen; Stärke wächst mit der Höhe). */
-  private patchWind(material: MeshStandardMaterial, strength: number): void {
+  /** Wind-Schwingen im Vertex-Shader für Instanzen (InstancedMesh) und Batches (BatchedMesh); Stärke wächst mit der Höhe. */
+  patchWind(material: MeshStandardMaterial, strength: number): void {
     material.onBeforeCompile = (shader) => {
       shader.uniforms.uTime = this.time;
       shader.uniforms.uWind = this.wind;
@@ -223,14 +141,23 @@ export class VegetationAssets {
         .replace(
           '#include <begin_vertex>',
           `#include <begin_vertex>
+{
+  vec3 wpos = vec3(0.0);
+  bool hasAnchor = false;
 #ifdef USE_INSTANCING
-  vec3 wpos = (modelMatrix * instanceMatrix * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
-  float hgt = max(transformed.y, 0.0);
-  float sway = sin(uTime * 1.6 + wpos.x * 0.31 + wpos.z * 0.23) * uWind * ${strength.toFixed(2)} * 0.14 * hgt;
-  float sway2 = cos(uTime * 2.3 + wpos.x * 0.17 - wpos.z * 0.29) * uWind * ${strength.toFixed(2)} * 0.06 * hgt;
-  transformed.x += sway;
-  transformed.z += sway2;
-#endif`,
+  wpos = (modelMatrix * instanceMatrix * vec4(0.0, 0.0, 0.0, 1.0)).xyz; hasAnchor = true;
+#endif
+#ifdef USE_BATCHING
+  wpos = (modelMatrix * batchingMatrix * vec4(0.0, 0.0, 0.0, 1.0)).xyz; hasAnchor = true;
+#endif
+  if (hasAnchor) {
+    float hgt = max(transformed.y, 0.0);
+    float sway = sin(uTime * 1.6 + wpos.x * 0.31 + wpos.z * 0.23) * uWind * ${strength.toFixed(2)} * 0.14 * hgt;
+    float sway2 = cos(uTime * 2.3 + wpos.x * 0.17 - wpos.z * 0.29) * uWind * ${strength.toFixed(2)} * 0.06 * hgt;
+    transformed.x += sway;
+    transformed.z += sway2;
+  }
+}`,
         );
     };
     material.customProgramCacheKey = () => `wind-${strength}`;

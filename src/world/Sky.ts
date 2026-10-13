@@ -109,6 +109,8 @@ export class Sky {
   readonly fogColor = new Color();
   /** Zenitfarbe für Reflexionen (linear, tageszeitabhängig). */
   readonly zenithColor = new Color();
+  /** Ein Mond steht vor der Sonne. */
+  eclipse = false;
   readonly look: AtmosphereLook;
   private readonly disposer = new Disposer();
   private readonly material: ShaderMaterial;
@@ -243,12 +245,14 @@ export class Sky {
     starMat.opacity = clamp01(1 - daylight * Math.min(1, this.look.density * 1.1)) * (1 - weather.cloudiness * 0.85);
     this.stars.rotation.y = cycle.t * Math.PI * 2 * 0.1;
 
-    // Monde
+    // Monde (+ Finsternis-Erkennung)
+    this.eclipse = false;
     for (const m of this.moons) {
       const phase = (m.phase + cycle.totalDays / m.period) % 1;
       cycle.directionAtPhase(phase, this.tmpDir);
       m.mesh.position.copy(this.tmpDir).multiplyScalar(this.radius * 0.93);
       m.mesh.visible = this.tmpDir.y > -0.1;
+      if (cycle.sunElevation > 0 && this.tmpDir.dot(cycle.sunDir) > 0.9993) this.eclipse = true;
     }
     if (this.giant) this.giant.rotation.y += dt * 0.01;
 

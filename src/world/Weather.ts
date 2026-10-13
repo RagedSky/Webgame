@@ -38,6 +38,8 @@ const PARAMS: Record<WeatherType, WeatherParams> = {
   lightning_storm: { fog: 2.5, cloudiness: 1, precipitation: 'none', precipIntensity: 0, wind: 0.9, sunDim: 0.6, lightning: true },
 };
 
+const STORM_TYPES: WeatherType[] = ['storm', 'thunderstorm', 'blizzard', 'sandstorm', 'lightning_storm'];
+
 /**
  * Wetter-Zustandsmaschine: zieht deterministisch (Seed) die nächste Wetterlage aus dem Planeten-Set,
  * blendet Parameter über eine Übergangszeit und liefert Blitz-Impulse bei Gewittern.
@@ -52,6 +54,9 @@ export class WeatherSystem {
   private readonly transitionSeconds = 25;
   private lightningTimer = 0;
   private flash = 0;
+  private clock = 0;
+  private stormEndedAt = -Infinity;
+  private wasStorm = false;
   readonly params: WeatherParams = { ...PARAMS.clear };
 
   constructor(
@@ -89,6 +94,10 @@ export class WeatherSystem {
   }
 
   update(dt: number): void {
+    this.clock += dt;
+    const stormNow = STORM_TYPES.includes(this.activeType);
+    if (this.wasStorm && !stormNow) this.stormEndedAt = this.clock;
+    this.wasStorm = stormNow;
     if (this.blend < 1) {
       this.blend = clamp01(this.blend + dt / this.transitionSeconds);
       if (this.blend >= 1) this.current = this.next;
@@ -133,6 +142,11 @@ export class WeatherSystem {
   /** Aktueller Blitz-Impuls 0..1 (fällt schnell ab). */
   get lightningFlash(): number {
     return this.flash;
+  }
+
+  /** Kurz nach einem Sturm (3 Minuten) – Spawn-Bedingung „after_storm“. */
+  get afterStorm(): boolean {
+    return this.clock - this.stormEndedAt < 180;
   }
 
   get label(): string {

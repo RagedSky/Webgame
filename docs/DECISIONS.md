@@ -77,3 +77,23 @@ Debug-Tasten: T (Zeitraffer ×60), Y (Wetter wechseln), G (Flugmodus), V (Ego/Sc
 ## D-020 · Vegetation als Platzhalter-Instancing in zwei Zellgrößen
 **Entscheidung:** Nahe Zellen (64 m, Radius 200 m) tragen Gras, Büsche, Steine; ferne Zellen (256 m, Radius 620 m) Bäume. Platzierung
 deterministisch aus Terrain-Seed + Zelle. Phase 3 ersetzt die Platzhalter-Geometrien durch Arten aus dem Archiv (gleiche Zellen-Logik).
+
+## D-021 · Kreaturen als Single-Bone-Skinning statt Mesh-Gruppen
+**Kontext:** Eine Kreatur aus 10–20 Einzelmeshes kostet ebenso viele Draw-Calls; 25 Kreaturen wären 400+ Draw-Calls.
+**Entscheidung:** Alle Körperteile werden zu einer Geometrie mit `skinIndex`/`skinWeight` (je Vertex genau ein Knochen) verschmolzen und als
+SkinnedMesh gezeichnet (ein Draw-Call). Die Animation dreht nur Knochen (CPU, keine Allokationen). Geometrie und Material werden je Art gecacht,
+jedes Tier hat ein eigenes Skelett.
+
+## D-022 · Arten-Flora per BatchedMesh je Zelle und Material
+**Entscheidung:** Statt InstancedMesh je Art (hunderte Draw-Calls) werden alle Arten einer Zelle in einem BatchedMesh gezeichnet (Multi-Draw,
+Farben pro Instanz). Generisches Gras und Steine bleiben InstancedMesh. Der Wind-Shader unterstützt beide Pfade (`USE_INSTANCING`/`USE_BATCHING`).
+
+## D-023 · Spawn-Regeln für Kreaturen
+**Entscheidung:** Spawn-Versuche alle 1,5 s in 45–170 m Entfernung, zu 65 % hinter dem Spieler. Kandidaten = Einträge des Bioms, deren
+Bedingungen (Zeit, Wetter, Höhe, Temperatur ± Toleranz, Spezial) erfüllt sind; Gewicht = Seltenheit (1 / 0,45 / 0,16 / 0,05) geteilt durch
+(1 + bereits vorhandene Exemplare). Gruppen: Schwärme 3–6, Herden 1–4, sonst 1–2. Population max. 26, Abbau ab 240 m.
+Legendäre Spezialbedingungen (Sonnenwende, Finsternis, nach Sturm) werden geprüft; die Sonnenwende folgt in Phase 4 mit dem Kalender.
+
+## D-024 · Dichte der Arten-Flora je Wuchsform normiert
+**Kontext:** Ozeanwelten mit 100 Flora-Arten bekamen dreimal so viele Pflanzen wie Welten mit 30 Arten (1,2 Mio. Dreiecke).
+**Entscheidung:** Je Wuchsform ist die Gesamtdichte konstant; Arten teilen sie proportional zu ihrem Seltenheitsgewicht.

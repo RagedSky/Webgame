@@ -64,8 +64,12 @@ Sternsystem, baust ein Raumschiff, synthetisierst Treibstoff und füllst ein Arc
     │   ├── Weather.ts         Wetter-Zustandsmaschine (seed-basiert), Parameter (Nebel, Wolken, Niederschlag, Wind, Blitze)
     │   ├── Precipitation.ts   Niederschlags-Partikel um die Kamera
     │   ├── Water.ts           Wasserfläche (Wellen, Fresnel, Glanz, Nebel)
-    │   ├── Vegetation.ts      Instancing-Zellen (nah: Gras/Büsche/Steine, fern: Bäume)
-    │   ├── VegetationAssets.ts Platzhalter-Geometrien + Materialien mit Wind-Shader
+    │   ├── Vegetation.ts      Zellen: generisches Gras/Steine (InstancedMesh) + Arten-Pflanzen je Material als BatchedMesh
+    │   ├── VegetationAssets.ts Platzhalter-Geometrien + Materialien mit Wind-Shader (Instancing und Batching)
+    │   ├── geometry.ts        Helfer: colorize, jitter, taperedQuad, mergeParts, hsl
+    │   ├── flora/             FloraBuilder (Genom → Geometrie je Wuchsform), FloraAssets (Cache + Materialien)
+    │   └── creatures/         CreatureBuilder (Genom → geskinnte Geometrie + Knochen), Creature (Skelett, Animation, Bewegung),
+    │                          CreatureAI (FSM, rein), CreatureManager (Spawner nach Bedingungen, Population)
     │   └── Player.ts          Ego-/Schulter-Controller, Terrain-Kollision, Schwimmen, Gravitation
     ├── assets/                AssetRegistry: Platzhalter-Geometrien/Materialien, später austauschbar
     ├── audio/                 AudioManager (Web Audio), prozedurale Sounds
@@ -165,6 +169,21 @@ trägt sein Höhenband (`altitude`) bei, Übergänge werden geblendet. Wasserspi
 liegen darunter. `sample(x, z)` liefert Höhe, Biom, Nachbarbiom, Blendgewicht, Detail- und Höhenwert; `findSpawn()` einen
 deterministischen, flachen Landeplatz. `VegetationProfiles.ts` definiert Dichten je Biom.
 
+### 4.5 Kreaturen und Arten-Flora (Phase 3)
+
+- `gen/archive/conditions.ts` (rein): `matchesSpawn(entry, ctx)` prüft Biom, Tageszeit, Wetter, Höhe, Temperatur und
+  Spezialbedingung; `matchesPlacement` für statische Flora; `pointTemperature` schätzt die Temperatur am Ort.
+- **Kreaturen**: `CreatureBuilder` erzeugt aus dem Fauna-Genom starre Körperteile (Rumpf, Hals, Kopf, Beine mit Hüfte/Knie,
+  Flügel, Flossen, Schwanz, Extras), färbt Muster per Vertexfarben und hängt jedes Teil an einen Knochen (Single-Bone-Skinning,
+  ein Draw-Call je Kreatur). `Creature` baut Skelett und SkinnedMesh, animiert prozedural (Gang, Flügelschlag, Schlängeln,
+  Fressen, Schlafen) und bewegt sich je Fortbewegungsart (Land, Wasser, Luft). `CreatureAI` ist die Zustandsmaschine
+  (Idle, Wandern, Fressen, Schlafen, Flüchten, Neugier, Imponieren) mit Bedrohungsmaß aus Entfernung, Lärm, Blick und Scheu.
+  `CreatureManager` spawnt alle 1,5 s hinter dem Spieler Arten, deren Bedingungen gerade passen (Seltenheit gewichtet,
+  Gruppen nach Verhalten, max. 26) und entfernt entfernte Tiere.
+- **Flora-Arten**: `FloraBuilder` baut je Eintrag eine Geometrie (Baum, Strauch, Gras, Pilz, Wasserpflanze, Sukkulente,
+  Flechte, Ranke, Kristallpflanze) aus dem Genom; `VegetationManager` platziert Arten nach Biom, Höhenband, Wasserregel und
+  Seltenheit (Dichte je Wuchsform normiert) und zeichnet sie pro Zelle als BatchedMesh.
+
 ## 5. Laufzeit-Architektur
 
 - **GameLoop**: `requestAnimationFrame`, Akkumulator mit festem Update-Schritt (1/60 s, max. 5 Schritte/Frame), Render pro Frame,
@@ -186,7 +205,7 @@ deterministischen, flachen Landeplatz. `VegetationProfiles.ts` definiert Dichten
 | 0 | Setup, Loop, Input, SceneManager, Debug-Overlay, Docs | ✅ |
 | 1 | Universum-Generator (Stern, Planeten, Archiv-Einträge, Startplanet, Treibstoff) + Tests + 3D-Debug-Ansicht | ✅ |
 | 2 | Planetenoberfläche: Chunk-Terrain, Biome, Himmel, Tag/Nacht, Wetter-Basis, Spieler, Wasser, Vegetation | ✅ |
-| 3 | Kreaturen und Flora: prozedurale Körper, Verhalten, Spawn nach Bedingungen, Seltenheit | ⬜ |
+| 3 | Kreaturen und Flora: prozedurale Körper, Verhalten, Spawn nach Bedingungen, Seltenheit | ✅ |
 | 4 | Kamera und Katalog (Kernschleife): Foto-Modus, Bewertung, Archiv-UI, Fotospeicherung, Hinweise, Mikroskop | ⬜ |
 | 5 | Überleben, Rohstoffe, Basis, Labor, Treibstoff-Synthese | ⬜ |
 | 6 | Schiffbau und Raumflug | ⬜ |

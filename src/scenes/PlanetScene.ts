@@ -8,6 +8,7 @@ import { TerrainModel } from '@/gen/terrain/TerrainModel';
 import type { Planet, StarSystem, WeatherType } from '@/gen/universe/types';
 import { WEATHER } from '@/gen/universe/catalog';
 import { TIME_LABELS } from '@/gen/archive/types';
+import { Vector3 } from 'three';
 import { kelvinToCelsius } from '@/math/utils';
 import { DayCycle } from '@/world/DayCycle';
 import { Sky } from '@/world/Sky';
@@ -17,6 +18,11 @@ import { Water } from '@/world/Water';
 import { TerrainManager } from '@/world/terrain/TerrainManager';
 import { VegetationAssets } from '@/world/VegetationAssets';
 import { VegetationManager } from '@/world/Vegetation';
+import { FloraAssets } from '@/world/flora/FloraAssets';
+import { CreatureManager } from '@/world/creatures/CreatureManager';
+import { STATE_LABELS } from '@/world/creatures/CreatureAI';
+import { BEHAVIOR_LABELS } from '@/gen/archive/descriptions';
+import { RARITY_LABELS } from '@/gen/archive/types';
 import { Player } from '@/world/Player';
 import { Hud } from '@/ui/Hud';
 import { PauseMenu } from '@/ui/PauseMenu';
@@ -46,7 +52,10 @@ export class PlanetScene implements GameScene {
   private weather!: WeatherSystem;
   private terrain!: TerrainManager;
   private assets!: VegetationAssets;
+  private flora!: FloraAssets;
   private vegetation!: VegetationManager;
+  private creatures!: CreatureManager;
+  private readonly camDir = new Vector3();
   private water: Water | null = null;
   private precipitation!: Precipitation;
   private player!: Player;
@@ -94,7 +103,9 @@ export class PlanetScene implements GameScene {
     this.weather = new WeatherSystem(planet, this.system.seed);
     this.terrain = new TerrainManager(this.scene, this.model, { viewDistance: VIEW_DISTANCE });
     this.assets = new VegetationAssets();
-    this.vegetation = new VegetationManager(this.scene, this.model, planet, this.assets);
+    this.flora = new FloraAssets(this.assets);
+    this.vegetation = new VegetationManager(this.scene, this.model, planet, this.assets, this.flora, this.system.entries);
+    this.creatures = new CreatureManager(this.scene, this.system, planet, this.model);
     if (this.model.hasWater) this.water = new Water(this.scene, planet, this.model.seaLevel);
     this.precipitation = new Precipitation(2400, `precip:${planet.id}`);
     this.scene.add(this.precipitation.points);
@@ -155,6 +166,16 @@ export class PlanetScene implements GameScene {
   setTimeOfDay(t: number): void {
     this.cycle.t = ((t % 1) + 1) % 1;
     this.cycle.advance(0);
+  }
+
+  /** Debug/Test: Kreaturen in der Umgebung erzwingen. */
+  spawnNearby(count = 8): number {
+    const pl = this.player;
+    return this.creatures.forceSpawn(
+      { pos: pl.position, yaw: pl.yaw, noise: 0 },
+      { timeOfDay: this.cycle.timeOfDay, weather: this.weather.activeType, daylight: this.cycle.daylight, afterStorm: this.weather.afterStorm, solstice: false, eclipse: this.sky.eclipse },
+      count,
+    );
   }
 
   /** Debug/Test: Wetter sofort erzwingen (Übergang läuft normal an). */
@@ -220,6 +241,20 @@ export class PlanetScene implements GameScene {
     this.elapsed += dt;
     this.terrain.update(this.camera.position, dt);
     this.vegetation.update(this.camera.position, dt, this.elapsed, this.weather.params.wind);
+    const pl = this.player;
+    const noise = pl.fly ? 0.25 : pl.swimming ? 0.4 : pl.speed > 7 ? 1 : pl.speed > 0.8 ? (pl.crouching ? 0.15 : 0.5) : 0.08;
+    this.creatures.update(
+      dt,
+      { pos: pl.position, yaw: pl.yaw, noise },
+      {
+        timeOfDay: this.cycle.timeOfDay,
+        weather: this.weather.activeType,
+        daylight: this.cycle.daylight,
+        afterStorm: this.weather.afterStorm,
+        solstice: false,
+        eclipse: this.sky.eclipse,
+      },
+    );
 
     this.hudAccum += dt;
     if (this.hudAccum >= 0.2) {
@@ -243,9 +278,17 @@ export class PlanetScene implements GameScene {
         fly: this.player.fly,
         timeScale: this.cycle.timeScale,
       });
+      this.camera.getWorldDirection(this.camDir);
+      const seen = this.creatures.nearestInView(this.camera.position, this.camDir, 60, 0.93);
+      if (seen) {
+        const c = seen.creature;
+        const beh = c.ai.behavior && c.ai.state !== 'flee' ? (BEHAVIOR_LABELS[c.ai.behavior] ?? c.ai.behavior) : STATE_LABELS[c.ai.state];
+        this.hud.setSighting(`Sichtung: ${c.entry.name} · ${RARITY_LABELS[c.entry.rarity]} · ${beh} · ${seen.distance.toFixed(0)} m`);
+      } else this.hud.setSighting('');
       const d = this.ctx.debug;
       d.set('Chunks', `${this.terrain.stats.chunks} (offen ${this.terrain.stats.pending})`);
-      d.set('Vegetation', `${this.vegetation.stats.cells} Zellen · ${this.vegetation.stats.instances} Instanzen`);
+      d.set('Vegetation', `${this.vegetation.stats.cells} Zellen · ${this.vegetation.stats.instances} Instanzen · ${this.vegetation.stats.species} Arten`);
+      d.set('Kreaturen', `${this.creatures.stats.count} (${this.creatures.stats.templates} Arten, ${this.creatures.stats.spawned} gespawnt)`);
       d.set('Spieler', `${p.x.toFixed(1)} ${p.y.toFixed(1)} ${p.z.toFixed(1)} · ${this.player.grounded ? 'Boden' : this.player.swimming ? 'Wasser' : 'Luft'}`);
     }
   }
@@ -281,7 +324,9 @@ export class PlanetScene implements GameScene {
     this.disposer.dispose();
     this.composer?.dispose();
     this.terrain?.dispose();
+    this.creatures?.dispose();
     this.vegetation?.dispose();
+    this.flora?.dispose();
     this.assets?.dispose();
     this.water?.dispose();
     this.precipitation?.dispose();
@@ -294,5 +339,6 @@ export class PlanetScene implements GameScene {
     this.ctx.debug.set('Chunks', '');
     this.ctx.debug.set('Vegetation', '');
     this.ctx.debug.set('Spieler', '');
+    this.ctx.debug.set('Kreaturen', '');
   }
 }
