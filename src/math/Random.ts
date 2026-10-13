@@ -2,7 +2,7 @@
  * Seedbarer Pseudozufallsgenerator (sfc32) mit String-Hash (cyrb128).
  *
  * Regeln:
- * - Alle Generatoren nutzen ausschließlich diese Klasse (kein Math.random()).
+ * - Alle Generatoren nutzen ausschließlich diese Klasse (kein Math.random).
  * - Teilgeneratoren erhalten einen eigenen Strom über `fork(label)`. Ein Fork hängt nur vom Seed-String
  *   und dem Label ab, nicht davon, wie viele Zahlen vorher gezogen wurden. Dadurch bleiben Seeds stabil,
  *   wenn ein Teilgenerator später mehr oder weniger Zufallszahlen verbraucht.
@@ -189,7 +189,7 @@ export function randomSeedString(length = 8): string {
   if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
     crypto.getRandomValues(bytes);
   } else {
-    // Fallback (z. B. sehr alte Umgebungen): Zeit-basiert, ebenfalls kein Math.random.
+    // Fallback (z. B. sehr alte Umgebungen): Zeit-basiert, ebenfalls ohne Math.random.
     let t = Date.now();
     for (let i = 0; i < length; i++) {
       t = (t * 1103515245 + 12345) >>> 0;

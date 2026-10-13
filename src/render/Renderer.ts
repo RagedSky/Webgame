@@ -30,6 +30,8 @@ export class Renderer {
     this.gl.toneMapping = ACESFilmicToneMapping;
     this.gl.toneMappingExposure = 1.0;
     this.gl.setClearColor(0x05070d, 1);
+    // Statistik über den ganzen Frame (mehrere Composer-Passes) sammeln; Reset macht der GameLoop-Render-Callback.
+    this.gl.info.autoReset = false;
     this.observer = new ResizeObserver(() => this.resize());
     this.observer.observe(canvas.parentElement ?? document.body);
     this.resize();

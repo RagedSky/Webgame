@@ -31,8 +31,9 @@ function bootstrap(): void {
       input.endFrame();
     },
     (alpha, frameDt) => {
+      debug.update(frameDt); // liest die Zahlen des letzten Frames
+      renderer.info.reset();
       scenes.render(alpha, frameDt);
-      debug.update(frameDt);
     },
   );
 

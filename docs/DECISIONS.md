@@ -40,3 +40,16 @@ Kurze ADR-Einträge: Kontext → Entscheidung → Konsequenz. Neueste unten anh�
 
 ## D-011 · Darstellungsradien in der Systemansicht logarithmisch
 **Entscheidung:** Orbits werden mit `10 + 14·log2(1 + AU/0,25)` skaliert, Planetenradien mit `log`-Skala, damit Rote-Riesen-Systeme und Blaue-Zwerg-Systeme beide lesbar bleiben. Rein visuell, Spielwerte bleiben physikalisch (AU, km).
+
+## D-012 · Temperatur-Untergrenze 40 K und engere Orbitabstände
+**Kontext:** Bei Blauen Zwergen mit 10 Planeten lagen äußere Welten bei < 30 K und > 150 AU.
+**Entscheidung:** Planetenmittel nie unter 40 K (Restwärme); Orbitverhältnis 1,35–1,8 statt 1,4–1,9. Gasriesen mindestens 90 K.
+
+## D-013 · Treibstoff-Qualität als Produkt, Reinheit zählt fehlende Komponenten
+**Entscheidung:** `quality = purity × energyDensity × stability` (statt geometrisches Mittel), `purity` wird mit dem Anteil gefundener Komponenten multipliziert. Dadurch ist „nur ein richtiger Stoff“ messbar schlecht (< 0,5), die korrekte Mischung exakt 1,0.
+
+## D-014 · Namen: deutsche Komposita + pseudo-lateinischer Artname
+**Entscheidung:** Trivialname = Präfix (Biom/Farbe/Größe/Aktivität/Merkmal) + Grundwort je Fortbewegung/Wuchsform (z. B. „Nebelschleicher“), wissenschaftlicher Name = Gattung (Silbenwort, pro Familie) + Epitheton. Beide systemweit eindeutig (NameRegistry, römische Suffixe als letzter Ausweg). Silbengenerator mit Blockliste für unglückliche Zeichenfolgen.
+
+## D-015 · Renderer-Statistik über den ganzen Frame
+**Entscheidung:** `renderer.info.autoReset = false`; der Loop setzt die Zähler einmal pro Frame zurück, damit Draw-Calls bei Postprocessing (mehrere Passes) korrekt im Debug-Overlay stehen.

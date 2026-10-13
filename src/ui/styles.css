@@ -269,16 +269,22 @@ input[type='range'] {
   pointer-events: auto;
 }
 
+.label-layer {
+  z-index: 1;
+}
+
 .system-topbar {
   position: absolute;
-  top: 10px;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 10px;
+  bottom: 60px;
   padding: 8px 14px;
   display: flex;
   gap: 12px;
   align-items: center;
   font-size: 13px;
+  z-index: 10;
+  max-width: calc(100vw - 500px);
+  flex-wrap: wrap;
 }
 
 .system-topbar .sysname {
@@ -295,6 +301,22 @@ input[type='range'] {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  z-index: 10;
+}
+
+.system-panel.collapsed {
+  bottom: auto;
+  width: auto;
+}
+
+.system-panel.collapsed .tab-body {
+  display: none;
+}
+
+.system-panel .tabs .collapse {
+  flex: 0 0 auto;
+  width: 36px;
+  font-size: 15px;
 }
 
 .system-panel .tabs {
@@ -529,6 +551,9 @@ input[type='range'] {
   gap: 10px;
   align-items: center;
   font-size: 12px;
+  z-index: 10;
+  max-width: calc(100vw - 500px);
+  flex-wrap: wrap;
 }
 
 @media (max-width: 800px) {

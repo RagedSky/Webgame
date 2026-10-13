@@ -1,17 +1,9 @@
-import {
-  AdditiveBlending,
-  BufferGeometry,
-  Color,
-  Float32BufferAttribute,
-  PerspectiveCamera,
-  Points,
-  PointsMaterial,
-  Scene,
-} from 'three';
+import { PerspectiveCamera, Scene, type Points } from 'three';
 import type { GameContext } from '@/core/GameContext';
 import type { GameScene } from '@/core/Scene';
 import { Disposer } from '@/core/Disposer';
-import { Random, randomSeedString } from '@/math/Random';
+import { randomSeedString } from '@/math/Random';
+import { createStarfield } from '@/render/Starfield';
 import { gameState } from '@/game/GameState';
 import { GAME_VERSION } from '@/config/constants';
 import { STR } from '@/ui/strings';
@@ -43,30 +35,7 @@ export class MainMenuScene implements GameScene {
   }
 
   private buildStars(): void {
-    const rng = new Random('menu-stars');
-    const count = 2500;
-    const positions = new Float32Array(count * 3);
-    const colors = new Float32Array(count * 3);
-    const tmp = new Color();
-    for (let i = 0; i < count; i++) {
-      const r = 60 + rng.next() * 140;
-      const theta = rng.next() * Math.PI * 2;
-      const phi = Math.acos(2 * rng.next() - 1);
-      positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
-      positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
-      positions[i * 3 + 2] = r * Math.cos(phi);
-      tmp.setHSL(rng.float(0.55, 0.68), rng.float(0.1, 0.5), rng.float(0.55, 0.95));
-      colors[i * 3] = tmp.r;
-      colors[i * 3 + 1] = tmp.g;
-      colors[i * 3 + 2] = tmp.b;
-    }
-    const geo = this.disposer.add(new BufferGeometry());
-    geo.setAttribute('position', new Float32BufferAttribute(positions, 3));
-    geo.setAttribute('color', new Float32BufferAttribute(colors, 3));
-    const mat = this.disposer.add(
-      new PointsMaterial({ size: 1.4, vertexColors: true, sizeAttenuation: true, blending: AdditiveBlending, depthWrite: false }),
-    );
-    this.stars = new Points(geo, mat);
+    this.stars = createStarfield(this.disposer, 'menu-stars', 2500, [60, 200]);
     this.scene.add(this.stars);
     this.camera.position.set(0, 0, 0.1);
   }

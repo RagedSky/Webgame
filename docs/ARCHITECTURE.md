@@ -52,9 +52,10 @@ Sternsystem, baust ein Raumschiff, synthetisierst Treibstoff und füllst ein Arc
     │   ├── universe/          Stern, Planeten, Biome, Rohstoffe, Treibstoff-Formel, System
     │   ├── archive/           Familien, Arten, Einträge, Namen, Beschreibungen, Budget
     │   └── index.ts           generateUniverse(seed) → StarSystem inkl. Archiv
-    ├── render/                Renderer-Wrapper (DPR, Render-Skalierung), Composer-Fabrik, Qualitätsstufen
+    ├── game/                  GameState: Seed, memoisiertes Sternsystem, später Spielstand
+    ├── render/                Renderer-Wrapper (DPR, Render-Skalierung), Composer-Fabrik, Starfield, PlanetTexture (prozedural)
     ├── scenes/                konkrete Szenen: MainMenuScene, SystemViewScene (Debug), später PlanetScene, ShipEditorScene …
-    ├── ui/                    DOM-Overlays: DebugOverlay, MainMenu, SystemPanel, später HUD/Katalog/Karte
+    ├── ui/                    DOM-Overlays: DebugOverlay, Toast, SystemPanel (Übersicht/Planeten/Archiv/Dump), später HUD/Katalog/Karte
     ├── world/                 Laufzeit-Welt (Phase 2+): Terrain-Chunks, Himmel, Wetter, Vegetation, Kreaturen
     ├── assets/                AssetRegistry: Platzhalter-Geometrien/Materialien, später austauschbar
     ├── audio/                 AudioManager (Web Audio), prozedurale Sounds
@@ -64,9 +65,27 @@ Sternsystem, baust ein Raumschiff, synthetisierst Treibstoff und füllst ein Arc
 ### Modulgrenzen (Abhängigkeitsrichtung)
 
 ```
-config ← math ← gen ← (scenes, world, ui, save)
+config ← math ← gen ← game ← (scenes, world, ui, save)
                  ↑
-core, render ────┘   (core/render kennen weder gen noch ui-Inhalte)
+core, render ────┘   (core kennt weder gen noch ui; render kennt nur gen-Datentypen für Texturen)
+```
+
+Generator-Aufbau (`src/gen`):
+
+```
+gen/index.ts            generateUniverse(seed) = generateStarSystem + generateArchive
+gen/universe/
+  catalog.ts            Sonnentypen, Planetentypen (Gewichte, Caps), Biome, Rohstoffe, Wetter, Gefahren
+  System.ts             Stern, Orbits (layoutOrbits: 1 Orbit garantiert in der Lebenszone), Planeten, Budget
+  Planet.ts             Typwahl nach Gleichgewichtstemperatur, Atmosphäre, Biome, Rohstoffe, Wetter, Gefahren, Anforderungen
+  Fuel.ts               Treibstoff-Formel + analyzeMix (Reinheit, Energiedichte, Stabilität)
+gen/archive/
+  budget.ts             Kategorie-Anteile → Planeten (Gewichte × Caps, Largest Remainder)
+  names.ts              NameRegistry (Eindeutigkeit), Komposita, lateinische Epitheta
+  spawn.ts              makeSpawn (nach Seltenheit) + isSpawnSatisfiable (Garantie)
+  descriptions.ts       deutsche Beschreibungstexte aus Merkmalen
+  generators/           fauna, flora, micro, minerals (ore/rock), fossils, weather, variants
+  ArchiveGenerator.ts   Orchestrierung pro Planet, Varianten zuletzt, planet.entryBudget
 ```
 
 - `gen/**` und `math/**` importieren **niemals** Three.js oder DOM. Dadurch laufen sie in Vitest (Node) und bleiben
