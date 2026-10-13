@@ -56,7 +56,17 @@ Sternsystem, baust ein Raumschiff, synthetisierst Treibstoff und füllst ein Arc
     ├── render/                Renderer-Wrapper (DPR, Render-Skalierung), Composer-Fabrik, Starfield, PlanetTexture (prozedural)
     ├── scenes/                konkrete Szenen: MainMenuScene, SystemViewScene (Debug), später PlanetScene, ShipEditorScene …
     ├── ui/                    DOM-Overlays: DebugOverlay, Toast, SystemPanel (Übersicht/Planeten/Archiv/Dump), später HUD/Katalog/Karte
-    ├── world/                 Laufzeit-Welt (Phase 2+): Terrain-Chunks, Himmel, Wetter, Vegetation, Kreaturen
+    ├── world/                 Laufzeit-Welt (Three.js)
+    │   ├── terrain/           TerrainChunk (Skirts, Vertexfarben, Geometrie-Pool), TerrainManager (Quadtree-LOD, Zeitbudget)
+    │   ├── Sky.ts             Kuppel-Shader (Rayleigh/Mie vereinfacht, Wolken, Dämmerung), Sterne, Monde, Gasriese, Sonnen-/Hemisphärenlicht
+    │   ├── DayCycle.ts        Tageszeit, Sonnenrichtung, Tageslicht-Faktor, Uhr
+    │   ├── Atmosphere.ts      Himmelsfarben aus Atmosphärenzusammensetzung und Sternfarbe
+    │   ├── Weather.ts         Wetter-Zustandsmaschine (seed-basiert), Parameter (Nebel, Wolken, Niederschlag, Wind, Blitze)
+    │   ├── Precipitation.ts   Niederschlags-Partikel um die Kamera
+    │   ├── Water.ts           Wasserfläche (Wellen, Fresnel, Glanz, Nebel)
+    │   ├── Vegetation.ts      Instancing-Zellen (nah: Gras/Büsche/Steine, fern: Bäume)
+    │   ├── VegetationAssets.ts Platzhalter-Geometrien + Materialien mit Wind-Shader
+    │   └── Player.ts          Ego-/Schulter-Controller, Terrain-Kollision, Schwimmen, Gravitation
     ├── assets/                AssetRegistry: Platzhalter-Geometrien/Materialien, später austauschbar
     ├── audio/                 AudioManager (Web Audio), prozedurale Sounds
     └── save/                  IndexedDB-Zugriff, Serialisierung, Migrationen, Export/Import
@@ -147,6 +157,14 @@ Startplanet enthält alle Start- und Treibstoff-Rohstoffe; korrekte Mischung erg
 `SaveGame { version, seed, character, inventory, base, ship, probes, mapProgress, archiveProgress, settings, photos (IndexedDB-Refs) }`
 mit `migrate(from, to)`.
 
+### 4.4 Terrain-Modell (Phase 2)
+
+`src/gen/terrain/TerrainModel.ts` (rein, testbar): quadratische Welt von 6–10 km Kantenlänge (abhängig vom Planetenradius),
+maximale Höhe 400–760 m. Ein Regionsfeld (fBm mit Domain-Warping) wählt das Biom nach kumulierter Abdeckung; jedes Biom
+trägt sein Höhenband (`altitude`) bei, Übergänge werden geblendet. Wasserspiegel = 0,1 · maxHeight, nur Biome mit `hasWater`
+liegen darunter. `sample(x, z)` liefert Höhe, Biom, Nachbarbiom, Blendgewicht, Detail- und Höhenwert; `findSpawn()` einen
+deterministischen, flachen Landeplatz. `VegetationProfiles.ts` definiert Dichten je Biom.
+
 ## 5. Laufzeit-Architektur
 
 - **GameLoop**: `requestAnimationFrame`, Akkumulator mit festem Update-Schritt (1/60 s, max. 5 Schritte/Frame), Render pro Frame,
@@ -156,6 +174,10 @@ mit `migrate(from, to)`.
   `renderer.info` für Debug. Composer (postprocessing) wird pro Szene erzeugt.
 - **UI**: `#ui-root` (Spiel-UI) und `#debug-root` (Debug-Overlay, F3). Jede UI-Komponente besitzt ihr DOM und räumt es auf.
 - **Input**: Aktionen statt Tasten (`move_forward`, `interact`, `camera`, `catalog`, `map` …), Bindings in `config/keybindings.ts`.
+- **PlanetScene**: Ladebildschirm → Terrain in Zeitscheiben → Vegetation → HUD. Pointer-Lock per Klick; Esc/Lock-Verlust öffnet das
+  Pausemenü. Zustand (Position, Tageszeit) wird in `GameState.surface` gesichert, damit Systemansicht ↔ Planet nahtlos wechseln.
+- **Terrain-LOD**: Quadtree mit Zellen 64–1024 m, 32 Segmente je Zelle, Skirts gegen Risse, Aufbau nach Entfernung mit Zeitbudget,
+  alte Zellen bleiben bis die Nachfolger fertig sind. Geometrien werden gepoolt (gleiche Vertexzahl).
 
 ## 6. Roadmap / Phasen
 
@@ -163,7 +185,7 @@ mit `migrate(from, to)`.
 | ----- | ------ | ------ |
 | 0 | Setup, Loop, Input, SceneManager, Debug-Overlay, Docs | ✅ |
 | 1 | Universum-Generator (Stern, Planeten, Archiv-Einträge, Startplanet, Treibstoff) + Tests + 3D-Debug-Ansicht | ✅ |
-| 2 | Planetenoberfläche: Chunk-Terrain, Biome, Himmel, Tag/Nacht, Wetter-Basis, Spieler, Wasser, Vegetation | ⬜ |
+| 2 | Planetenoberfläche: Chunk-Terrain, Biome, Himmel, Tag/Nacht, Wetter-Basis, Spieler, Wasser, Vegetation | ✅ |
 | 3 | Kreaturen und Flora: prozedurale Körper, Verhalten, Spawn nach Bedingungen, Seltenheit | ⬜ |
 | 4 | Kamera und Katalog (Kernschleife): Foto-Modus, Bewertung, Archiv-UI, Fotospeicherung, Hinweise, Mikroskop | ⬜ |
 | 5 | Überleben, Rohstoffe, Basis, Labor, Treibstoff-Synthese | ⬜ |

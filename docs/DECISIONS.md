@@ -53,3 +53,27 @@ Kurze ADR-Einträge: Kontext → Entscheidung → Konsequenz. Neueste unten anh�
 
 ## D-015 · Renderer-Statistik über den ganzen Frame
 **Entscheidung:** `renderer.info.autoReset = false`; der Loop setzt die Zähler einmal pro Frame zurück, damit Draw-Calls bei Postprocessing (mehrere Passes) korrekt im Debug-Overlay stehen.
+
+## D-016 · Planetenoberfläche als begrenzte, flache Karte
+**Kontext:** Vollständig kugelförmige Planeten (Cube-Sphere, Krümmung, Gravitationsrichtung) kosten viel Komplexität ohne
+Mehrwert für das Fotografieren/Katalogisieren.
+**Entscheidung:** Jeder Planet ist eine quadratische Karte von 6–10 km Kantenlänge (abhängig vom Radius), zentriert um den Landeplatz,
+mit weicher Weltgrenze. Satellitenkarte und Fog of War (Phase 7) beziehen sich auf diese Fläche.
+
+## D-017 · Quadtree-LOD mit konstanter Segmentzahl und Skirts
+**Entscheidung:** Alle Terrain-Zellen haben 32 Segmente; die Zellgröße (64–1024 m) bestimmt das Detail. Skirts statt Index-Stitching
+verstecken LOD-Risse. Alte Zellen werden erst entfernt, wenn alle überlappenden neuen Zellen gebaut sind (keine Löcher).
+Geometrie-Pool, weil alle Zellen gleich groß sind.
+
+## D-018 · Wasserstand und Biom-Höhenbänder
+**Entscheidung:** Wasserspiegel = 0,1 · maxHeight, sobald ein Biom `hasWater` hat. Biome ohne Wasser werden auf ≥ 0,125 angehoben, damit
+Wasser nur in Wasser-Biomen auftritt (Ozeane, Küsten, Sümpfe, Oasen). Die `altitude`-Bänder aus dem Katalog bestimmen die Höhenlage
+und bleiben damit konsistent mit den Spawn-Bedingungen der Archiv-Einträge.
+
+## D-019 · Tageslänge und Zeitraffer
+**Entscheidung:** Ein 24-Stunden-Planetentag dauert 20 Echtzeit-Minuten (skaliert mit `dayLengthHours`, mindestens 4 Minuten).
+Debug-Tasten: T (Zeitraffer ×60), Y (Wetter wechseln), G (Flugmodus), V (Ego/Schulter). Später per Einstellung konfigurierbar.
+
+## D-020 · Vegetation als Platzhalter-Instancing in zwei Zellgrößen
+**Entscheidung:** Nahe Zellen (64 m, Radius 200 m) tragen Gras, Büsche, Steine; ferne Zellen (256 m, Radius 620 m) Bäume. Platzierung
+deterministisch aus Terrain-Seed + Zelle. Phase 3 ersetzt die Platzhalter-Geometrien durch Arten aus dem Archiv (gleiche Zellen-Logik).

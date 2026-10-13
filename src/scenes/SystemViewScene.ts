@@ -34,6 +34,7 @@ import { createPlanetTexture } from '@/render/PlanetTexture';
 import { SystemPanel } from '@/ui/SystemPanel';
 import { el } from '@/ui/dom';
 import { MainMenuScene } from './MainMenuScene';
+import { PlanetScene } from './PlanetScene';
 
 interface PlanetNode {
   planet: Planet;
@@ -260,6 +261,7 @@ export class SystemViewScene implements GameScene {
     this.panel = new SystemPanel(this.uiRoot, this.system, {
       onSelectPlanet: (p) => this.select(p, true),
       onFocusPlanet: (p) => this.focus(p),
+      onLandPlanet: (p) => this.ctx.scenes.switchTo(new PlanetScene(p.id)),
     });
     this.disposer.addFn(() => this.panel.dispose());
 

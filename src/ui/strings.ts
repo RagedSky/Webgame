@@ -7,7 +7,7 @@ export const STR = {
   randomUniverse: 'Zufälliges Universum',
   showSystem: 'System anzeigen (Debug)',
   newGame: 'Neues Spiel',
-  newGameHint: 'Planetenoberfläche folgt in Phase 2',
+  newGameHint: 'Auf dem Startplaneten landen',
   load: 'Laden',
   settings: 'Einstellungen',
   credits: 'Credits',
@@ -17,6 +17,22 @@ export const STR = {
   copied: 'Kopiert!',
   comingSoon: 'Kommt in einer späteren Phase.',
   debugOverlayHint: 'F3: Debug-Overlay',
+  planet: {
+    landing: 'Landeanflug',
+    buildingTerrain: 'Terrain wird aufgebaut …',
+    vegetation: 'Vegetation wird verteilt …',
+    clickToStart: 'Klicken, um die Steuerung zu übernehmen',
+    land: 'Hier landen',
+    noSurface: 'Keine feste Oberfläche – Gasriesen nur per Atmosphärensonde (Phase 7).',
+  },
+  pause: {
+    title: 'Pause',
+    resume: 'Weiter',
+    systemView: 'Systemansicht',
+    mainMenu: 'Hauptmenü',
+    controls:
+      'WASD bewegen · Maus umsehen · Leertaste springen · Shift sprinten · Strg ducken · V Ansicht wechseln · Esc Pause<br>Debug: T Zeitraffer (halten) · Y Wetter wechseln · G Flugmodus · F3 Overlay',
+  },
   systemView: {
     overview: 'Übersicht',
     planets: 'Planeten',

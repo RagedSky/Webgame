@@ -565,3 +565,103 @@ input[type='range'] {
     bottom: 10px;
   }
 }
+
+/* ---------- Planetenoberfläche: HUD, Pause, Laden ---------- */
+.hud {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  font-size: 13px;
+}
+
+.hud-info {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.42);
+  border-radius: 8px;
+  white-space: pre-line;
+  text-align: right;
+  line-height: 1.5;
+}
+
+.hud-status {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 12px;
+  background: rgba(0, 0, 0, 0.42);
+  border-radius: 8px;
+  font-family: var(--mono);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.hud-hint {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, 60px);
+  padding: 8px 14px;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 8px;
+}
+
+.crosshair {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  margin: -3px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 0 4px #000;
+  display: none;
+}
+
+.pause-menu,
+.loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(3, 5, 10, 0.55);
+  z-index: 20;
+}
+
+.pause-menu .panel,
+.loading .panel {
+  width: min(460px, 92vw);
+  padding: 24px 28px;
+}
+
+.pause-menu h2,
+.loading h2 {
+  margin: 0 0 12px;
+  font-size: 22px;
+}
+
+.pause-menu .menu-buttons {
+  display: grid;
+  gap: 8px;
+}
+
+.pause-menu .hint {
+  margin-top: 14px;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.loading .progress {
+  margin-top: 12px;
+  height: 8px;
+}
+
+.loading .progress > div {
+  transition: width 0.15s;
+}

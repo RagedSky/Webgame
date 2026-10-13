@@ -11,6 +11,7 @@ import { kelvinToCelsius } from '@/math/utils';
 export interface SystemPanelCallbacks {
   onSelectPlanet: (planet: Planet | null) => void;
   onFocusPlanet: (planet: Planet) => void;
+  onLandPlanet: (planet: Planet) => void;
 }
 
 type Tab = 'overview' | 'planets' | 'archive' | 'dump';
@@ -210,6 +211,13 @@ export class SystemPanel {
     const budget = CATEGORIES.map((c) => `${CATEGORY_SHORT[c]} ${p.entryBudget[c]}`).join(' · ');
 
     const focusBtn = el('button', { class: 'small', text: 'Kamera fokussieren', onClick: () => this.cb.onFocusPlanet(p) });
+    const landBtn = el('button', {
+      class: 'small primary',
+      text: STR.planet.land,
+      title: p.type === 'gas_giant' ? STR.planet.noSurface : `Auf ${p.name} landen`,
+      disabled: p.type === 'gas_giant',
+      onClick: () => this.cb.onLandPlanet(p),
+    });
     const archiveBtn = el('button', {
       class: 'small',
       text: 'Einträge zeigen',
@@ -224,7 +232,7 @@ export class SystemPanel {
       'div',
       {},
       el('h3', { text: `${p.isStart ? '★ ' : ''}${p.name} – ${p.typeLabel}` }),
-      el('div', { class: 'row' }, focusBtn, archiveBtn),
+      el('div', { class: 'row' }, landBtn, focusBtn, archiveBtn),
       el('p', { class: 'muted', text: PLANET_TYPES[p.type].description }),
       this.kv([
         ['Orbit', `${p.orbitRadiusAu.toFixed(2)} AU · Jahr ${fmtInt(p.orbitPeriodDays)} Tage`],

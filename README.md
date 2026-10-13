@@ -18,8 +18,11 @@ npm run preview    # dist/ lokal testen
 npm test           # Generator-Tests
 ```
 
-Im Hauptmenü einen Seed eingeben oder „Zufälliges Universum“ wählen und „System anzeigen“ drücken.
-**F3** blendet das Debug-Overlay ein.
+Im Hauptmenü einen Seed eingeben oder „Zufälliges Universum“ wählen. „Neues Spiel“ landet auf dem Startplaneten,
+„System anzeigen“ öffnet die 3D-Übersicht des Sternsystems (dort „Hier landen“ für jeden Planeten mit Oberfläche).
+
+Steuerung auf der Oberfläche: Klick übernimmt die Maus, WASD bewegen, Leertaste springen, Shift sprinten, Strg ducken,
+V Ego/Schulter, Esc Pause. Debug: F3 Overlay, T Zeitraffer, Y Wetter, G Flugmodus.
 
 Architektur: `docs/ARCHITECTURE.md` · Entscheidungen: `docs/DECISIONS.md` · Arbeitskontext: `CLAUDE.md`.
 

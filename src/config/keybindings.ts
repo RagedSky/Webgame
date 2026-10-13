@@ -15,7 +15,11 @@ export type GameAction =
   | 'build'
   | 'pause'
   | 'debug'
-  | 'screenshot';
+  | 'screenshot'
+  | 'toggle_view'
+  | 'fly'
+  | 'debug_time'
+  | 'debug_weather';
 
 export const DEFAULT_BINDINGS: Record<GameAction, string[]> = {
   move_forward: ['KeyW', 'ArrowUp'],
@@ -34,6 +38,10 @@ export const DEFAULT_BINDINGS: Record<GameAction, string[]> = {
   pause: ['Escape'],
   debug: ['F3'],
   screenshot: ['F12'],
+  toggle_view: ['KeyV'],
+  fly: ['KeyG'],
+  debug_time: ['KeyT'],
+  debug_weather: ['KeyY'],
 };
 
 /** Lesbare Namen für die Tastenbelegungs-UI. */
@@ -54,4 +62,8 @@ export const ACTION_LABELS: Record<GameAction, string> = {
   pause: 'Pause / Menü',
   debug: 'Debug-Overlay',
   screenshot: 'Screenshot',
+  toggle_view: 'Ansicht (Ego/Schulter)',
+  fly: 'Flugmodus (Debug)',
+  debug_time: 'Zeitraffer (Debug)',
+  debug_weather: 'Wetter wechseln (Debug)',
 };

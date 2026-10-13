@@ -18,10 +18,12 @@ export function el<K extends keyof HTMLElementTagNameMap>(
       node.textContent = String(value);
     } else if (key === 'html') {
       node.innerHTML = String(value);
-    } else if (key in node && typeof value !== 'boolean') {
+    } else if (typeof value === 'boolean') {
+      if (value) node.setAttribute(key, '');
+    } else if (key in node) {
       (node as unknown as Record<string, unknown>)[key] = value;
     } else {
-      node.setAttribute(key, value === true ? '' : String(value));
+      node.setAttribute(key, String(value));
     }
   }
   for (const child of children) {

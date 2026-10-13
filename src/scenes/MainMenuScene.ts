@@ -10,6 +10,7 @@ import { STR } from '@/ui/strings';
 import { el } from '@/ui/dom';
 import { showToast } from '@/ui/toast';
 import { SystemViewScene } from './SystemViewScene';
+import { PlanetScene } from './PlanetScene';
 
 /**
  * Hauptmenü: Seed-Eingabe, „Zufälliges Universum“, Debug-Systemansicht.
@@ -66,14 +67,14 @@ export class MainMenuScene implements GameScene {
       el(
         'div',
         { class: 'menu-buttons' },
-        el('button', { class: 'primary', text: STR.showSystem, onClick: () => this.openSystemView() }),
-        el('button', { text: STR.newGame, title: STR.newGameHint, onClick: () => showToast(STR.newGameHint) }),
+        el('button', { class: 'primary', text: STR.newGame, title: STR.newGameHint, onClick: () => this.newGame() }),
+        el('button', { text: STR.showSystem, onClick: () => this.openSystemView() }),
         el('button', { text: STR.load, onClick: () => showToast(STR.comingSoon) }),
         el('button', { text: STR.settings, onClick: () => showToast(STR.comingSoon) }),
         el('button', { text: STR.credits, onClick: () => showToast('Stellar Archive · prozedural, Three.js, TypeScript') }),
       ),
       el('div', { class: 'hint', text: STR.debugOverlayHint }),
-      el('div', { class: 'version', text: `v${GAME_VERSION} · Phase 1` }),
+      el('div', { class: 'version', text: `v${GAME_VERSION} · Phase 2` }),
     );
     this.root = el('div', { class: 'main-menu' }, panel);
     this.ctx.uiRoot.append(this.root);
@@ -85,6 +86,12 @@ export class MainMenuScene implements GameScene {
     if (this.seedInput) this.seedInput.value = seed;
     gameState.seed = seed;
     this.ctx.debug.setSeed(seed);
+  }
+
+  private newGame(): void {
+    gameState.seed = this.seedInput?.value ?? gameState.seed;
+    const system = gameState.getSystem();
+    this.ctx.scenes.switchTo(new PlanetScene(system.startPlanetId));
   }
 
   private openSystemView(): void {

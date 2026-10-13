@@ -15,7 +15,9 @@ prozedural erzeugten Archiv-Einträgen pro seed-basiertem Sternsystem. Vollstän
 | `npm run lint`    | ESLint (inkl. Verbot von `Math.random`)                 |
 | `npm run check`   | typecheck + lint + test                                 |
 
-Im Spiel: **F3** Debug-Overlay, **Esc** zurück ins Menü.
+Im Spiel: **F3** Debug-Overlay, **Esc** Pause/zurück. Oberfläche: WASD, Maus, Leertaste, Shift, Strg, **V** Ansicht.
+Debug auf der Oberfläche: **T** Zeitraffer (halten), **Y** Wetter wechseln, **G** Flugmodus.
+Konsole: `__stellar.scenes.active.setTimeOfDay(0.5)` / `.forceWeather('rain', true)` in der Planetenszene.
 
 ## Konventionen
 
@@ -32,7 +34,7 @@ Im Spiel: **F3** Debug-Overlay, **Esc** zurück ins Menü.
 
 - [x] **Phase 0 Setup:** Vite, TS, Three.js, ESLint, Vitest, Ordnerstruktur, CLAUDE.md, ARCHITECTURE.md, DECISIONS.md, GameLoop, Input, SceneManager, Debug-Overlay (FPS, Seed)
 - [x] **Phase 1 Universum-Generator:** Seed/PRNG, Sonnentypen, 3–10 Planeten, Planetenwerte, Archiv-Generator (400–600 Einträge), Startplanet-Garantie, Treibstoff-Formel, Unit-Tests, 3D-Systemansicht + Daten-Dump
-- [ ] **Phase 2 Planetenoberfläche:** Chunk-Terrain, Biome, Himmel, Tag/Nacht, Wetter-Basis, Spieler-Controller, Wasser, Vegetation (Instancing)
+- [x] **Phase 2 Planetenoberfläche:** Chunk-Terrain, Biome, Himmel, Tag/Nacht, Wetter-Basis, Spieler-Controller, Wasser, Vegetation (Instancing)
 - [ ] **Phase 3 Kreaturen und Flora:** prozedurale Tiere/Pflanzen aus Familien, Verhalten (FSM), Spawn nach Bedingungen, Seltenheit
 - [ ] **Phase 4 Kamera und Katalog:** Foto-Modus, Bewertung, Archiv-UI, Fotospeicherung (IndexedDB), Hinweissystem, Mikroskop, Proben
 - [ ] **Phase 5 Überleben, Rohstoffe, Basis:** Sauerstoff/Energie, Sammeln, Crafting, Labor, Treibstoff-Synthese-Minispiel
@@ -49,4 +51,7 @@ Im Spiel: **F3** Debug-Overlay, **Esc** zurück ins Menü.
 - `src/gen/universe/System.ts` – Stern + Planeten + Startplanet + Treibstoff
 - `src/gen/archive/ArchiveGenerator.ts` – Budget, Familien, Einträge
 - `src/scenes/SystemViewScene.ts` – 3D-Debug-Ansicht des Systems
+- `src/scenes/PlanetScene.ts` – Planetenoberfläche (verdrahtet world/*)
+- `src/gen/terrain/TerrainModel.ts` – Höhenfeld/Biome (rein, testbar)
+- `src/world/terrain/TerrainManager.ts` – Quadtree-LOD-Chunks
 - `src/core/GameLoop.ts`, `src/core/SceneManager.ts`, `src/core/Input.ts`
