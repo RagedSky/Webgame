@@ -6,6 +6,7 @@ export interface PauseMenuCallbacks {
   onSystemView: () => void;
   onMainMenu: () => void;
   onSettings?: () => void;
+  onSave?: () => void;
 }
 
 /** Pausemenü der Planetenoberfläche (öffnet sich bei Esc bzw. Verlust des Pointer-Locks). */
@@ -21,7 +22,7 @@ export class PauseMenu {
         'div',
         { class: 'panel' },
         el('h2', { text: STR.pause.title }),
-        el('div', { class: 'menu-buttons' }, el('button', { class: 'primary', text: STR.pause.resume, onClick: cb.onResume }), cb.onSettings ? el('button', { text: STR.pause.settings, onClick: cb.onSettings }) : null, el('button', { text: STR.pause.systemView, onClick: cb.onSystemView }), el('button', { text: STR.pause.mainMenu, onClick: cb.onMainMenu })),
+        el('div', { class: 'menu-buttons' }, el('button', { class: 'primary', text: STR.pause.resume, onClick: cb.onResume }), cb.onSave ? el('button', { text: STR.pause.save, onClick: cb.onSave }) : null, cb.onSettings ? el('button', { text: STR.pause.settings, onClick: cb.onSettings }) : null, el('button', { text: STR.pause.systemView, onClick: cb.onSystemView }), el('button', { text: STR.pause.mainMenu, onClick: cb.onMainMenu })),
         el('div', { class: 'hint', html: [STR.pause.controls, ...extraLines].join('<br>') }),
       ),
     );

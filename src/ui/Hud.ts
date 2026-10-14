@@ -1,4 +1,24 @@
 import { el } from './dom';
+import { STR } from './strings';
+
+export interface CompassMarker {
+  /** Peilung in Grad (0 = Norden, 90 = Osten). */
+  bearing: number;
+  glyph: string;
+  cls: string;
+}
+
+export interface TutorialCard {
+  index: number;
+  total: number;
+  title: string;
+  text: string;
+  done: boolean;
+}
+
+const COMPASS_PX_PER_DEG = 2;
+const COMPASS_HALF_WIDTH = 150;
+const COMPASS_VISIBLE_DEG = 70;
 
 export interface HudInfo {
   planet: string;
@@ -18,7 +38,7 @@ export interface HudInfo {
   phenomena?: string;
 }
 
-/** Spiel-HUD der Planetenoberfläche (Phase 2: Orientierung; Sauerstoff/Energie folgen in Phase 5). */
+/** Spiel-HUD der Planetenoberfläche: Orientierung, Kompass, Überleben, Interaktion, Ziele, Tutorial. */
 export class Hud {
   readonly root: HTMLElement;
   private readonly info: HTMLElement;
@@ -36,6 +56,15 @@ export class Hud {
   private readonly palette: HTMLElement;
   private readonly fade: HTMLElement;
   private readonly goal: HTMLElement;
+  private readonly compass: HTMLElement;
+  private readonly compassTape: HTMLElement;
+  private readonly compassMarkers: HTMLElement[] = [];
+  private readonly tutorial: HTMLElement;
+  private readonly tutorialHead: HTMLElement;
+  private readonly tutorialTitle: HTMLElement;
+  private readonly tutorialText: HTMLElement;
+  private readonly saved: HTMLElement;
+  private savedTimer = 0;
 
   constructor(parent: HTMLElement) {
     this.info = el('div', { class: 'hud-info' });
@@ -59,8 +88,68 @@ export class Hud {
     this.palette = el('div', { class: 'hud-palette', style: 'display:none' });
     this.fade = el('div', { class: 'hud-fade' });
     this.goal = el('div', { class: 'hud-goal' });
-    this.root = el('div', { class: 'hud' }, this.info, this.status, this.crosshair, this.hint, this.sighting, this.prompt, this.survival, this.harvest, this.palette, this.goal, this.fade);
+    this.compassTape = el('div', { class: 'tape' });
+    for (let deg = -360; deg <= 720; deg += 15) {
+      const major = deg % 45 === 0;
+      const idx = (((deg % 360) + 360) % 360) / 45;
+      const label = major ? (STR.hud.compass[idx] as string) : '';
+      this.compassTape.append(el('span', { class: major ? 'major' : 'minor', text: label, style: `left:${(deg + 360) * COMPASS_PX_PER_DEG}px` }));
+    }
+    this.compass = el('div', { class: 'hud-compass' }, this.compassTape, el('div', { class: 'needle' }));
+    for (let i = 0; i < 4; i++) {
+      const m = el('span', { class: 'marker', style: 'display:none' });
+      this.compassMarkers.push(m);
+      this.compass.append(m);
+    }
+    this.tutorialHead = el('div', { class: 'tut-head' });
+    this.tutorialTitle = el('div', { class: 'tut-title' });
+    this.tutorialText = el('div', { class: 'tut-text' });
+    this.tutorial = el('div', { class: 'hud-tutorial', style: 'display:none' }, this.tutorialHead, this.tutorialTitle, this.tutorialText, el('div', { class: 'muted small', text: STR.tutorial.skip }));
+    this.saved = el('div', { class: 'hud-saved', text: `💾 ${STR.save.autosaved}` });
+    this.root = el('div', { class: 'hud' }, this.info, this.status, this.crosshair, this.hint, this.sighting, this.prompt, this.survival, this.harvest, this.palette, this.goal, this.compass, this.tutorial, this.saved, this.fade);
     parent.append(this.root);
+  }
+
+  /** Kompass: Blickrichtung in Grad (0 = Norden) und Markierungen (Schiff, Unterkunft, Rover …). */
+  setCompass(headingDeg: number, markers: readonly CompassMarker[]): void {
+    const h = ((headingDeg % 360) + 360) % 360;
+    this.compassTape.style.transform = `translateX(${COMPASS_HALF_WIDTH - (h + 360) * COMPASS_PX_PER_DEG}px)`;
+    for (let i = 0; i < this.compassMarkers.length; i++) {
+      const node = this.compassMarkers[i] as HTMLElement;
+      const m = markers[i];
+      if (!m) {
+        node.style.display = 'none';
+        continue;
+      }
+      let rel = ((m.bearing - h + 540) % 360) - 180;
+      const clamped = Math.abs(rel) > COMPASS_VISIBLE_DEG;
+      if (clamped) rel = Math.sign(rel) * COMPASS_VISIBLE_DEG;
+      node.style.display = 'block';
+      node.style.left = `${COMPASS_HALF_WIDTH + rel * COMPASS_PX_PER_DEG}px`;
+      node.className = `marker ${m.cls}${clamped ? ' edge' : ''}`;
+      if (node.textContent !== m.glyph) node.textContent = m.glyph;
+    }
+  }
+
+  setCompassVisible(on: boolean): void {
+    this.compass.style.display = on ? 'block' : 'none';
+  }
+
+  /** Tutorial-Karte (null = ausblenden). */
+  setTutorial(card: TutorialCard | null): void {
+    this.tutorial.style.display = card ? 'block' : 'none';
+    if (!card) return;
+    this.tutorialHead.textContent = `${STR.tutorial.title} · ${STR.tutorial.stepOf} ${card.index}/${card.total}`;
+    this.tutorialTitle.textContent = `${card.done ? '✓ ' : ''}${card.title}`;
+    this.tutorialText.textContent = card.text;
+    this.tutorial.classList.toggle('done', card.done);
+  }
+
+  /** Kurze „Gespeichert“-Einblendung. */
+  flashSaved(): void {
+    this.saved.classList.add('show');
+    window.clearTimeout(this.savedTimer);
+    this.savedTimer = window.setTimeout(() => this.saved.classList.remove('show'), 1600);
   }
 
   setHint(text: string): void {
@@ -126,6 +215,7 @@ export class Hud {
   }
 
   dispose(): void {
+    window.clearTimeout(this.savedTimer);
     this.root.remove();
   }
 }

@@ -137,6 +137,15 @@ export class GameDb {
     }
   }
 
+  async deleteValue(key: string): Promise<void> {
+    if (!this.db) return;
+    try {
+      await this.db.delete('kv', key);
+    } catch {
+      /* ignorieren */
+    }
+  }
+
   async getValue<T>(key: string): Promise<T | undefined> {
     if (!this.db) return undefined;
     try {

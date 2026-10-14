@@ -47,6 +47,13 @@ import { effectiveCost } from '@/ui/InventoryUi';
 import { SettingsUi } from '@/ui/SettingsUi';
 import { SHADOW_MAP_SIZES, type GraphicsSettings } from '@/game/settings/Settings';
 import { Buoys } from '@/world/probes/Buoys';
+import { Random } from '@/math/Random';
+import { Tutorial, type TutorialEvent } from '@/game/tutorial/Tutorial';
+import { SaveUi } from '@/ui/SaveUi';
+import type { SaveBundle } from '@/save/SaveBundle';
+import { ambientMixFor, footSurfaceFor } from '@/audio/ambientMix';
+import type { CompassMarker } from '@/ui/Hud';
+import { startGame } from './startGame';
 import { ShipEditorScene } from './ShipEditorScene';
 import { SpaceScene } from './SpaceScene';
 import { LAUNCH_FUEL_TARGET, MODULE_LABELS, RECIPE_BY_ID, type ItemId, type ModuleType, type Recipe } from '@/game/crafting/recipes';
@@ -75,6 +82,8 @@ const BUILD_RANGE = 12;
 const LURE_SECONDS = 60;
 const PLANT_REGROW_SECONDS = 300;
 const BUILD_TYPES: ModuleType[] = ['workbench', 'shelter', 'charger', 'lab'];
+const AUTOSAVE_SECONDS = 120;
+const RAD2DEG = 180 / Math.PI;
 
 interface Interaction {
   kind: 'none' | 'prop' | 'water' | 'plant' | 'soil';
@@ -214,6 +223,16 @@ export class PlanetScene implements GameScene {
   private unsubSettings: (() => void) | null = null;
   private bloomPass: EffectPass | null = null;
   private viewDistance = DEFAULT_VIEW_DISTANCE;
+  private tutorial!: Tutorial;
+  private saveUi!: SaveUi;
+  private sfxRng!: Random;
+  private autosaveAccum = 0;
+  private stepAccum = 0;
+  private ambientAccum = 0;
+  private callTimer = 5;
+  /** Nach dem Laden eines Spielstands: beim Verlassen nichts mehr speichern (würde den geladenen Stand überschreiben). */
+  private discardOnExit = false;
+  private readonly compassMarkers: CompassMarker[] = [];
   private readonly roverEye = new Vector3();
   private readonly roverFwd = new Vector3();
   private readonly roverCamOffset = new Vector3();
@@ -272,6 +291,9 @@ export class PlanetScene implements GameScene {
       this.playerDirty = true;
       this.checkGoal();
     });
+    this.tutorial = new Tutorial(this.state.tutorial);
+    if (!ctx.settings.current.tutorial && this.tutorial.active && this.tutorial.stepIndex === 0) this.tutorial.skip();
+    this.sfxRng = new Random(`sfx:${this.system.seed}:${planet.id}`);
     this.nodes = new ResourceNodeManager(this.scene, this.model, planet);
     this.base = new BaseManager(this.scene, this.model, planet, this.state);
     this.grid = this.state.mapGrid(planet.id, this.model.size);
@@ -398,9 +420,15 @@ export class PlanetScene implements GameScene {
       onLaunch: () => this.startLaunch(),
       onClose: () => this.closeShip(),
     });
-    this.settingsUi = new SettingsUi(ctx.uiRoot, ctx.settings, ctx.renderer, ctx.loop, () => this.closeSettings());
+    this.settingsUi = new SettingsUi(ctx.uiRoot, ctx.settings, ctx.renderer, ctx.loop, () => this.closeSettings(), { onRestartTutorial: () => this.restartTutorial() });
+    this.saveUi = new SaveUi(ctx.uiRoot, {
+      onClose: () => this.closeSave(),
+      onLoaded: (bundle) => this.loadBundle(bundle),
+      getGame: () => ({ player: this.state, progress: this.progress, system: this.system, settings: ctx.settings.current }),
+    });
     this.pauseMenu = new PauseMenu(ctx.uiRoot, {
       onResume: () => this.resume(),
+      onSave: () => this.openSave(),
       onSettings: () => this.openSettings(),
       onSystemView: () => this.leave(new SystemViewScene()),
       onMainMenu: () => this.leave(new MainMenuScene()),
@@ -427,9 +455,15 @@ export class PlanetScene implements GameScene {
       this.shipUi.dispose();
       this.mapUi.dispose();
       this.settingsUi.dispose();
+      this.saveUi.dispose();
       this.closeMicroscope();
     });
+    this.disposer.listen(document, 'visibilitychange', () => {
+      if (document.hidden && this.ready && !this.switching) void this.saveProgress();
+    });
     this.checkGoal();
+    this.refreshTutorial();
+    audio.setMusic(this.cycle.daylight > 0.25 ? 'day' : 'night');
     this.ready = true;
     const c = this.progress.completion(planet.id);
     showToast(`${planet.name} · ${planet.typeLabel} · Archiv ${c.discovered}/${c.total}`);
@@ -463,6 +497,155 @@ export class PlanetScene implements GameScene {
   private closeSettings(): void {
     this.settingsUi.hide();
     if (this.paused) this.pauseMenu.show();
+  }
+
+  private openSave(): void {
+    this.pauseMenu.hide();
+    this.saveUi.show();
+  }
+
+  private closeSave(): void {
+    this.saveUi.hide();
+    if (this.paused) this.pauseMenu.show();
+  }
+
+  /** Slot/Datei wurde als Live-Stand geschrieben: Szene ohne weiteres Speichern verlassen und neu starten. */
+  private loadBundle(bundle: SaveBundle): void {
+    this.discardOnExit = true;
+    this.switching = true;
+    this.saveUi.hide();
+    this.ctx.input.exitPointerLock();
+    void startGame(this.ctx, bundle.seed, true);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Tutorial
+  private tut(event: TutorialEvent): void {
+    if (this.tutorial.notify(event)) {
+      audio.tick();
+      this.refreshTutorial();
+    }
+  }
+
+  private refreshTutorial(): void {
+    const step = this.tutorial.current;
+    if (!step) {
+      this.hud.setTutorial(null);
+      return;
+    }
+    const text = (STR.tutorial.steps as Record<string, { title: string; text: string }>)[step.id] ?? { title: step.id, text: '' };
+    this.hud.setTutorial({ index: this.tutorial.stepIndex + 1, total: this.tutorial.total, title: text.title, text: text.text, done: this.tutorial.justCompleted });
+  }
+
+  private persistTutorial(): void {
+    this.state.tutorial = this.tutorial.toJSON();
+    this.playerDirty = true;
+  }
+
+  private restartTutorial(): void {
+    this.tutorial.restart();
+    this.persistTutorial();
+    this.refreshTutorial();
+    showToast(`${STR.tutorial.title}: ${STR.settingsUi.tutorialRestart}`);
+  }
+
+  private tutorialTick(dt: number): void {
+    const input = this.ctx.input;
+    if (input.wasPressed('skip_tutorial') && this.tutorial.active) {
+      this.tutorial.skip();
+      this.persistTutorial();
+      this.refreshTutorial();
+      showToast(STR.tutorial.done, 4000);
+      return;
+    }
+    if (!this.tutorial.active) return;
+    if (this.tutorial.update(dt)) {
+      this.persistTutorial();
+      this.refreshTutorial();
+      if (!this.tutorial.active) {
+        showToast(STR.tutorial.done, 5000);
+        audio.success(2);
+      }
+    }
+    if (input.pointerLocked && !this.uiOpen && !this.cinematic) {
+      if (this.tutorial.look(Math.abs(input.mouseDelta.x) + Math.abs(input.mouseDelta.y))) this.tut('look');
+      const pl = this.player;
+      if (this.tutorial.move(Math.hypot(pl.position.x - pl.prevPosition.x, pl.position.z - pl.prevPosition.z))) this.tut('move');
+      if ((input.isDown('sprint') && pl.speed > 6.5) || input.wasPressed('jump')) this.tut('sprint_or_jump');
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Audio: Ambient, Schritte, Kreaturenrufe
+  private updateAmbient(dt: number): void {
+    this.ambientAccum += dt;
+    if (this.ambientAccum < 0.5) return;
+    this.ambientAccum = 0;
+    const pl = this.player.position;
+    const biome = this.model.biomeAt(pl.x, pl.z);
+    const params = this.weather.params;
+    audio.setAmbient(
+      ambientMixFor({
+        biomeKind: biome.kind,
+        biomeHasWater: biome.hasWater,
+        isCave: biome.isCave,
+        humidity: biome.humidity,
+        daylight: this.cycle.daylight,
+        wind: params.wind,
+        precipitation: params.precipitation,
+        precipIntensity: params.precipIntensity,
+        underwater: this.model.hasWater && this.camera.position.y < this.model.seaLevel,
+        nearWater: this.model.hasWater && pl.y < this.model.seaLevel + 2.5,
+        breathable: this.planet.atmosphere.breathable,
+      }),
+    );
+  }
+
+  private updateFootsteps(dt: number): void {
+    const pl = this.player;
+    if (!pl.grounded || pl.swimming || pl.fly || pl.frozen || pl.speed < 0.6) {
+      this.stepAccum = 0;
+      return;
+    }
+    this.stepAccum += pl.speed * dt;
+    const stride = pl.crouching ? 1.1 : pl.speed > 7 ? 2.3 : 1.7;
+    if (this.stepAccum < stride) return;
+    this.stepAccum -= stride;
+    const biome = this.model.biomeAt(pl.position.x, pl.position.z);
+    const wading = this.model.hasWater && pl.position.y < this.model.seaLevel + 0.25;
+    audio.footstep(footSurfaceFor(biome.kind, wading), pl.crouching ? 0.3 : pl.speed > 7 ? 1 : 0.6);
+  }
+
+  private updateCreatureCalls(dt: number): void {
+    this.callTimer -= dt;
+    if (this.callTimer > 0) return;
+    this.callTimer = this.sfxRng.float(2.5, 7);
+    const list = this.creatures.creatures;
+    if (list.length === 0) return;
+    const c = this.sfxRng.pick(list);
+    const pos = c.position;
+    const dx = pos.x - this.camera.position.x;
+    const dz = pos.z - this.camera.position.z;
+    const dist = Math.hypot(dx, dz);
+    if (dist > 70) return;
+    // Stereo-Position: Anteil der Richtung entlang der Kamera-Rechtsachse
+    const sinY = Math.sin(this.player.yaw);
+    const cosY = Math.cos(this.player.yaw);
+    const pan = dist > 0.5 ? (dx * cosY - dz * sinY) / dist : 0;
+    const g = c.genome;
+    audio.creatureCall({ lengthM: g.lengthM, covering: g.covering, locomotion: g.locomotion, distance: dist, pan });
+  }
+
+  private updateCompass(): void {
+    const pl = this.player.position;
+    const heading = -this.player.yaw * RAD2DEG;
+    const bearingTo = (x: number, z: number): number => Math.atan2(x - pl.x, -(z - pl.z)) * RAD2DEG;
+    this.compassMarkers.length = 0;
+    if (this.ship) this.compassMarkers.push({ bearing: bearingTo(this.ship.position.x, this.ship.position.z), glyph: '▲', cls: 'ship' });
+    const home = this.state.respawn[this.planet.id];
+    if (home) this.compassMarkers.push({ bearing: bearingTo(home.x, home.z), glyph: '⌂', cls: 'shelter' });
+    if (this.rover && !this.roverMode) this.compassMarkers.push({ bearing: bearingTo(this.rover.position.x, this.rover.position.z), glyph: '●', cls: 'rover' });
+    this.hud.setCompass(heading, this.compassMarkers);
   }
 
   /** Flacher, trockener Landeplatz nahe dem Spawn (Startplanet / erste Landung). */
@@ -548,6 +731,7 @@ export class PlanetScene implements GameScene {
     const check = this.base.validate(type, p.x, p.z);
     if (!check.ok) return false;
     this.base.place(type, p.x, p.z, 0);
+    this.tut('build');
     return true;
   }
 
@@ -562,7 +746,7 @@ export class PlanetScene implements GameScene {
   }
 
   private get uiOpen(): boolean {
-    return this.archiveUi.isOpen || this.inventoryUi.isOpen || this.labUi.isOpen || this.shipUi.isOpen || this.mapUi.isOpen;
+    return this.archiveUi.isOpen || this.inventoryUi.isOpen || this.labUi.isOpen || this.shipUi.isOpen || this.mapUi.isOpen || this.saveUi.isOpen;
   }
 
   get roverActor(): Rover | null {
@@ -659,6 +843,7 @@ export class PlanetScene implements GameScene {
     this.hud.setPhotoMode(true);
     this.refreshSkyPhenomena();
     audio.blip();
+    this.tut('photo_open');
   }
 
   private exitPhoto(): void {
@@ -736,6 +921,7 @@ export class PlanetScene implements GameScene {
       name: `${this.progress.displayName(s.entry)}${roverShot ? ` (${STR.probe.roverPhoto})` : ''}`,
     }));
     if (subjects.length === 0) this.progress.photosTaken++;
+    this.tut('photo_taken');
     let maxStars = 0;
     for (const r of results) {
       maxStars = Math.max(maxStars, r.result.stars);
@@ -794,6 +980,7 @@ export class PlanetScene implements GameScene {
   // ---------------------------------------------------------------------------
   // Katalog, Proben, Mikroskop
   private openCatalog(): void {
+    this.tut('archive_open');
     if (this.archiveUi.isOpen) return;
     this.exitPhoto();
     this.archiveUi.show();
@@ -1022,6 +1209,7 @@ export class PlanetScene implements GameScene {
       if (h.plantKey) this.harvestedPlants.set(h.plantKey, this.elapsed + PLANT_REGROW_SECONDS);
     }
     if (got > 0) {
+      this.tut('harvest');
       showToast(`+${got} ${RESOURCES[id].name} ${STR.interact.gained} (${inv.get(id)})`, 1800);
       audio.blip();
     }
@@ -1040,6 +1228,7 @@ export class PlanetScene implements GameScene {
   // ---------------------------------------------------------------------------
   // Inventar, Fertigung, Labor
   private openInventory(station: 'hand' | 'workbench'): void {
+    this.tut('inventory_open');
     if (this.inventoryUi.isOpen) return;
     this.exitPhoto();
     this.exitBuild();
@@ -1242,6 +1431,7 @@ export class PlanetScene implements GameScene {
       else {
         this.state.inventory.removeItem(type);
         this.base.place(type, p.x, p.z, this.buildRot);
+        this.tut('build');
         showToast(`${MODULE_LABELS[type]} ${STR.build.placed.toLowerCase()}${type === 'shelter' ? ` · ${STR.survival.respawnSet}` : ''}`);
         audio.success(1);
         this.refreshPalette();
@@ -1263,6 +1453,7 @@ export class PlanetScene implements GameScene {
   // ---------------------------------------------------------------------------
   // Schiff: Panel, Betanken, Werft, Start- und Landesequenz
   private openShip(): void {
+    this.tut('ship_open');
     if (this.shipUi.isOpen || this.cinematic) return;
     this.exitPhoto();
     this.exitBuild();
@@ -1314,6 +1505,7 @@ export class PlanetScene implements GameScene {
       return;
     }
     audio.unlock();
+    audio.rumble(LAUNCH_SECONDS + 1.5, 0.7);
     this.shipUi.hide();
     this.exitBuild();
     this.exitPhoto();
@@ -1340,6 +1532,7 @@ export class PlanetScene implements GameScene {
   }
 
   private startLanding(): void {
+    audio.rumble(LANDING_SECONDS, 0.5);
     if (!this.ship) return;
     this.cinematic = { kind: 'landing', t: 0, countdownShown: 0 };
     this.player.frozen = true;
@@ -1430,6 +1623,7 @@ export class PlanetScene implements GameScene {
   // ---------------------------------------------------------------------------
   // Karte (M)
   private openMap(): void {
+    this.tut('map_open');
     if (this.mapUi.isOpen) return;
     this.exitPhoto();
     this.exitBuild();
@@ -1775,6 +1969,7 @@ export class PlanetScene implements GameScene {
   private doInteract(): void {
     const it = this.interaction;
     audio.unlock();
+    if (it.kind !== 'none') this.tut('sample');
     switch (it.kind) {
       case 'prop': {
         const prop = it.prop as WorldProp;
@@ -1875,7 +2070,9 @@ export class PlanetScene implements GameScene {
     const input = this.ctx.input;
 
     if (input.wasPressed('pause') && !this.cinematic && performance.now() - this.lockChangedAt > 400) {
-      if (this.settingsUi.isOpen) this.closeSettings();
+      if (this.settingsUi.isOpen) {
+        if (!this.settingsUi.isListening) this.closeSettings();
+      } else if (this.saveUi.isOpen) this.closeSave();
       else if (this.inventoryUi.isOpen) this.closeInventory();
       else if (this.shipUi.isOpen) this.closeShip();
       else if (this.mapUi.isOpen) this.closeMap();
@@ -1888,6 +2085,14 @@ export class PlanetScene implements GameScene {
       else this.pause();
     }
     if (this.paused) return;
+    this.state.playtime += dt;
+    this.autosaveAccum += dt;
+    if (this.autosaveAccum >= AUTOSAVE_SECONDS) {
+      this.autosaveAccum = 0;
+      void this.saveProgress().then(() => this.hud.flashSaved());
+    }
+    if (input.wasPressed('quicksave') && !this.cinematic) void this.saveUi.quicksave().then((ok) => ok && this.hud.flashSaved());
+    this.tutorialTick(dt);
     if (input.wasPressed('map') && !this.inventoryUi.isOpen && !this.labUi.isOpen && !this.archiveUi.isOpen && !this.shipUi.isOpen && !this.cinematic) {
       if (this.mapUi.isOpen) this.closeMap();
       else this.openMap();
@@ -1947,6 +2152,7 @@ export class PlanetScene implements GameScene {
     this.weather.update(dt * this.cycle.timeScale * slow);
     this.player.update(dt, input.pointerLocked);
     this.elapsed += dt;
+    this.updateFootsteps(dt);
     this.terrain.update(this.camera.position, dt);
     this.vegetation.update(this.camera.position, dt, this.elapsed, this.weather.params.wind);
     this.props.update(this.camera.position, dt);
@@ -1966,6 +2172,8 @@ export class PlanetScene implements GameScene {
         audio.hint();
       }
     }
+    this.updateAmbient(dt);
+    this.updateCreatureCalls(dt * slow);
     this.saveTick(dt);
 
     this.hudAccum += dt;
@@ -2031,6 +2239,7 @@ export class PlanetScene implements GameScene {
     const parts = [...sv.hazards];
     if (near) parts.push(STR.survival.recharging);
     this.hud.setSurvival(sv.oxygen, sv.energy, parts.join(' · '), sv.oxygen <= 25 || sv.energy <= 25);
+    audio.setMusic(this.cycle.daylight > 0.25 ? 'day' : 'night');
     const d = this.ctx.debug;
     d.set('Chunks', `${this.terrain.stats.chunks} (offen ${this.terrain.stats.pending})`);
     d.set('Vegetation', `${this.vegetation.stats.cells} Zellen · ${this.vegetation.stats.instances} Instanzen · ${this.vegetation.stats.species} Arten`);
@@ -2049,6 +2258,7 @@ export class PlanetScene implements GameScene {
     this.player.applyCamera(this.paused ? 1 : _alpha);
     if (this.cinematic) this.applyCinematicCamera();
     else if (this.roverMode) this.applyRoverCamera();
+    if (!this.cinematic) this.updateCompass();
     this.ship?.update(this.elapsed);
     this.buoys?.update(this.elapsed);
     const params = this.weather.params;
@@ -2091,7 +2301,8 @@ export class PlanetScene implements GameScene {
 
   dispose(): void {
     this.ready = false;
-    void this.saveProgress();
+    if (!this.discardOnExit) void this.saveProgress();
+    audio.clearAmbient();
     this.disposer.dispose();
     this.unsubSettings?.();
     this.unsubSettings = null;
@@ -2121,6 +2332,7 @@ export class PlanetScene implements GameScene {
     this.precipitation?.dispose();
     this.player?.dispose();
     this.sky?.dispose();
+    this.terrain?.dispose();
     this.scene.clear();
     const gl = this.ctx.renderer.gl;
     gl.shadowMap.enabled = false;

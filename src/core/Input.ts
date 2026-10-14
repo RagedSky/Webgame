@@ -81,7 +81,7 @@ export class Input {
   }
 
   private shouldPreventDefault(code: string): boolean {
-    return code === 'Space' || code === 'Tab' || code.startsWith('Arrow');
+    return code === 'Space' || code === 'Tab' || code === 'F1' || code === 'F5' || code.startsWith('Arrow');
   }
 
   setBindings(bindings: Partial<Record<GameAction, string[]>>): void {

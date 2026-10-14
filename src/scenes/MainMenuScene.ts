@@ -8,17 +8,17 @@ import { gameState } from '@/game/GameState';
 import { GAME_VERSION } from '@/config/constants';
 import { STR } from '@/ui/strings';
 import { el } from '@/ui/dom';
-import { showToast } from '@/ui/toast';
 import { SystemViewScene } from './SystemViewScene';
-import { PlanetScene } from './PlanetScene';
-import { SpaceScene } from './SpaceScene';
 import { CharacterScene } from './CharacterScene';
-import { ensurePlayerState } from '@/game/playerStore';
 import { SettingsUi } from '@/ui/SettingsUi';
+import { SaveUi } from '@/ui/SaveUi';
+import { getDb } from '@/save/Db';
+import { audio } from '@/audio/AudioManager';
+import { startGame } from './startGame';
 
 /**
- * Hauptmenü: Seed-Eingabe, „Zufälliges Universum“, Debug-Systemansicht.
- * Hintergrund: langsam rotierendes Sternenfeld (deterministisch aus festem Seed).
+ * Hauptmenü: Seed-Eingabe, „Zufälliges Universum“, Weiterspielen/Neues Spiel, Charakter, Spielstände,
+ * Einstellungen, Credits, Debug-Systemansicht. Hintergrund: langsam rotierendes Sternenfeld.
  */
 export class MainMenuScene implements GameScene {
   readonly name = 'MainMenu';
@@ -29,7 +29,11 @@ export class MainMenuScene implements GameScene {
   private stars: Points | null = null;
   private root: HTMLElement | null = null;
   private seedInput: HTMLInputElement | null = null;
+  private startButton: HTMLButtonElement | null = null;
   private settingsUi: SettingsUi | null = null;
+  private saveUi: SaveUi | null = null;
+  private credits: HTMLElement | null = null;
+  private seedCheckTimer = 0;
   private time = 0;
 
   enter(ctx: GameContext): void {
@@ -38,6 +42,8 @@ export class MainMenuScene implements GameScene {
     ctx.debug.setSeed(gameState.seed);
     this.buildStars();
     this.buildUi();
+    audio.clearAmbient();
+    audio.setMusic('menu');
   }
 
   private buildStars(): void {
@@ -57,10 +63,12 @@ export class MainMenuScene implements GameScene {
     });
     this.seedInput = seedInput;
     seedInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') this.openSystemView();
+      if (e.key === 'Enter') this.newGame();
     });
+    seedInput.addEventListener('input', () => this.scheduleSeedCheck());
 
     const randomBtn = el('button', { class: 'small', text: STR.randomUniverse, onClick: () => this.randomSeed() });
+    this.startButton = el('button', { class: 'primary', text: STR.newGame, title: STR.newGameHint, onClick: () => this.newGame() });
 
     const panel = el(
       'div',
@@ -72,21 +80,59 @@ export class MainMenuScene implements GameScene {
       el(
         'div',
         { class: 'menu-buttons' },
-        el('button', { class: 'primary', text: STR.newGame, title: STR.newGameHint, onClick: () => this.newGame() }),
+        this.startButton,
         el('button', { text: STR.character.menu, onClick: () => this.openCharacter() }),
-        el('button', { text: STR.showSystem, onClick: () => this.openSystemView() }),
-        el('button', { text: STR.load, onClick: () => showToast(STR.comingSoon) }),
+        el('button', { text: STR.load, onClick: () => this.saveUi?.show() }),
         el('button', { text: STR.settings, onClick: () => this.settingsUi?.show() }),
-        el('button', { text: STR.credits, onClick: () => showToast('Stellar Archive · prozedural, Three.js, TypeScript') }),
+        el('button', { text: STR.showSystem, onClick: () => this.openSystemView() }),
+        el('button', { text: STR.credits.title, onClick: () => this.toggleCredits() }),
       ),
       el('div', { class: 'hint', text: STR.debugOverlayHint }),
-      el('div', { class: 'version', text: `v${GAME_VERSION} · Phase 9` }),
+      el('div', { class: 'version', text: `v${GAME_VERSION}` }),
     );
     this.root = el('div', { class: 'main-menu' }, panel);
     this.ctx.uiRoot.append(this.root);
     this.disposer.addDom(this.root);
     this.settingsUi = new SettingsUi(this.ctx.uiRoot, this.ctx.settings, this.ctx.renderer, this.ctx.loop, () => this.settingsUi?.hide());
     this.disposer.addFn(() => this.settingsUi?.dispose());
+    this.saveUi = new SaveUi(this.ctx.uiRoot, {
+      onClose: () => this.saveUi?.hide(),
+      onLoaded: (bundle) => {
+        this.saveUi?.hide();
+        void startGame(this.ctx, bundle.seed, true);
+      },
+      getGame: () => null,
+    });
+    this.disposer.addFn(() => this.saveUi?.dispose());
+    this.credits = el(
+      'div',
+      { class: 'inv-ui credits-ui', style: 'display:none' },
+      el('div', { class: 'panel inv-panel' }, el('div', { class: 'row inv-head' }, el('h2', { text: STR.credits.title }), el('button', { class: 'small', text: STR.back, onClick: () => this.toggleCredits() })), ...STR.credits.lines.map((line) => el('p', { text: line })), el('p', { class: 'muted small', text: `v${GAME_VERSION}` })),
+    );
+    this.ctx.uiRoot.append(this.credits);
+    this.disposer.addDom(this.credits);
+    this.disposer.addFn(() => window.clearTimeout(this.seedCheckTimer));
+    void this.checkSeed();
+  }
+
+  private toggleCredits(): void {
+    if (!this.credits) return;
+    this.credits.style.display = this.credits.style.display === 'none' ? 'flex' : 'none';
+  }
+
+  private scheduleSeedCheck(): void {
+    window.clearTimeout(this.seedCheckTimer);
+    this.seedCheckTimer = window.setTimeout(() => void this.checkSeed(), 300);
+  }
+
+  /** Beschriftung „Weiterspielen“, wenn für den eingegebenen Seed ein Spielstand existiert. */
+  private async checkSeed(): Promise<void> {
+    const raw = this.seedInput?.value ?? gameState.seed;
+    const seed = raw.trim().toUpperCase().replace(/\s+/g, '-') || gameState.seed;
+    const db = await getDb();
+    const exists = (await db.getValue(`player:${seed}`)) !== undefined;
+    if (!this.startButton || (this.seedInput && this.seedInput.value !== raw)) return;
+    this.startButton.textContent = exists ? STR.continueGame : STR.newGame;
   }
 
   private randomSeed(): void {
@@ -94,28 +140,13 @@ export class MainMenuScene implements GameScene {
     if (this.seedInput) this.seedInput.value = seed;
     gameState.seed = seed;
     this.ctx.debug.setSeed(seed);
+    void this.checkSeed();
   }
 
   /** Neues Spiel bzw. Weiterspielen: ohne Charakter zuerst der Editor; im Orbit → Raumflug, sonst Planet des Schiffs. */
   private newGame(): void {
-    gameState.seed = this.seedInput?.value ?? gameState.seed;
-    const seed = gameState.seed;
-    void ensurePlayerState(seed).then((state) => {
-      if (gameState.seed !== seed || !this.root) return;
-      if (!state.character) {
-        this.ctx.scenes.switchTo(new CharacterScene({ onDone: () => this.enterWorld(), onCancel: () => this.ctx.scenes.switchTo(new MainMenuScene()), applyLabel: STR.character.start }));
-        return;
-      }
-      this.enterWorld();
-    });
-  }
-
-  private enterWorld(): void {
-    const system = gameState.getSystem();
-    const state = gameState.player;
-    const loc = state?.ship.location ?? null;
-    if (loc?.kind === 'orbit') this.ctx.scenes.switchTo(new SpaceScene());
-    else this.ctx.scenes.switchTo(new PlanetScene(loc?.kind === 'surface' && system.planets.some((p) => p.id === loc.planetId) ? loc.planetId : system.startPlanetId));
+    if (!this.root) return;
+    void startGame(this.ctx, this.seedInput?.value ?? gameState.seed);
   }
 
   /** Charakter des aktuellen Seeds bearbeiten (auch nachträglich; Boni gelten ab dem nächsten Planetenbesuch). */
@@ -133,6 +164,11 @@ export class MainMenuScene implements GameScene {
 
   update(dt: number): void {
     this.time += dt;
+    if (this.ctx.input.wasPressed('pause')) {
+      if (this.settingsUi?.isOpen && !this.settingsUi.isListening) this.settingsUi.hide();
+      else if (this.saveUi?.isOpen) this.saveUi.hide();
+      else if (this.credits && this.credits.style.display !== 'none') this.toggleCredits();
+    }
   }
 
   render(_alpha: number, frameDt: number): void {

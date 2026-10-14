@@ -31,6 +31,7 @@ Sternsystem, baust ein Raumschiff, synthetisierst Treibstoff und füllst ein Arc
 ├── CLAUDE.md                  Befehle, Konventionen, Phasen-Checkliste (Kontext für Sessions)
 ├── docs/
 │   ├── ARCHITECTURE.md        dieses Dokument
+│   ├── BALANCING.md           Stellschrauben und Pacing-Modell (50–80 h bis 80 %)
 │   └── DECISIONS.md           Entscheidungs-Log (ADR-Stil, kurz)
 ├── legacy/aetherfall/         altes Einzeldatei-Spiel (unverändert, nicht Teil des Builds)
 ├── public/                    statische Assets (aktuell leer – alles prozedural)
@@ -62,17 +63,24 @@ Sternsystem, baust ein Raumschiff, synthetisierst Treibstoff und füllst ein Arc
     │                          progressStore (gemeinsamer Archiv-Fortschritt für Planet und Orbit),
     │                          character/Character (Konfiguration, Begrenzung, Zufall, Share-Code, Presets), character/backgrounds
     │                          (Hintergründe mit Boni), character/presetStore (eigene Presets in IndexedDB),
-    │                          settings/Settings (Presets, Begrenzung, adaptiver Monitor – rein), settings/SettingsManager
-    │                          (Anwendung auf Renderer/Loop/Debug, Persistenz)
-    ├── save/                  Db.ts: IndexedDB (Fotos als JPEG+Thumb-Blob, Fortschritt je Seed, Schlüssel/Wert)
-    ├── audio/                 AudioManager: prozedurale UI-Klänge (Auslöser, Erfolg, Hinweis)
+    │                          settings/Settings (Presets, Lautstärken, Begrenzung, adaptiver Monitor – rein), settings/Keybindings
+    │                          (Belegung bereinigen, Tastennamen, Konflikte – rein), settings/SettingsManager (Anwendung auf
+    │                          Renderer/Loop/Audio/Input/Debug, Persistenz), tutorial/Tutorial (Schrittfolge, rein),
+    │                          archive/pacing im gen-Ordner (Spielzeit-Schätzung, rein)
+    ├── save/                  Db.ts: IndexedDB (Fotos als JPEG+Thumb-Blob, Fortschritt je Seed, Schlüssel/Wert); SaveBundle.ts
+    │                          (versioniertes Bundle aus Spieler + Fortschritt + Fotos/Einstellungen, Migration, Kurzinfo – rein);
+    │                          SaveManager.ts (Slots, Live-Stand, Export als JSON-Datei, Import)
+    ├── audio/                 AudioManager (Web Audio, rein prozedural): Busse Master/Effekte/Ambient/Musik, Ambient-Schichten,
+    │                          Kreaturenrufe, Schritte, Auslöser, UI, Grollen, Musik-Platzhalter; ambientMix.ts (Pegel aus Biom,
+    │                          Tageszeit, Wetter – rein)
     ├── render/                Renderer-Wrapper (DPR, Render-Skalierung), Composer-Fabrik, Starfield, PlanetTexture (prozedural)
     ├── scenes/                MainMenuScene, SystemViewScene (Debug), PlanetScene, ShipEditorScene (Werft), SpaceScene (Orbit/Flug),
-    │                          CharacterScene (Charaktererstellung mit Studio-Bühne)
+    │                          CharacterScene (Charaktererstellung mit Studio-Bühne), startGame.ts (Spiel starten/fortsetzen)
     ├── ui/                    DOM-Overlays: DebugOverlay, Toast, SystemPanel, Hud, PauseMenu, PhotoUi (Sucher + Ergebnis),
     │                          ArchiveUi (Enzyklopädie, Logbuch, Proben), MicroscopeView (2D-Zellen mit Fokus-Minispiel),
     │                          InventoryUi, LabUi, ShipUi, ShipEditorUi, MapUi (Canvas-Karte mit Layern, Fog of War, Markern),
-    │                          SettingsUi (Grafik, Leistung, Tastenübersicht), CharacterUi
+    │                          SettingsUi (Grafik, Leistung, Audio, Spiel, Tastenbelegung mit Umbelegung), CharacterUi,
+    │                          SaveUi (Slots, Export/Import); Hud zusätzlich mit Kompass, Tutorial-Karte und Autosave-Anzeige
     ├── world/                 Laufzeit-Welt (Three.js)
     │   ├── terrain/           TerrainChunk (Skirts, Vertexfarben, Geometrie-Pool), TerrainManager (Quadtree-LOD, Zeitbudget)
     │   ├── Sky.ts             Kuppel-Shader (Rayleigh/Mie vereinfacht, Wolken, Dämmerung), Sterne, Monde, Gasriese, Sonnen-/Hemisphärenlicht
@@ -99,8 +107,7 @@ Sternsystem, baust ein Raumschiff, synthetisierst Treibstoff und füllst ein Arc
     │   └── HintSystem.ts      Spuren/Kot/Nester als Objekte, Geräusche/Gerüche als Meldung, Gerüchte über seltene Verwandte
     │   └── Player.ts          Ego-/Schulter-Controller, Terrain-Kollision, Schwimmen, Gravitation
     ├── assets/                AssetRegistry: Platzhalter-Geometrien/Materialien, später austauschbar
-    ├── audio/                 AudioManager (Web Audio), prozedurale Sounds
-    └── save/                  IndexedDB-Zugriff, Serialisierung, Migrationen, Export/Import
+    └── (assets/ bleibt leer – alle Inhalte sind prozedural)
 ```
 
 ### Modulgrenzen (Abhängigkeitsrichtung)
@@ -183,11 +190,18 @@ Fossilien/Ruinen 40 · Wetter/Himmel 30 · Varianten 30. Verteilung auf Planeten
 jeder Eintrag ist auf seinem Planeten auffindbar (Biom vorhanden, Wetter im Wetter-Set, Temperatur im Bereich);
 Startplanet enthält alle Start- und Treibstoff-Rohstoffe; korrekte Mischung ergibt Stabilität/Energiedichte/Reinheit ≥ 0,9.
 
-### 4.3 Spielstand (ab Phase 4/10)
+### 4.3 Spielstand
 
-Der Spielstand ist je Seed in zwei IndexedDB-Datensätze geteilt: `progress` (Archiv-Fortschritt, `ArchiveProgress.toJSON()`) und
-`kv['player:<seed>']` (`PlayerStateSnapshot { version, inventory, survival, modules, labLevel, respawn, goalStep }`). Beide haben
-`migrate()`-Funktionen; Phase 10 bündelt sie mit Charakter, Schiff, Sonden, Karte und Einstellungen zu einem Export/Import.
+Der laufende Spielstand („Live-Stand“) ist je Seed in zwei IndexedDB-Datensätze geteilt: `progress` (Archiv-Fortschritt,
+`ArchiveProgress.toJSON()`) und `kv['player:<seed>']` (`PlayerStateSnapshot` v5: Inventar, Überleben, Module, Labor, Respawn,
+Ziel, Schiff, Baupläne, Ruinen, Meilensteine, Landeplätze, Karten, Satelliten, Rover, Sonden, Charakter, Spielzeit, Tutorial).
+Beide haben `migrate()`-Funktionen. Fotos liegen im `photos`-Store (JPEG + Thumbnail, per ID aus dem Fortschritt referenziert).
+Autosave: entprellt bei Änderungen, alle 120 s, bei Pause, Szenenwechsel und wenn der Tab unsichtbar wird.
+**Slots und Dateien** (Phase 10, `save/SaveBundle.ts`, `save/SaveManager.ts`): ein `SaveBundle { kind, version, seed, savedAt,
+player, progress, photos?, settings? }` ist eine Kopie des Live-Stands. Fünf Slots (`kv['slot:<n>']`, Kurzinfos in
+`kv['save-index']`), F5 schreibt Slot 1. Laden schreibt die Kopie zurück in den Live-Stand und startet den Seed neu; die
+Planetenszene speichert danach nicht mehr (`discardOnExit`). Export erzeugt eine JSON-Datei inkl. Fotos (Base64) und globalen
+Einstellungen, Import prüft `kind`/`version`, migriert und schreibt Live-Stand und Fotos.
 
 ### 4.4 Terrain-Modell (Phase 2)
 
@@ -350,12 +364,36 @@ deterministischen, flachen Landeplatz. `VegetationProfiles.ts` definiert Dichten
   (`VegetationManager.setDensity` verwirft Zellen und baut sie neu) und Bloom live um. Ohne Postprocessing rendern Planet,
   Orbit und Systemansicht direkt (`gl.render`), nur der Foto-Modus nutzt weiter den Composer (Tiefenschärfe).
 - **UI** (`SettingsUi`): im Hauptmenü und im Pausemenü. Preset-Buttons, alle Regler, Vollbild (Fullscreen-API), V-Sync-Hinweis,
-  Statuszeile mit Fenster- und interner Auflösung sowie FPS, Tastenbelegung als Übersicht (Umbelegung Phase 10).
+  Statuszeile mit Fenster- und interner Auflösung sowie FPS, Lautstärken, Tutorial-Schalter, Tastenbelegung mit Umbelegung.
 - **Adaptive Qualität** (`AdaptiveMonitor`): liegen die FPS auf der Planetenoberfläche 8 s lang unter 75 % des Ziels
   (FPS-Limit oder 60), schlägt ein Aktions-Toast das nächstniedrigere Preset vor (Übernehmen / Später / Nicht mehr fragen),
   danach 120 s Abkühlzeit. Nie ein Zwang.
 - **Optimierung:** Rohstoffknoten als `InstancedMesh` je Rohstoffart (Instanz-Index → Knoten beim Raycast, Matrizen nur bei
   Änderungen neu geschrieben) – ein Draw-Call je Art statt je Knoten. Composer werden zentral registriert und freigegeben.
+
+### 4.12 Politur: Tutorial, Audio, Speichern, Balancing (Phase 10)
+
+- **Tutorial** (`game/tutorial/Tutorial.ts`, rein): zwölf Schritte (Umsehen, Bewegen, Sprint/Sprung, Kamera, Foto, Archiv, Probe,
+  Rohstoffe, Inventar, Bauen, Karte, Lander). Die Szene meldet Ereignisse (`notify`), ein Schritt bleibt 1,6 s als erledigt stehen,
+  F1 überspringt alles. Fortschritt im `PlayerState` (`tutorial`), Einstellung „Tutorial bei neuen Spielständen“, Neustart aus
+  den Einstellungen. HUD-Karte links oben; die Zielzeile (`goals`) bleibt die langfristige Führung.
+- **Audio** (`audio/AudioManager.ts`, Web Audio, keine Dateien): Master → Effekte / Ambient / Musik mit Lautstärken aus den
+  Einstellungen. Ambient aus `ambientMixFor()` (Wind, Wasser, Regen, Nachtleben, Grundton, Lava), alle 0,5 s aus Biom,
+  Tageszeit, Wetter, Unterwasser/Ufer aktualisiert, Übergänge ~1 s. Kreaturenrufe aus Körperwerten (Größe → Tonhöhe, Bedeckung →
+  Wellenform, Luft → Vibrato) mit Entfernungsdämpfung und Stereo-Position, alle 2,5–7 s eine zufällige Kreatur bis 70 m.
+  Schritte je Untergrund (`footSurfaceFor`), Auslöser, Erfolg, Hinweis, Fehler, Tutorial-Tick, Start-/Landegrollen. Musik als
+  gleitende Akkordflächen je Stimmung (Menü, Tag, Nacht, Orbit). Zufall aus `Random('audio')`.
+- **Kompass** (HUD): Band mit N/NO/O/…, Markierungen für Schiff ▲, Unterkunft ⌂ und Rover ●, am Rand geklemmt, wenn außerhalb
+  des Sichtfelds. Norden = −z, Peilung = atan2(dx, −dz).
+- **Tastenbelegung** (`game/settings/Keybindings.ts`): je Aktion bis zu zwei `KeyboardEvent.code`; Esc, F3 und F12 sind fest.
+  Klick auf die Taste, nächste Taste wird übernommen (Esc bricht ab, Entf setzt zurück), Konflikte werden angezeigt, Persistenz in
+  `kv['keybindings']`, Anwendung live über `Input.setBindings`.
+- **Balancing**: `gen/archive/pacing.ts` schätzt aus dem generierten System die Spielzeit bis 80 %; Test prüft 50–80 h für acht
+  Seeds. Stellschrauben in `docs/BALANCING.md`.
+- **Bugfixes**: vollflächige Overlay-Wurzeln (`.hud`, `.photo-ui`, …) fingen Klicks auf das Canvas ab (ID-Regel `#ui-root > *`
+  schlug `pointer-events: none`), Pointer Lock per Klick ging dadurch nie – behoben über spezifischere Regeln.
+  `PlanetScene.dispose()` gab den `TerrainManager` nicht frei (≈ 70–130 Chunk-Geometrien je Planetenbesuch blieben auf der GPU) –
+  behoben; der Smoke-Test misst `renderer.info.memory` über mehrere Planet-↔-Menü-Wechsel. Veraltete „Phase X“-Texte entfernt.
 
 ## 5. Laufzeit-Architektur
 
@@ -389,7 +427,7 @@ deterministischen, flachen Landeplatz. `VegetationProfiles.ts` definiert Dichten
 | 7 | Sonden, Satelliten, Karte: Fog of War, Layer, Hotspots/Lücken, Marker, Rover, Tiefsee- und Atmosphärensonde | ✅ |
 | 8 | Charaktererstellung: Editor mit Live-Vorschau, Hintergründe mit Boni, Presets, Share-Code, Avatar im Spiel | ✅ |
 | 9 | Grafik und Einstellungen: Presets, Auflösung/Skalierung, Schatten, Vegetation, Sichtweite, AA, FPS-Limit, adaptive Qualität | ✅ |
-| 10 | Politur: Tutorial, Audio, Speichern/Laden, Balancing, README | ⬜ |
+| 10 | Politur: Tutorial, Audio, Speichern/Laden/Export, Tastenbelegung, Kompass, Balancing, Bugfixes, README | ✅ |
 
 ## 7. Performance-Leitlinien
 

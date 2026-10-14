@@ -35,7 +35,9 @@ export type GameAction =
   | 'slot1'
   | 'slot2'
   | 'slot3'
-  | 'slot4';
+  | 'slot4'
+  | 'skip_tutorial'
+  | 'quicksave';
 
 export const DEFAULT_BINDINGS: Record<GameAction, string[]> = {
   move_forward: ['KeyW', 'ArrowUp'],
@@ -74,6 +76,8 @@ export const DEFAULT_BINDINGS: Record<GameAction, string[]> = {
   slot2: ['Digit2'],
   slot3: ['Digit3'],
   slot4: ['Digit4'],
+  skip_tutorial: ['F1'],
+  quicksave: ['F5'],
 };
 
 /** Lesbare Namen für die Tastenbelegungs-UI. */
@@ -114,4 +118,6 @@ export const ACTION_LABELS: Record<GameAction, string> = {
   slot2: 'Modul 2',
   slot3: 'Modul 3',
   slot4: 'Modul 4',
+  skip_tutorial: 'Tutorial überspringen',
+  quicksave: 'Schnellspeichern (Slot 1)',
 };

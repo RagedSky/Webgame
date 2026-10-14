@@ -244,3 +244,39 @@ Aktions-Toast mit dem nächstniedrigeren Preset, danach 120 s Pause. Nie automat
 **Entscheidung:** Ein InstancedMesh je Rohstoffart mit fester Kapazität; Instanzmatrizen werden nur bei Zellwechsel, Abbau und
 Respawn neu geschrieben, der Raycast liefert den Instanz-Index. Der Kegel-Fallback bleibt. Postprocessing-aus-Pfad und
 Composer-Registry gehören zum selben Optimierungsdurchlauf.
+
+## D-051 · Live-Stand plus Slots statt Slots als einzige Wahrheit
+**Kontext:** Autosave und manuelle Slots sollen koexistieren, Fotos sind groß.
+**Entscheidung:** Der laufende Spielstand bleibt je Seed der „Live-Stand“ (Autosave). Ein Slot ist eine Kopie davon ohne Fotos;
+Laden schreibt die Kopie zurück und startet den Seed neu. Fotos bleiben im Foto-Store und werden per ID referenziert – Slots
+desselben Seeds teilen sie sich. Nur der Datei-Export trägt Fotos (Base64) und Einstellungen, damit ein Spielstand vollständig
+umziehen kann.
+
+## D-052 · Tutorial als ereignisgetriebene Schrittfolge im Spielerzustand
+**Entscheidung:** Kein eigener Modus, keine Sperren: die Szene meldet Ereignisse, das Tutorial rückt vor und zeigt eine Karte.
+Es ist jederzeit per F1 überspringbar und per Einstellung abschaltbar; der Fortschritt liegt im `PlayerState`, damit ein
+Seed es nur einmal zeigt. Die bestehende Zielzeile übernimmt die langfristige Führung (Werkbank → Labor → Treibstoff → Start).
+
+## D-053 · Audio bleibt vollständig prozedural
+**Entscheidung:** Auch in der Politur keine Audiodateien: Ambient, Rufe, Schritte und Musik entstehen aus Oszillatoren und
+gefiltertem Rauschen mit seedbarem Zufall. Das hält den Build klein und lizenzfrei; Kreaturenrufe folgen dem Genom (Größe,
+Bedeckung, Fortbewegung), sodass jede Art anders klingt. Die Musik ist bewusst eine zurückhaltende Akkordfläche (Platzhalter mit
+Stimmung je Szene), kein komponierter Soundtrack.
+
+## D-054 · Umbelegung je Aktion, feste Esc/F3/F12, Konflikte erlaubt
+**Entscheidung:** Jede Aktion hat bis zu zwei Tasten; die neue Taste wird Primärtaste, die alte rückt nach hinten. Esc, F3 und
+F12 bleiben fest (Zurück/Debug/Browser). Konflikte werden angezeigt, aber nicht verhindert, weil viele Aktionen nur in eigenen
+Modi gelten (Foto-Modus, Bau-Modus). HUD-Texte nennen weiter die Standardtasten.
+
+## D-055 · Pacing-Modell als Test statt Playtest-Pflicht
+**Kontext:** 50–80 h Spielzeit lassen sich nicht automatisiert spielen.
+**Entscheidung:** Ein reines Modell (`gen/archive/pacing.ts`) kodiert die Annahmen (Minuten je Kategorie, Seltenheit,
+Bedingungen, Overhead) und schätzt aus dem generierten System die Zeit bis 80 %. Der Test hält acht Seeds im Band; Änderungen am
+Generator, die das Band verlassen, fallen sofort auf. Die Annahmen stehen in `docs/BALANCING.md` und werden mit echten
+Spielsitzungen nachjustiert.
+
+## D-056 · Spezifische Pointer-Events-Regeln für Overlay-Wurzeln
+**Kontext:** `#ui-root > * { pointer-events: auto }` (ID-Spezifität) überstimmte `.hud { pointer-events: none }`; Klicks auf das
+Canvas kamen nie an, Pointer Lock per Klick war unmöglich.
+**Entscheidung:** Vollflächige Overlay-Wurzeln ohne eigene Klickfläche werden explizit mit `#ui-root > .hud` usw. auf
+`pointer-events: none` gesetzt; ihre interaktiven Kinder bleiben `auto`. Neue Vollflächen-Overlays müssen in diese Liste.

@@ -1,7 +1,7 @@
 {
   "name": "stellar-archive",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.0.0",
   "type": "module",
   "description": "Stellar Archive – ein 3D-Entdecker-Spiel im Browser (Three.js, TypeScript, prozedural)",
   "scripts": {

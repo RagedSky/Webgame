@@ -9,8 +9,9 @@ import { starterDesign, type ShipDesign } from './ship/ShipDesign';
 import { milestonesEarned, nextBlueprint } from './ship/blueprints';
 import { MapGrid } from './map/MapGrid';
 import { migrateCharacter, type CharacterConfig } from './character/Character';
+import type { TutorialSnapshot } from './tutorial/Tutorial';
 
-export const PLAYER_STATE_VERSION = 4;
+export const PLAYER_STATE_VERSION = 5;
 
 export interface MapMarker {
   x: number;
@@ -87,6 +88,10 @@ export interface PlayerStateSnapshot {
   atmoProbes: string[];
   /** Charakter (null = noch nicht erstellt → Editor vor dem ersten Spiel). */
   character: CharacterConfig | null;
+  /** Spielzeit in Sekunden (Oberfläche und Orbit, ohne Pause). */
+  playtime: number;
+  /** Tutorial-Fortschritt. */
+  tutorial: TutorialSnapshot;
   updatedAt: number;
 }
 
@@ -108,6 +113,8 @@ export class PlayerState {
   readonly atmoProbes: string[] = [];
   readonly markers: Record<string, MapMarker[]> = {};
   character: CharacterConfig | null = null;
+  playtime = 0;
+  tutorial: TutorialSnapshot = { step: 0, done: false };
   private readonly grids = new Map<string, MapGrid>();
   private readonly gridData: Record<string, string> = {};
   private counter = 0;
@@ -231,6 +238,8 @@ export class PlayerState {
       deepProbes: Object.fromEntries(Object.entries(this.deepProbes).map(([k, v]) => [k, v.map((p) => ({ ...p }))])),
       atmoProbes: this.atmoProbes.slice(),
       character: this.character ? migrateCharacter(this.character) : null,
+      playtime: this.playtime,
+      tutorial: { ...this.tutorial },
       updatedAt: Date.now(),
     };
   }
@@ -269,6 +278,8 @@ export class PlayerState {
     for (const [id, list] of Object.entries(s.deepProbes)) p.deepProbes[id] = list.map((x) => ({ ...x }));
     p.atmoProbes.push(...s.atmoProbes);
     p.character = s.character ? migrateCharacter(s.character) : null;
+    p.playtime = s.playtime;
+    p.tutorial = { ...s.tutorial };
     p.counter = s.modules.length;
     return p;
   }
@@ -307,5 +318,8 @@ export function migratePlayerState(s: PlayerStateSnapshot): PlayerStateSnapshot 
   out.atmoProbes ??= [];
   if (out.version < 4) out.version = 4;
   out.character ??= null;
+  if (out.version < 5) out.version = 5;
+  out.playtime = typeof out.playtime === 'number' && Number.isFinite(out.playtime) && out.playtime >= 0 ? out.playtime : 0;
+  out.tutorial = out.tutorial && typeof out.tutorial === 'object' ? { step: Math.max(0, Math.floor(out.tutorial.step ?? 0)), done: !!out.tutorial.done } : { step: 0, done: false };
   return out;
 }

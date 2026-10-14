@@ -52,6 +52,16 @@ body {
   pointer-events: auto;
 }
 
+/* Vollflächige Overlays ohne eigene Klickfläche dürfen Klicks auf das Canvas (Pointer Lock) nicht abfangen;
+   die ID-Regel oben hat sonst Vorrang vor den Klassenregeln. */
+#ui-root > .editor-ui,
+#ui-root > .hud,
+#ui-root > .main-menu,
+#ui-root > .photo-ui,
+#ui-root > .system-ui {
+  pointer-events: none;
+}
+
 /* ---------- Debug-Overlay ---------- */
 .debug-overlay {
   position: absolute;
@@ -1715,4 +1725,209 @@ input[type='range'] {
   align-items: center;
   pointer-events: auto;
   bottom: 70px;
+}
+
+/* ---------- Phase 10: Kompass, Tutorial, Speichern, Credits ---------- */
+.hud-compass {
+  position: absolute;
+  top: 40px;
+  left: 50%;
+  width: 300px;
+  height: 26px;
+  margin-left: -150px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 6px;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent);
+}
+
+.hud-compass .tape {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 2160px;
+  height: 100%;
+  will-change: transform;
+}
+
+.hud-compass .tape span {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  transform: translateX(-50%);
+  font-size: 12px;
+  line-height: 26px;
+  color: var(--text);
+}
+
+.hud-compass .tape span.minor {
+  width: 1px;
+  height: 6px;
+  top: 10px;
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.hud-compass .needle {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 2px;
+  height: 100%;
+  margin-left: -1px;
+  background: var(--accent-2);
+}
+
+.hud-compass .marker {
+  position: absolute;
+  top: 1px;
+  transform: translateX(-50%);
+  font-size: 11px;
+  line-height: 12px;
+  color: var(--accent);
+  text-shadow: 0 0 3px #000;
+}
+
+.hud-compass .marker.ship {
+  color: var(--accent-2);
+}
+
+.hud-compass .marker.shelter {
+  color: var(--ok);
+}
+
+.hud-compass .marker.rover {
+  color: #c9b7ff;
+}
+
+.hud-compass .marker.edge {
+  opacity: 0.55;
+}
+
+.hud.photo .hud-compass,
+.hud.photo .hud-tutorial {
+  display: none !important;
+}
+
+.hud-tutorial {
+  position: absolute;
+  top: 80px;
+  left: 10px;
+  width: 300px;
+  padding: 10px 12px;
+  background: rgba(8, 14, 28, 0.78);
+  border: 1px solid rgba(65, 184, 255, 0.4);
+  border-left: 3px solid var(--accent);
+  border-radius: 8px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  transition: border-color 0.3s;
+}
+
+.hud-tutorial.done {
+  border-left-color: var(--ok);
+}
+
+.hud-tutorial .tut-head {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.hud-tutorial .tut-title {
+  margin: 2px 0 4px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.hud-tutorial .tut-text {
+  margin-bottom: 6px;
+}
+
+.hud-saved {
+  position: absolute;
+  bottom: 44px;
+  right: 12px;
+  padding: 4px 10px;
+  background: rgba(0, 0, 0, 0.45);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--ok);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.hud-saved.show {
+  opacity: 1;
+}
+
+.save-panel {
+  max-width: 720px;
+}
+
+.save-slots {
+  display: grid;
+  gap: 8px;
+}
+
+.save-slot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.save-slot.empty {
+  opacity: 0.75;
+}
+
+.save-slot .save-title {
+  font-weight: 600;
+}
+
+.save-actions {
+  flex-shrink: 0;
+  gap: 6px;
+}
+
+button.danger {
+  border-color: rgba(255, 107, 107, 0.5);
+  color: var(--danger);
+}
+
+.key-grid {
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 4px 12px;
+}
+
+.key-grid .key-cell {
+  gap: 4px;
+}
+
+.key-grid .key-btn {
+  min-width: 120px;
+  font-family: var(--mono);
+}
+
+.key-grid .key-btn.fixed {
+  opacity: 0.5;
+}
+
+.key-grid .key-reset {
+  padding: 2px 6px;
+}
+
+.credits-ui .panel {
+  width: min(560px, 92vw);
+}
+
+.credits-ui p {
+  margin: 6px 0;
+  line-height: 1.5;
 }

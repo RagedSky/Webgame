@@ -100,6 +100,8 @@ export class SpaceScene implements GameScene {
     this.placeShipAt(this.current);
     this.focus(this.current);
     this.ready = true;
+    audio.clearAmbient();
+    audio.setMusic('space');
     showToast(`${STR.space.orbiting} ${this.current.name}`);
   }
 
@@ -411,6 +413,7 @@ export class SpaceScene implements GameScene {
   update(dt: number): void {
     if (!this.ready) return;
     this.time += dt;
+    this.state.playtime += dt;
     if (this.ctx.input.wasPressed('pause') && !this.transfer) this.toMenu();
     if (this.transfer) {
       const tr = this.transfer;

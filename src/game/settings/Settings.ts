@@ -4,7 +4,7 @@
  */
 import { clamp } from '@/math/utils';
 
-export const SETTINGS_VERSION = 1;
+export const SETTINGS_VERSION = 2;
 export const QUALITY_PRESETS = ['low', 'medium', 'high', 'ultra'] as const;
 export type QualityPreset = (typeof QUALITY_PRESETS)[number] | 'custom';
 export const RESOLUTIONS = ['auto', '720p', '1080p', '1440p', '2160p'] as const;
@@ -35,6 +35,13 @@ export interface GraphicsSettings {
   fpsLimit: FpsLimit;
   adaptiveQuality: boolean;
   showDebug: boolean;
+  /** Lautstärken 0..1. */
+  volumeMaster: number;
+  volumeSfx: number;
+  volumeAmbient: number;
+  volumeMusic: number;
+  /** Tutorial auf neuen Spielständen anzeigen. */
+  tutorial: boolean;
 }
 
 export type PresetValues = Pick<GraphicsSettings, 'renderScale' | 'maxPixelRatio' | 'shadows' | 'vegetationDensity' | 'viewDistance' | 'postprocessing' | 'antialiasing'>;
@@ -52,7 +59,7 @@ export const SHADOW_MAP_SIZES: Record<ShadowQuality, number> = { off: 0, low: 10
 export const MSAA_SAMPLES: Record<AntiAliasing, number> = { off: 0, msaa2: 2, msaa4: 4, msaa8: 8 };
 
 export function defaultSettings(): GraphicsSettings {
-  return { version: SETTINGS_VERSION, preset: 'high', ...PRESET_VALUES.high, fpsLimit: 0, adaptiveQuality: true, showDebug: false, resolution: 'auto' };
+  return { version: SETTINGS_VERSION, preset: 'high', ...PRESET_VALUES.high, fpsLimit: 0, adaptiveQuality: true, showDebug: false, resolution: 'auto', volumeMaster: 0.8, volumeSfx: 1, volumeAmbient: 0.8, volumeMusic: 0.5, tutorial: true };
 }
 
 function pick<T extends string | number>(v: unknown, allowed: readonly T[], fallback: T): T {
@@ -77,6 +84,11 @@ export function sanitizeSettings(input: unknown): GraphicsSettings {
     fpsLimit: pick(s.fpsLimit, FPS_LIMITS, d.fpsLimit),
     adaptiveQuality: typeof s.adaptiveQuality === 'boolean' ? s.adaptiveQuality : d.adaptiveQuality,
     showDebug: typeof s.showDebug === 'boolean' ? s.showDebug : d.showDebug,
+    volumeMaster: num(s.volumeMaster, 0, 1, d.volumeMaster),
+    volumeSfx: num(s.volumeSfx, 0, 1, d.volumeSfx),
+    volumeAmbient: num(s.volumeAmbient, 0, 1, d.volumeAmbient),
+    volumeMusic: num(s.volumeMusic, 0, 1, d.volumeMusic),
+    tutorial: typeof s.tutorial === 'boolean' ? s.tutorial : d.tutorial,
   };
   out.preset = detectPreset(out);
   return out;

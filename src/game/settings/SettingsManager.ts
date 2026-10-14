@@ -1,44 +1,62 @@
 /**
- * Laufzeit-Verwaltung der Grafik-Einstellungen: hält den aktuellen Stand, wendet ihn auf Renderer, Loop und
- * Debug-Overlay an, meldet Änderungen an Szenen und speichert in IndexedDB (global, nicht je Seed).
+ * Laufzeit-Verwaltung der Einstellungen: hält den aktuellen Stand, wendet ihn auf Renderer, Loop, Audio,
+ * Debug-Overlay und Tastenbelegung an, meldet Änderungen an Szenen und speichert in IndexedDB (global, nicht je Seed).
  */
 import type { Renderer } from '@/render/Renderer';
 import type { GameLoop } from '@/core/GameLoop';
+import type { Input } from '@/core/Input';
 import type { DebugOverlay } from '@/ui/DebugOverlay';
+import type { GameAction } from '@/config/keybindings';
 import { getDb } from '@/save/Db';
+import { audio } from '@/audio/AudioManager';
 import { AdaptiveMonitor, applyPreset, detectPreset, lowerPreset, MSAA_SAMPLES, RESOLUTION_HEIGHTS, sanitizeSettings, type GraphicsSettings, type QualityPreset } from './Settings';
+import { defaultBindings, sanitizeBindings, withBinding, withDefaultBinding, type Bindings } from './Keybindings';
 
 const KEY = 'settings';
+const KEY_BINDINGS = 'keybindings';
 
 export class SettingsManager {
   current: GraphicsSettings;
+  bindings: Bindings = defaultBindings();
   readonly adaptive = new AdaptiveMonitor(60);
   private readonly listeners = new Set<(s: GraphicsSettings) => void>();
+  private readonly bindingListeners = new Set<(b: Bindings) => void>();
   private saveTimer = 0;
 
   constructor(
     private readonly renderer: Renderer,
     private readonly loop: GameLoop,
     private readonly debug: DebugOverlay,
+    private readonly input: Input,
   ) {
     this.current = sanitizeSettings(undefined);
     this.apply();
   }
 
-  /** Gespeicherte Einstellungen laden (asynchron; Standardwerte gelten bis dahin). */
+  /** Gespeicherte Einstellungen und Tastenbelegung laden (asynchron; Standardwerte gelten bis dahin). */
   async load(): Promise<void> {
     const db = await getDb();
-    const saved = await db.getValue<GraphicsSettings>(KEY);
+    const [saved, bindings] = await Promise.all([db.getValue<GraphicsSettings>(KEY), db.getValue<Bindings>(KEY_BINDINGS)]);
     if (saved) {
       this.current = sanitizeSettings(saved);
       this.apply();
       this.emit();
+    }
+    if (bindings) {
+      this.bindings = sanitizeBindings(bindings);
+      this.input.setBindings(this.bindings);
+      for (const l of this.bindingListeners) l(this.bindings);
     }
   }
 
   onChange(fn: (s: GraphicsSettings) => void): () => void {
     this.listeners.add(fn);
     return () => this.listeners.delete(fn);
+  }
+
+  onBindingsChange(fn: (b: Bindings) => void): () => void {
+    this.bindingListeners.add(fn);
+    return () => this.bindingListeners.delete(fn);
   }
 
   private emit(): void {
@@ -74,6 +92,30 @@ export class SettingsManager {
     this.loop.fpsLimit = s.fpsLimit;
     this.adaptive.targetFps = s.fpsLimit || 60;
     this.debug.setVisible(s.showDebug);
+    audio.setVolumes({ master: s.volumeMaster, sfx: s.volumeSfx, ambient: s.volumeAmbient, music: s.volumeMusic });
+  }
+
+  // --- Tastenbelegung -------------------------------------------------------
+  /** Taste als Primärbelegung einer Aktion setzen (Code aus KeyboardEvent.code). */
+  setBinding(action: GameAction, code: string): void {
+    this.bindings = withBinding(this.bindings, action, code);
+    this.applyBindings();
+  }
+
+  resetBinding(action: GameAction): void {
+    this.bindings = withDefaultBinding(this.bindings, action);
+    this.applyBindings();
+  }
+
+  resetAllBindings(): void {
+    this.bindings = defaultBindings();
+    this.applyBindings();
+  }
+
+  private applyBindings(): void {
+    this.input.setBindings(this.bindings);
+    for (const l of this.bindingListeners) l(this.bindings);
+    void getDb().then((db) => db.setValue(KEY_BINDINGS, this.bindings));
   }
 
   private scheduleSave(): void {
