@@ -487,10 +487,119 @@ Stufenobergrenze liegt jetzt bei **100** (Gegenstandsstufe bis 120).
 - **Nebel und Kameraabstand:** Auch im Hochformat, ganz herausgezoomt und bei Nebelwetter verschwindet die Umgebung der
   Figur nie ganz im Nebel.
 
+## Mehrspieler (Koop für 2–4 Spieler)
+
+Im Hauptmenü öffnet **Mehrspieler** den Koop-Modus. Er braucht ein Konto (Clerk) und die Supabase-Verbindung; der Einzelspieler
+bleibt vollständig offline und ohne Anmeldung spielbar. Die Mehrspieler-Module werden erst beim ersten Öffnen des Menüs eingehängt –
+vorher läuft der Einzelspieler exakt wie bisher (kein zusätzlicher Netzverkehr, keine zusätzlichen Hüllen im Spieltakt).
+
+### Einrichtung in Supabase
+
+1. Voraussetzung: [`supabase/schema.sql`](supabase/schema.sql) ist eingespielt, Clerk ist unter *Authentication › Third-Party Auth*
+   als Anbieter eingetragen (wie bei den Cloud-Spielständen).
+2. [`supabase/multiplayer.sql`](supabase/multiplayer.sql) im SQL-Editor ausführen (idempotent, ändert keine Spielstände; steht auch als
+   nicht ausgeführter Codeblock am Ende von `index.html`). Es legt an: `lobbies`, `lobby_members`, `friends`, `player_blocks`,
+   `lobby_invites`, `player_reports`, die Spalten `profiles.mp_name/mp_tag/last_seen`, alle Datenbankfunktionen `mp_*`
+   (SECURITY DEFINER, prüfen `auth.jwt()->>'sub'`), Row-Level-Security-Policies und die **Realtime-Authorization**-Policies auf
+   `realtime.messages` (nur Mitglieder einer Lobby dürfen auf dem privaten Kanal `lobby:<uuid>` senden und empfangen – Broadcast und Presence).
+3. **Realtime** muss für das Projekt aktiv sein (Standard). Unter *Realtime › Settings* die Option **„Allow public access“ ausschalten**,
+   damit nur private Kanäle mit Autorisierung möglich sind (das Spiel nutzt ausschließlich private Kanäle).
+4. Optional **pg_cron** aktivieren (*Database › Extensions*) und das Skript erneut ausführen: dann räumt `mp_cleanup()` alle 15 Minuten
+   abgelaufene Lobbys auf. Ohne pg_cron räumt jedes Erstellen einer Lobby auf.
+5. Meldungen (`player_reports`) lesen nur Konten mit `profiles.is_admin = true` (Tabelleneditor oder SQL); Spieler können sie nur anlegen.
+
+Im Frontend stehen weiterhin nur der Clerk Publishable Key und Supabase-URL + Publishable/Anon Key (`CONFIG`). Kontingent: Supabase
+Realtime begrenzt Nachrichten pro Sekunde (Free-Plan ca. 100). Jeder Teilnehmer sendet gebündelt 5–12 Nachrichten pro Sekunde
+(bei 4 Spielern automatisch höchstens 7); bei Ablehnungen drosselt das Spiel selbst. Für viele gleichzeitige Gruppen „Niedrig“ wählen
+oder einen größeren Plan nutzen.
+
+### Lobby, Freunde, Einladungen
+
+- **Lobby erstellen:** Sichtbarkeit (privat/öffentlich), 2–4 Spieler, Schwierigkeit (Story/Normal/Schwer), optionales Passwort
+  (bcrypt in der Datenbank), Beute (eigene Beute / Reihum / Bedarf & Gier), Friendly Fire, Wiederbeleben, Stufenband (Sidekick oder
+  nur Warnung) und – nur privat – „Cheats erlauben“. Beitrittscode mit 8 gut lesbaren Zeichen (`ABCD-EFGH`, ohne 0/O/1/I) und
+  **Einladungslink** (`…?lobby=CODE`); Codes laufen ab und verlängern sich nur, solange die Lobby aktiv ist (höchstens 24 h).
+- **Beitreten** per Code, per Link, per **Schnellbeitritt** (öffentliche Lobbys mit gleicher Spielversion: Host, Region, Story-Fortschritt,
+  Spielerzahl, Sprache, Passwort-Symbol) oder über eine **Einladung** eines Freundes.
+- **Lobby-Raum:** Vorschau aller Charaktere (Porträt, Klasse, Stufe, Stufenwarnung), Bereit-Status, Lobby-Chat, Host kann entfernen
+  (Kick, dauerhaft für diese Lobby) und die Lobby sperren. Start, sobald alle bereit sind. Spieler können während der Sitzung dazukommen.
+- **Freunde:** per `Name#Kennung` hinzufügen, Anfragen annehmen/ablehnen, Online-Status, Einladen, Entfernen, Sperrliste mit „Freigeben“.
+  Blockierte können nicht einladen, nicht flüstern und nicht handeln. Mitspieler sehen nur Anzeigename#Kennung, Klasse, Stufe und
+  Aussehen – nie E-Mail-Adressen oder Konto-IDs (im Netz trägt jeder eine zufällige Sitzungs-ID). Der Mehrspieler-Name ist ein eigener
+  Wert (Standard: Name des Charakters), nicht der Kontoname.
+
+### Spielstände
+
+Die **Welt gehört dem Host** (Story, Quests, Rätsel, Bossstatus, Weltstufe – aus seinem Slot). Jeder bringt seinen **eigenen Charakter**
+aus einem seiner Slots mit und behält Stufe, Erfahrung, Ausrüstung, Beute und Bossbelohnungen im eigenen Slot. Entdecktes (Regionen,
+Dungeons) wird ergänzt, nie überschrieben; Regionen, die nur der Host freigeschaltet hat, sind in der Sitzung betretbar, nach der
+Sitzung kehrt man an den letzten eigenen Ort zurück. Gespeichert wird beim Verlassen, nach wichtigen Ereignissen (Bosse, Handel,
+Würfeln) und alle 45 s; schlägt das Speichern fehl, erscheint eine Warnung. **Spielstände aus Mehrspielersitzungen sind für künftige
+Ranglisten nicht verifiziert** (`flags.mp_unverified`, `mp.unverified`); genutzte Cheats setzen `cheats_used`.
+
+### Gemeinsam spielen
+
+- **Gegner und Bosse** simuliert der Host. Aggro aus Schaden, Nähe, Klasse (Krieger zieht mehr) und Spott (Krieger-Spezialangriff).
+  Skalierung nicht linear aus einer zentralen Tabelle (`BAL.mp` in `b_util_data.js`): Leben normaler Gegner ×1 / 1,55 / 2,0 / 2,4,
+  Bosse ×1 / 1,7 / 2,3 / 2,85, Bossschaden bis ×1,1, mehr Beschwörungen und dichtere Geschossringe; dazu der Schwierigkeitsfaktor der
+  Lobby. Ändert sich die Spielerzahl, passen sich lebende Gegner an.
+- **Telegrafen, Laser, Felder, Wellen und Sonderangriffe** sehen alle; Flächenangriffe (z. B. Trap Kick, Shattered Reality) treffen
+  jeden Spieler im Bereich. Ausweichen per Rolle/Sprung wird gegen die eigene Position zum Trefferzeitpunkt geprüft (Lag-Kompensation).
+- **Am Boden statt Game Over:** Mitspieler beleben durch Halten der Interagieren-Taste (3 s, Fortschrittsbalken bei beiden) wieder;
+  nach 30 s oder ohne Wiederbeleben erscheint man am Wegstein. **Fallen alle, wird der Kampf zurückgesetzt.**
+- **Beute:** eigene Beute (Standard, keine Duplikate – jeder würfelt für sich), Reihum oder Bedarf & Gier (Würfelfenster bei allen).
+  Bossbelohnungen erhält jeder.
+- **Koop-Rätsel** (je Zone eine Koop-Prüfung, nur zu zweit lösbar, jeder bekommt eine eigene Truhe): Zwillingshebel, Druckplatte & Tor,
+  Zahnradkette, Spiegelrelais, Staffellauf (Parkour), Waage. Alle bisherigen Rätsel bleiben allein lösbar; löst sie jemand, gilt das für die Gruppe.
+- **Gruppenbuffs** (Schild und Heilung wirken auf Mitspieler in der Nähe, Spott des Kriegers), **Element-Kombos über Spieler hinweg**
+  (Frost des einen + Blitz des anderen), **Friendly Fire** als Option, unterscheidbare Schadenszahlen (eigene / Mitspieler).
+- **Quests:** gemeinsamer Fortschritt (Sammeln, Eskorte, Abschluss beim Host zählt für alle). **Story:** der Host entscheidet, alle
+  sehen Szene und Wahl; Überspringen nur, wenn alle zustimmen.
+- **Reisen:** Clients folgen dem Host; eigene Reisewünsche gehen als Anfrage an ihn. **Gruppen-Schnellreise** zu einem Mitspieler
+  (Wegstein in seiner Nähe, Abklingzeit 60 s). Mitspieler auf Karte, Minimap und Kompass, Pings auch auf der Karte.
+- **Handel** mit beidseitiger Bestätigung (Prüfsumme über beide Angebote, erst erhalten, dann abgeben, sofort speichern).
+
+### Chat, Pings, Befehle
+
+Kanäle: Gruppe, Lobby, Flüstern (`/w Name text`), System. Kein globaler Chat. Texte anderer Spieler werden immer als Text angezeigt
+(nie als HTML), gekürzt (200 Zeichen), gedrosselt (5 je 5 s) und auf Wunsch gefiltert. `/party`, `/mute`, `/block`, `/report`
+(Grund + Notiz, speichert die letzten Chatzeilen in `player_reports`). **Pings** (Taste **5**, Gamepad **L3+D↑**) und
+**Schnellnachrichten** (Taste **6**, Gamepad **L3+D↓**): kurz tippen für „Hierhin“ bzw. halten und Richtung wählen; auf Touch eigene
+Knöpfe mit antippbarem Auswahlkreis. Beide Tasten sind unter Einstellungen › Steuerung frei belegbar (auch Kombinationen).
+
+Testwerkzeuge (nur Entwicklermodus/Admin, gelten nicht als Cheat): `/mp status`, `/mp simulate <0–3>` (Offline-Sitzung mit
+Bot-Mitspielern), `/mp lag <ms>`, `/mp loss <prozent>`, `/mp kick <name>`, `/mp host`, `/mp coop <variante>`. `/debug net` (für alle,
+auch in Sitzungen) blendet das Netzwerk-Overlay ein (Rolle, Pakete/s, KB/s, offene/wiederholte Nachrichten, Ping je Spieler).
+
+Einstellungen › **Mehrspieler**: Anzeigename, bevorzugte Sichtbarkeit, Ping-Anzeige, Namensschilder, Lebensbalken über Mitspielern
+(skaliert mit der HUD-Größe), Chat-Filter, Sprach-Hinweise (aus), Netzwerk-Qualität (5 / 8 / 12 Takte pro Sekunde), Debug-Overlay.
+Beim ersten Öffnen erklärt eine kurze Einführung Host-Welt, eigene Charaktere, Cheats und Verifizierung.
+
+### Technik und Sicherheit
+
+- **Transport:** Supabase Realtime, ein privater Kanal je Lobby (`lobby:<uuid>`), Broadcast für gebündelte Spielnachrichten,
+  Presence für Anwesenheit/Bereit-Status. Protokollversion `MP_PROTO` und Spielversion werden beim Beitritt geprüft (Datenbank und Kanal).
+- **Host-autoritativ** für Gegner, Bosse, Beute-Würfe, Rätsel und Begegnungen; Clients simulieren die eigene Figur (Client-Side
+  Prediction) und schicken Zustand (5–12 Hz) und Trefferansprüche. Snapshots als Deltas mit Schlüsselbildern alle 2 s und
+  Interessenbereich; Interpolation mit kurzer Extrapolation (max. 0,25 s).
+- **Zuverlässige Nachrichten** mit Sequenznummern, Bestätigungen, Wiederholung, Reihenfolge je Absender, Untergrenze je Empfänger
+  (keine Lücken für spät Beigetretene) und Verbindungskennung (Wiederverbinden setzt sauber neu auf, offene Nachrichten werden neu gesendet).
+  Token-Eimer gegen Ratenlimits.
+- **Ausfälle:** Wiederverbinden mit Spielstand (90 s Fenster), Host-Migration an den am längsten anwesenden Mitspieler (nach kurzer
+  Schonfrist), sauberes Ende ohne Kandidaten. Fehler werden abgefangen (Debug-Log), das Spiel stürzt nicht ab.
+- **Anti-Cheat:** Cheats und Admin-Befehle sind in Sitzungen gesperrt (Ausnahme: private Lobby, vom Host erlaubt – sichtbarer Hinweis,
+  Flag `cheats_used`). Der Host prüft Bewegung (Geschwindigkeit, gekennzeichnete Teleports höchstens 8/min auf begehbare Felder),
+  Reichweite, Schaden je Treffer und je Sekunde (abhängig von der Stufe), Trefferrate, Zustände und Kombos; Verstöße bauen sich ab,
+  nach 8 wird der Spieler entfernt. Clients prüfen Kill-Rate und Bossbelohnungen, Gegenstände aus Handel/Würfeln werden bereinigt
+  und auf eine plausible Stufe begrenzt.
+- **Grenzen:** Ohne eigenen Spieleserver ist das Modell nicht manipulationssicher – ein veränderter Client kann seinen eigenen
+  Spielstand fälschen, ein veränderter Host die Welt seiner Gruppe. Deshalb gelten Mehrspieler-Stände als nicht verifiziert. Die
+  Prüfungen (`MPSec`) sind so geschrieben, dass sie später eine Supabase Edge Function als Schiedsrichter übernehmen kann.
+
 ## Einstellungen
 
 Tabs **Allgemein** (Sprache, Weltstufe, Tipps & Tutorials) · **Steuerung** · **Grafik** · **Audio** · **Anzeige**
-(Navigationshilfen, Quest-Tracker, Minikarte) · **Konto** (Anmeldung, Slots, Chat & Entwickler, Konsole, Befehlsprotokoll). Alle Einstellungen werden lokal gespeichert und – wenn man
+(Navigationshilfen, Quest-Tracker, Minikarte) · **Konto** (Anmeldung, Slots, Chat & Entwickler, Konsole, Befehlsprotokoll) · **Mehrspieler**. Alle Einstellungen werden lokal gespeichert und – wenn man
 angemeldet ist – im Supabase-Profil (`profiles.settings`, `keybindings`, `language`) und beim Start geladen.
 
 ## Inhalt
