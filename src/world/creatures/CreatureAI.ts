@@ -5,7 +5,7 @@
 import { clamp01 } from '@/math/utils';
 import type { Activity, Diet, FaunaLocomotion, Temperament, TimeOfDay } from '@/gen/archive/types';
 
-export type CreatureState = 'idle' | 'wander' | 'feed' | 'sleep' | 'flee' | 'curious' | 'display';
+export type CreatureState = 'idle' | 'wander' | 'feed' | 'sleep' | 'flee' | 'curious' | 'display' | 'lured';
 
 export const STATE_LABELS: Record<CreatureState, string> = {
   idle: 'ruht',
@@ -15,6 +15,7 @@ export const STATE_LABELS: Record<CreatureState, string> = {
   flee: 'flüchtet',
   curious: 'neugierig',
   display: 'imponiert',
+  lured: 'angelockt',
 };
 
 export interface AIProfile {
@@ -39,6 +40,9 @@ export interface AIInput {
   /** Richtung zurück zum Ankerpunkt und Entfernung dazu (Leine). */
   angleToHome: number;
   distToHome: number;
+  /** Nächster Köder (optional). */
+  lureAngle?: number;
+  lureDist?: number;
 }
 
 const FEED_BEHAVIORS = new Set(['grazing', 'feeding', 'hunting', 'stalking', 'drinking', 'burrowing']);
@@ -130,6 +134,12 @@ export class CreatureAI {
         this.behavior = this.displayPool.length ? (this.displayPool[Math.floor(r() * this.displayPool.length)] as string) : 'display';
         if (input) this.heading = input.angleToPlayer;
         break;
+      case 'lured':
+        this.timer = 20 + r() * 20;
+        this.targetSpeed = 0.35;
+        this.behavior = this.feedPool.length ? (this.feedPool[0] as string) : 'feeding';
+        if (input?.lureAngle !== undefined) this.heading = input.lureAngle;
+        break;
     }
   }
 
@@ -157,7 +167,22 @@ export class CreatureAI {
       return;
     }
 
+    // Köder: ruhige Tiere laufen hin und fressen dort
+    if (input.lureDist !== undefined && input.lureAngle !== undefined && input.lureDist < 40 && this.state !== 'flee' && this.state !== 'lured' && this.state !== 'sleep') {
+      this.enter('lured', input);
+      return;
+    }
+
     switch (this.state) {
+      case 'lured':
+        if (input.lureDist === undefined || input.lureDist > 45) this.enter('idle');
+        else if (input.lureDist < 2.5) this.targetSpeed = 0;
+        else {
+          this.targetSpeed = 0.35;
+          if (input.lureAngle !== undefined) this.heading = input.lureAngle;
+        }
+        if (this.timer < 0) this.enter('idle');
+        break;
       case 'flee':
         if (input.distToPlayer > this.alertRadius * 1.6 && this.timer < 0) this.enter('idle');
         else if (this.timer < -6) this.enter('idle');
@@ -204,7 +229,8 @@ export class CreatureAI {
         return 'run';
       case 'wander':
       case 'curious':
-        return this.targetSpeed > 0 ? 'walk' : 'idle';
+      case 'lured':
+        return this.targetSpeed > 0 ? 'walk' : 'feed';
       case 'feed':
         return 'feed';
       case 'sleep':

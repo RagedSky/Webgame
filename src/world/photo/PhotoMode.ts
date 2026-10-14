@@ -78,7 +78,7 @@ export class PhotoMode {
   constructor(
     private readonly gl: WebGLRenderer,
     private readonly camera: PerspectiveCamera,
-    composer: EffectComposer,
+    private readonly composer: EffectComposer,
     private readonly sources: PhotoSubjectSource[],
   ) {
     this.baseFov = camera.fov;
@@ -88,20 +88,32 @@ export class PhotoMode {
     this.brightness = new BrightnessContrastEffect({ brightness: 0, contrast: 0 });
     this.sepia = new SepiaEffect({ intensity: 0 });
     this.pass = new EffectPass(camera, this.dof, this.hueSat, this.brightness, this.sepia, this.vignette);
-    this.pass.enabled = false;
     composer.addPass(this.pass);
+    this.setPassEnabled(false);
+  }
+
+  /**
+   * Der Composer gibt nur dem zuletzt hinzugefügten Pass `renderToScreen`. Ist der Foto-Pass aus, muss der
+   * vorhergehende Pass auf den Bildschirm rendern – sonst bleibt die Leinwand schwarz.
+   */
+  private setPassEnabled(on: boolean): void {
+    this.pass.enabled = on;
+    this.pass.renderToScreen = on;
+    const passes = this.composer.passes;
+    const prev = passes[passes.indexOf(this.pass) - 1];
+    if (prev) prev.renderToScreen = !on;
   }
 
   enter(): void {
     this.active = true;
     this.baseExposure = this.gl.toneMappingExposure;
-    this.pass.enabled = true;
+    this.setPassEnabled(true);
     this.apply();
   }
 
   exit(): void {
     this.active = false;
-    this.pass.enabled = false;
+    this.setPassEnabled(false);
     this.camera.fov = this.baseFov;
     this.camera.updateProjectionMatrix();
     this.gl.toneMappingExposure = this.baseExposure;

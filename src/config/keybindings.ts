@@ -28,7 +28,14 @@ export type GameAction =
   | 'photo_exposure_up'
   | 'photo_filter'
   | 'photo_grid'
-  | 'photo_selfie';
+  | 'photo_selfie'
+  | 'sample'
+  | 'remove'
+  | 'rotate'
+  | 'slot1'
+  | 'slot2'
+  | 'slot3'
+  | 'slot4';
 
 export const DEFAULT_BINDINGS: Record<GameAction, string[]> = {
   move_forward: ['KeyW', 'ArrowUp'],
@@ -60,6 +67,13 @@ export const DEFAULT_BINDINGS: Record<GameAction, string[]> = {
   photo_filter: ['KeyF'],
   photo_grid: ['KeyH'],
   photo_selfie: ['KeyC'],
+  sample: ['KeyF'],
+  remove: ['KeyX'],
+  rotate: ['KeyR'],
+  slot1: ['Digit1'],
+  slot2: ['Digit2'],
+  slot3: ['Digit3'],
+  slot4: ['Digit4'],
 };
 
 /** Lesbare Namen für die Tastenbelegungs-UI. */
@@ -93,4 +107,11 @@ export const ACTION_LABELS: Record<GameAction, string> = {
   photo_filter: 'Filter wechseln',
   photo_grid: 'Raster ein/aus',
   photo_selfie: 'Selfie-Modus',
+  sample: 'Probe / Scan',
+  remove: 'Modul entfernen (Bau-Modus)',
+  rotate: 'Drehen (Bau-Modus)',
+  slot1: 'Modul 1',
+  slot2: 'Modul 2',
+  slot3: 'Modul 3',
+  slot4: 'Modul 4',
 };

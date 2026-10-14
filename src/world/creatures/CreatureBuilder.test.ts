@@ -50,6 +50,7 @@ describe('CreatureBuilder', () => {
         playerNoise: 0.2,
         timeOfDay: 'day' as const,
         daylight: 1,
+        lures: [],
       };
       for (let i = 0; i < 600; i++) c.update(1 / 60, world);
       expect(Number.isFinite(c.position.x)).toBe(true);

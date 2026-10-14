@@ -24,8 +24,15 @@ Im Hauptmenü einen Seed eingeben oder „Zufälliges Universum“ wählen. „N
 Steuerung auf der Oberfläche: Klick übernimmt die Maus, WASD bewegen, Leertaste springen, Shift sprinten, Strg ducken,
 V Ego/Schulter, Esc Pause. **Q** öffnet den Foto-Modus (Mausrad Zoom, `,`/`.` Fokus, Rechtsklick Autofokus, R Blende,
 1/2 Belichtung, F Filter, H Raster, C Selfie, Leertaste/Klick auslösen). **Tab** öffnet das Archiv mit Logbuch, Proben und
-Mikroskop, **E** nimmt Proben (Wasser, Boden, Pflanzen, Gestein) oder scannt Fossilien. Fotos und Fortschritt liegen in
-IndexedDB des Browsers. Debug: F3 Overlay, T Zeitraffer, Y Wetter, G Flugmodus.
+Mikroskop, **F** nimmt Proben (Wasser, Boden, Pflanzen, Gestein) oder scannt Fossilien.
+
+Überleben und Basis: **E halten** baut Rohstoffknoten ab (Brocken, Kristalle, Quellen, Büschel), sammelt Wasser am Ufer und
+Fasern/Harz/Sporen an Pflanzen. **I** öffnet Inventar und Feldfertigung (Werkbank, Unterkunft), **B** den Bau-Modus
+(1–4 Modul, R drehen, Klick platzieren, X entfernen). **E** an der Werkbank fertigt Ladestation, Labor, Zellen, Köder und
+Labor-Upgrades; **E** am Labor öffnet die Treibstoff-Synthese (Mischung aus 2–3 Rohstoffen mit Treibstoff-Rolle analysieren und
+synthetisieren, Ziel 20 Treibstoff). Sauerstoff sinkt in nicht atembarer Luft und unter Wasser, Energie langsam immer; Unterkunft und
+Ladestation laden auf, bei 0 folgt ein Zusammenbruch mit Rückkehr zur Unterkunft (10 % Rohstoffverlust). Fotos, Fortschritt und
+Spielerzustand liegen in IndexedDB des Browsers. Debug: F3 Overlay, T Zeitraffer, Y Wetter, G Flugmodus.
 
 Architektur: `docs/ARCHITECTURE.md` · Entscheidungen: `docs/DECISIONS.md` · Arbeitskontext: `CLAUDE.md`.
 

@@ -18,6 +18,8 @@ export interface CreatureWorld {
   playerNoise: number;
   timeOfDay: Exclude<TimeOfDay, 'any'>;
   daylight: number;
+  /** Aktive Köder (Positionen). */
+  lures: Vector3[];
 }
 
 const tmp = new Vector3();
@@ -119,7 +121,19 @@ export class Creature {
     const fz = -Math.cos(world.playerYaw);
     const facing = dist > 0.01 && (-tmp.x * fx - tmp.z * fz) / dist > 0.85;
     tmp.subVectors(this.home, pos);
+    let lureAngle: number | undefined;
+    let lureDist: number | undefined;
+    if (this.genome.locomotion !== 'water') {
+      for (const l of world.lures) {
+        const d = Math.hypot(l.x - pos.x, l.z - pos.z);
+        if (d < 40 && (lureDist === undefined || d < lureDist)) {
+          lureDist = d;
+          lureAngle = Math.atan2(-(l.x - pos.x), -(l.z - pos.z));
+        }
+      }
+    }
     this.ai.update({
+      ...(lureAngle !== undefined ? { lureAngle, lureDist } : {}),
       dt,
       distToPlayer: dist,
       angleToPlayer,

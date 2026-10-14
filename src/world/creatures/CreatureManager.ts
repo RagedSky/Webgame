@@ -94,6 +94,7 @@ export class CreatureManager {
       playerNoise: 0,
       timeOfDay: 'day',
       daylight: 1,
+      lures: [],
     };
     scene.add(this.group);
   }
@@ -181,6 +182,11 @@ export class CreatureManager {
     for (let i = 0; i < count * 4 && this.creatures.length - before < count; i++) this.trySpawn(player, env);
     this.stats.count = this.creatures.length;
     return this.creatures.length - before;
+  }
+
+  /** Setzt die aktiven Köder (Positionen) für diesen Tick. */
+  setLures(lures: Vector3[]): void {
+    this.world.lures = lures;
   }
 
   update(dt: number, player: PlayerInfo, env: CreatureEnv): void {

@@ -1,12 +1,12 @@
-import { Color, FogExp2, PCFShadowMap, PerspectiveCamera, Scene, Vector3 } from 'three';
+import { Color, FogExp2, Mesh, MeshStandardMaterial, PCFShadowMap, PerspectiveCamera, Scene, SphereGeometry, Vector3 } from 'three';
 import { BloomEffect, EffectPass, type EffectComposer } from 'postprocessing';
 import type { GameContext } from '@/core/GameContext';
 import type { GameScene } from '@/core/Scene';
 import { Disposer } from '@/core/Disposer';
 import { gameState } from '@/game/GameState';
 import { TerrainModel } from '@/gen/terrain/TerrainModel';
-import type { Biome, Planet, StarSystem, WeatherType } from '@/gen/universe/types';
-import { WEATHER } from '@/gen/universe/catalog';
+import type { Biome, Planet, ResourceId, StarSystem, WeatherType } from '@/gen/universe/types';
+import { RESOURCES, WEATHER } from '@/gen/universe/catalog';
 import { RARITY_LABELS, TIME_LABELS, type ArchiveEntry } from '@/gen/archive/types';
 import { BEHAVIOR_LABELS } from '@/gen/archive/descriptions';
 import { matchesSpawn, pointTemperature, type SpawnContext } from '@/gen/archive/conditions';
@@ -29,6 +29,12 @@ import { PhotoMode, type PhotoEnv, type ScoredSubject, type SubjectCandidate } f
 import { ArchiveProgress, type Sample } from '@/game/progress/ArchiveProgress';
 import { analyzeMineralSample, createSample, microCellsForSample } from '@/game/samples';
 import { getDb, type GameDb } from '@/save/Db';
+import { PlayerState, type BaseModule, type PlayerStateSnapshot } from '@/game/PlayerState';
+import { LAUNCH_FUEL_TARGET, MODULE_LABELS, RECIPE_BY_ID, type ItemId, type ModuleType, type Recipe } from '@/game/crafting/recipes';
+import { ResourceNodeManager, type LiveNode } from '@/world/resources/ResourceNodeManager';
+import { BaseManager, RECHARGE_RADIUS } from '@/world/base/BaseModules';
+import { InventoryUi } from '@/ui/InventoryUi';
+import { LabUi } from '@/ui/LabUi';
 import { audio } from '@/audio/AudioManager';
 import { Hud } from '@/ui/Hud';
 import { PauseMenu } from '@/ui/PauseMenu';
@@ -44,6 +50,12 @@ import { SystemViewScene } from './SystemViewScene';
 
 const VIEW_DISTANCE = 1700;
 const PHOTO_SLOWMO = 0.1;
+const HARVEST_SECONDS = 1.2;
+const HARVEST_RANGE = 4.5;
+const BUILD_RANGE = 12;
+const LURE_SECONDS = 60;
+const PLANT_REGROW_SECONDS = 300;
+const BUILD_TYPES: ModuleType[] = ['workbench', 'shelter', 'charger', 'lab'];
 
 interface Interaction {
   kind: 'none' | 'prop' | 'water' | 'plant' | 'soil';
@@ -51,6 +63,21 @@ interface Interaction {
   prop?: WorldProp;
   species?: SpeciesPlacement;
   biome?: Biome;
+}
+
+/** Ziel der E-Taste: Modul öffnen oder Rohstoff sammeln (halten). */
+interface Harvest {
+  kind: 'none' | 'module' | 'node' | 'water' | 'plant';
+  label: string;
+  module?: BaseModule;
+  node?: LiveNode;
+  resourceId?: ResourceId;
+  plantKey?: string;
+}
+
+interface Lure {
+  mesh: Mesh;
+  ttl: number;
 }
 
 /**
@@ -115,6 +142,30 @@ export class PlanetScene implements GameScene {
   private previewAccum = 0;
   private skyActive: ArchiveEntry[] = [];
 
+  // Phase 5: Überleben, Rohstoffe, Basis
+  private state!: PlayerState;
+  private nodes!: ResourceNodeManager;
+  private base!: BaseManager;
+  private inventoryUi!: InventoryUi;
+  private labUi!: LabUi;
+  private harvest: Harvest = { kind: 'none', label: '' };
+  private harvestTarget: Harvest | null = null;
+  private harvestProgress = 0;
+  private readonly harvestedPlants = new Map<string, number>();
+  private buildMode = false;
+  private buildIndex = 0;
+  private buildRot = 0;
+  private readonly buildPos = { x: 0, z: 0, valid: false, reason: '' };
+  private readonly lures: Lure[] = [];
+  private readonly lurePositions: Vector3[] = [];
+  private readonly lureGeometry = new SphereGeometry(0.22, 10, 7);
+  private readonly lureMaterial = new MeshStandardMaterial({ color: 0xd87a3a, emissive: 0x7a3a10, emissiveIntensity: 0.5, roughness: 0.7 });
+  private collapsing = false;
+  private collapseTimer = 0;
+  private respawned = false;
+  private playerDirty = false;
+  private playerSaveTimer = 0;
+
   constructor(private readonly planetId: string) {}
 
   async enter(ctx: GameContext): Promise<void> {
@@ -156,7 +207,21 @@ export class PlanetScene implements GameScene {
     this.scene.add(this.precipitation.points);
     this.player = new Player(this.model, planet, ctx.input, this.camera);
     this.scene.add(this.player.body);
+
+    // Spielerzustand (Inventar, Überleben, Basis) laden – vor dem Spawn, damit der Respawn-Punkt zählt
+    this.db = await dbPromise;
+    const playerSnapshot = await this.db.getValue<PlayerStateSnapshot>(`player:${this.system.seed}`);
+    this.state = playerSnapshot ? PlayerState.fromJSON(playerSnapshot) : new PlayerState(this.system.seed);
+    this.state.onChange(() => {
+      this.playerDirty = true;
+      this.checkGoal();
+    });
+    this.nodes = new ResourceNodeManager(this.scene, this.model, planet);
+    this.base = new BaseManager(this.scene, this.model, planet, this.state);
+
+    const respawn = this.state.respawn[planet.id];
     if (saved) this.player.spawn(saved.x, saved.y, saved.z, saved.yaw);
+    else if (respawn) this.player.spawn(respawn.x + 3, this.model.heightAt(respawn.x + 3, respawn.z + 3), respawn.z + 3, 0);
     else {
       const s = this.model.findSpawn();
       this.player.spawn(s.x, s.y, s.z, 0);
@@ -186,9 +251,9 @@ export class PlanetScene implements GameScene {
     await loading.nextFrame();
     this.vegetation.buildAllNow(this.camera.position);
     this.props.update(this.camera.position, 2);
+    this.nodes.update(this.camera.position, 1);
 
     // Fortschritt laden
-    this.db = await dbPromise;
     const snapshot = await this.db.loadProgress(this.system.seed);
     this.progress = snapshot ? ArchiveProgress.fromJSON(snapshot, this.system.entries) : new ArchiveProgress(this.system.seed, this.system.entries);
     this.progress.onChange(() => (this.dirty = true));
@@ -212,30 +277,36 @@ export class PlanetScene implements GameScene {
       },
       planet.id,
     );
+    this.inventoryUi = new InventoryUi(ctx.uiRoot, this.state, { onCraft: (r) => this.craft(r), onUseItem: (id) => this.useItem(id), onClose: () => this.closeInventory() }, () => this.goalText());
+    this.inventoryUi.planetIdForLab = planet.id;
+    this.labUi = new LabUi(ctx.uiRoot, this.state, this.system.fuelFormula, { onClose: () => this.closeLab(), onFuelProduced: (n) => this.onFuelProduced(n) });
     this.pauseMenu = new PauseMenu(ctx.uiRoot, {
       onResume: () => this.resume(),
       onSystemView: () => this.leave(new SystemViewScene()),
       onMainMenu: () => this.leave(new MainMenuScene()),
-    }, [STR.pause.phase4]);
+    }, [STR.pause.phase4, STR.pause.phase5]);
     const canvas = ctx.renderer.canvas;
     this.disposer.listen(canvas, 'click', () => {
       audio.unlock();
-      if (!this.paused && !this.archiveUi.isOpen && !ctx.input.pointerLocked) ctx.input.requestPointerLock();
+      if (!this.paused && !this.uiOpen && !ctx.input.pointerLocked) ctx.input.requestPointerLock();
     });
     this.disposer.listen(document, 'pointerlockchange', () => {
       const locked = ctx.input.pointerLocked;
       this.lockChangedAt = performance.now();
-      this.hud.setHint(locked ? '' : this.archiveUi.isOpen ? '' : STR.planet.clickToStart);
+      this.hud.setHint(locked ? '' : this.uiOpen ? '' : STR.planet.clickToStart);
       this.hud.setCrosshair(locked && !this.photo.active);
-      if (!locked && !this.switching && !this.paused && !this.archiveUi.isOpen) this.pause();
+      if (!locked && !this.switching && !this.paused && !this.uiOpen) this.pause();
     });
     this.disposer.addFn(() => {
       this.hud.dispose();
       this.pauseMenu.dispose();
       this.photoUi.dispose();
       this.archiveUi.dispose();
+      this.inventoryUi.dispose();
+      this.labUi.dispose();
       this.closeMicroscope();
     });
+    this.checkGoal();
     this.ready = true;
     const c = this.progress.completion(planet.id);
     showToast(`${planet.name} · ${planet.typeLabel} · Archiv ${c.discovered}/${c.total}`);
@@ -266,6 +337,39 @@ export class PlanetScene implements GameScene {
 
   get archive(): ArchiveProgress {
     return this.progress;
+  }
+
+  get playerState(): PlayerState {
+    return this.state;
+  }
+
+  get baseManager(): BaseManager {
+    return this.base;
+  }
+
+  get nodeManager(): ResourceNodeManager {
+    return this.nodes;
+  }
+
+  /** Debug/Test: aktuelles E-Ziel sofort sammeln (ohne Halten). */
+  harvestNow(): string {
+    this.harvest = this.computeHarvest();
+    if (this.harvest.kind === 'none' || this.harvest.kind === 'module') return this.harvest.kind;
+    this.performHarvest(this.harvest);
+    return this.harvest.kind;
+  }
+
+  /** Debug/Test: Modul direkt platzieren (ohne Bau-Modus). */
+  placeModule(type: ModuleType, x: number, z: number): boolean {
+    const p = this.base.snap(x, z);
+    const check = this.base.validate(type, p.x, p.z);
+    if (!check.ok) return false;
+    this.base.place(type, p.x, p.z, 0);
+    return true;
+  }
+
+  private get uiOpen(): boolean {
+    return this.archiveUi.isOpen || this.inventoryUi.isOpen || this.labUi.isOpen;
   }
 
   // ---------------------------------------------------------------------------
@@ -547,16 +651,16 @@ export class PlanetScene implements GameScene {
   }
 
   // ---------------------------------------------------------------------------
-  // Interaktion (E)
+  // Proben/Scan (F)
   private computeInteraction(): Interaction {
     this.camera.getWorldDirection(this.camDir);
     const hit = this.props.pick(this.camera.position, this.camDir, 4.5);
     if (hit) {
       const e = hit.prop.entry;
       const name = this.progress.isDiscovered(e.id) ? this.progress.displayName(e) : `${STR.archive.unknown} (${e.category === 'fossil' ? (e.subcategory === 'ruin' ? 'Ruine' : 'Fossil') : e.category === 'ore' ? 'Erz' : 'Gestein'})`;
-      if (e.category === 'fossil') return { kind: 'prop', label: `E: ${STR.interact.scan} – ${name}`, prop: hit.prop };
+      if (e.category === 'fossil') return { kind: 'prop', label: `F: ${STR.interact.scan} – ${name}`, prop: hit.prop };
       const done = this.sampledProps.has(hit.prop.id);
-      return { kind: 'prop', label: `E: ${STR.interact.sample} – ${name}${done ? ` (${STR.interact.sampled})` : ''}`, prop: hit.prop };
+      return { kind: 'prop', label: `F: ${STR.interact.sample} – ${name}${done ? ` (${STR.interact.sampled})` : ''}`, prop: hit.prop };
     }
     const sea = this.model.seaLevel;
     if (this.model.hasWater && this.camera.position.y > sea && this.camDir.y < -0.05) {
@@ -564,9 +668,23 @@ export class PlanetScene implements GameScene {
       if (dist > 0 && dist < 5) {
         const x = this.camera.position.x + this.camDir.x * dist;
         const z = this.camera.position.z + this.camDir.z * dist;
-        if (this.model.heightAt(x, z) < sea) return { kind: 'water', label: `E: ${STR.interact.water}`, biome: this.model.biomeAt(x, z) };
+        if (this.model.heightAt(x, z) < sea) return { kind: 'water', label: `F: ${STR.interact.water}`, biome: this.model.biomeAt(x, z) };
       }
     }
+    const best = this.plantInView();
+    if (best) {
+      const name = this.progress.isDiscovered(best.entry.id) ? this.progress.displayName(best.entry) : STR.archive.unknown;
+      return { kind: 'plant', label: `F: ${STR.interact.plant} – ${name}`, species: best, biome: this.model.biomeAt(best.x, best.z) };
+    }
+    if (this.player.grounded && !this.player.swimming) {
+      const biome = this.model.biomeAt(this.player.position.x, this.player.position.z);
+      return { kind: 'soil', label: `F: ${STR.interact.soil} (${biome.name})`, biome };
+    }
+    return { kind: 'none', label: '' };
+  }
+
+  /** Nächste Pflanze im Blickkegel (erwartet `camDir` aktuell). */
+  private plantInView(): SpeciesPlacement | null {
     this.vegetation.querySpecies(this.player.position.x, this.player.position.z, 3.2, this.speciesBuf);
     let best: SpeciesPlacement | null = null;
     let bestCos = 0.8;
@@ -580,15 +698,464 @@ export class PlanetScene implements GameScene {
         best = sp;
       }
     }
-    if (best) {
-      const name = this.progress.isDiscovered(best.entry.id) ? this.progress.displayName(best.entry) : STR.archive.unknown;
-      return { kind: 'plant', label: `E: ${STR.interact.plant} – ${name}`, species: best, biome: this.model.biomeAt(best.x, best.z) };
+    return best;
+  }
+
+  /** Blick auf eine Wasseroberfläche in Reichweite? Liefert die Distanz oder -1. */
+  private waterInView(maxDist: number): number {
+    const sea = this.model.seaLevel;
+    if (!this.model.hasWater || this.camera.position.y <= sea || this.camDir.y >= -0.05) return -1;
+    const dist = (sea - this.camera.position.y) / this.camDir.y;
+    if (dist <= 0 || dist >= maxDist) return -1;
+    const x = this.camera.position.x + this.camDir.x * dist;
+    const z = this.camera.position.z + this.camDir.z * dist;
+    return this.model.heightAt(x, z) < sea ? dist : -1;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Sammeln und Module (E)
+  private hasDeposit(id: ResourceId): boolean {
+    return this.planet.resources.some((d) => d.resourceId === id);
+  }
+
+  private computeHarvest(): Harvest {
+    this.camera.getWorldDirection(this.camDir);
+    const mod = this.base.pick(this.camera.position, this.camDir, HARVEST_RANGE);
+    if (mod) return { kind: 'module', label: `E: ${STR.interact.open} – ${MODULE_LABELS[mod.type]}`, module: mod };
+    const hit = this.nodes.pick(this.camera.position, this.camDir, HARVEST_RANGE);
+    if (hit) {
+      const id = hit.node.node.resourceId;
+      return { kind: 'node', label: `E halten: ${STR.interact.harvest} – ${RESOURCES[id].name} (${hit.node.remaining})`, node: hit.node, resourceId: id };
     }
-    if (this.player.grounded && !this.player.swimming) {
-      const biome = this.model.biomeAt(this.player.position.x, this.player.position.z);
-      return { kind: 'soil', label: `E: ${STR.interact.soil} (${biome.name})`, biome };
+    if (this.waterInView(5) > 0) {
+      const id: ResourceId | null = this.hasDeposit('water') ? 'water' : this.hasDeposit('brine') ? 'brine' : null;
+      if (id) return { kind: 'water', label: `E halten: ${STR.interact.collectWater} (${RESOURCES[id].name})`, resourceId: id };
+    }
+    const plant = this.plantInView();
+    if (plant) {
+      const form = plant.entry.genome.kind === 'flora' ? plant.entry.genome.form : 'shrub';
+      let id: ResourceId | null = null;
+      if (form === 'fungus' && this.hasDeposit('spores')) id = 'spores';
+      else if (form === 'tree' && this.hasDeposit('resin')) id = 'resin';
+      else if (this.hasDeposit('fiber')) id = 'fiber';
+      else if (this.hasDeposit('resin')) id = 'resin';
+      else if (this.hasDeposit('spores')) id = 'spores';
+      if (id) {
+        const key = `${plant.x.toFixed(1)}:${plant.z.toFixed(1)}`;
+        const regrow = this.harvestedPlants.get(key);
+        if (regrow !== undefined && regrow > this.elapsed) return { kind: 'none', label: '' };
+        const label = id === 'spores' ? STR.interact.collectSpores : id === 'resin' ? STR.interact.collectResin : STR.interact.collectFiber;
+        return { kind: 'plant', label: `E halten: ${label}`, resourceId: id, plantKey: key };
+      }
     }
     return { kind: 'none', label: '' };
+  }
+
+  private updateHarvest(dt: number): void {
+    const input = this.ctx.input;
+    if (input.wasPressed('interact')) {
+      audio.unlock();
+      this.harvest = this.computeHarvest();
+      if (this.harvest.kind === 'module') {
+        this.openModule(this.harvest.module as BaseModule);
+        return;
+      }
+      if (this.harvest.kind !== 'none') {
+        this.harvestTarget = this.harvest;
+        this.harvestProgress = 0;
+      }
+    }
+    if (!this.harvestTarget) return;
+    if (!input.isDown('interact') || this.player.speed > 2) {
+      this.harvestTarget = null;
+      this.hud.setHarvest(null);
+      return;
+    }
+    this.harvestProgress += dt / HARVEST_SECONDS;
+    this.hud.setHarvest(Math.min(1, this.harvestProgress));
+    if (this.harvestProgress >= 1) {
+      this.performHarvest(this.harvestTarget);
+      this.harvestTarget = null;
+      this.hud.setHarvest(null);
+      this.harvest = this.computeHarvest();
+      this.hud.setPrompt(this.promptText());
+    }
+  }
+
+  private performHarvest(h: Harvest): void {
+    const inv = this.state.inventory;
+    const id = h.resourceId as ResourceId;
+    let got = 0;
+    if (h.kind === 'node' && h.node) {
+      got = inv.add(id, this.nodes.harvest(h.node, 2));
+      if (h.node.remaining <= 0) showToast(STR.interact.depleted, 2500);
+    } else if (h.kind === 'water') got = inv.add(id, 2);
+    else if (h.kind === 'plant') {
+      got = inv.add(id, 1);
+      if (h.plantKey) this.harvestedPlants.set(h.plantKey, this.elapsed + PLANT_REGROW_SECONDS);
+    }
+    if (got > 0) {
+      showToast(`+${got} ${RESOURCES[id].name} ${STR.interact.gained} (${inv.get(id)})`, 1800);
+      audio.blip();
+    }
+  }
+
+  private openModule(m: BaseModule): void {
+    if (m.type === 'workbench') this.openInventory('workbench');
+    else if (m.type === 'lab') this.openLab();
+    else if (m.type === 'shelter') {
+      this.state.respawn[this.planet.id] = { x: m.x, z: m.z };
+      this.state.touch();
+      showToast(`${STR.survival.respawnSet} · ${STR.survival.recharging}`);
+    } else showToast(`${MODULE_LABELS[m.type]}: ${STR.survival.recharging} (${RECHARGE_RADIUS} m)`);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Inventar, Fertigung, Labor
+  private openInventory(station: 'hand' | 'workbench'): void {
+    if (this.inventoryUi.isOpen) return;
+    this.exitPhoto();
+    this.exitBuild();
+    this.inventoryUi.show(station);
+    this.hud.setPrompt('');
+    this.ctx.input.exitPointerLock();
+    this.ctx.input.reset();
+  }
+
+  private closeInventory(): void {
+    if (!this.inventoryUi.isOpen) return;
+    this.inventoryUi.hide();
+    this.ctx.input.requestPointerLock();
+  }
+
+  private openLab(): void {
+    if (this.labUi.isOpen) return;
+    this.exitPhoto();
+    this.exitBuild();
+    this.labUi.show();
+    this.hud.setPrompt('');
+    this.ctx.input.exitPointerLock();
+    this.ctx.input.reset();
+    if (this.state.goalStep < 3) {
+      this.state.goalStep = 3;
+      this.state.touch();
+    }
+  }
+
+  private closeLab(): void {
+    if (!this.labUi.isOpen) return;
+    this.labUi.hide();
+    this.ctx.input.requestPointerLock();
+  }
+
+  private craft(r: Recipe): void {
+    const st = this.state;
+    if (r.requiresLab && !st.hasModule(this.planet.id, 'lab')) return;
+    if (r.max !== undefined && st.labLevel >= r.max) return;
+    if (!st.inventory.pay(r.cost)) {
+      const miss = Object.entries(st.inventory.missing(r.cost)).map(([id, n]) => `${n} ${RESOURCES[id as ResourceId].name}`);
+      showToast(`Fehlt: ${miss.join(', ')}`);
+      return;
+    }
+    if (r.id === 'lab_upgrade') {
+      st.labLevel++;
+      st.touch();
+      showToast(`${STR.lab.level} ${st.labLevel + 1}`);
+    } else {
+      st.inventory.addItem(r.id, 1);
+      showToast(`${r.name} gefertigt${r.module ? ` – ${STR.inventory.craftModule}` : ''}`);
+    }
+    audio.blip();
+  }
+
+  private useItem(id: ItemId): void {
+    const st = this.state;
+    if (id === 'oxygen_cell' || id === 'energy_cell') {
+      const full = id === 'oxygen_cell' ? st.survival.oxygen >= 99.5 : st.survival.energy >= 99.5;
+      if (full || !st.inventory.removeItem(id)) return;
+      if (id === 'oxygen_cell') st.survival.useOxygenCell();
+      else st.survival.useEnergyCell();
+      st.touch();
+      audio.blip();
+      return;
+    }
+    if (id === 'lure') {
+      if (!st.inventory.removeItem('lure')) return;
+      this.closeInventory();
+      this.placeLure();
+      return;
+    }
+    const module = RECIPE_BY_ID[id]?.module;
+    if (module) {
+      this.closeInventory();
+      this.buildIndex = Math.max(0, BUILD_TYPES.indexOf(module));
+      this.enterBuild();
+    }
+  }
+
+  private onFuelProduced(amount: number): void {
+    audio.success(amount >= 10 ? 3 : 2);
+    this.progress.addLog('info', `Treibstoff synthetisiert: +${amount} (${this.state.inventory.getItem('fuel')}/${LAUNCH_FUEL_TARGET})`, this.elapsed, undefined, this.planet.id);
+    if (this.state.inventory.getItem('fuel') >= LAUNCH_FUEL_TARGET) showToast(STR.goals[5] as string, 6000);
+  }
+
+  private goalText(): string {
+    return STR.goals[Math.min(STR.goals.length - 1, this.state.goalStep)] as string;
+  }
+
+  /** Zielschritt aus dem Zustand ableiten (nur aufwärts). */
+  private checkGoal(): void {
+    const st = this.state;
+    const inv = st.inventory;
+    let step = 0;
+    if (inv.getItem('fuel') >= LAUNCH_FUEL_TARGET) step = 5;
+    else if (inv.getItem('fuel') > 0) step = 4;
+    else if (st.modules.some((m) => m.type === 'lab')) step = 3;
+    else if (st.modules.some((m) => m.type === 'workbench')) step = 2;
+    else if (inv.getItem('workbench') > 0 || inv.canAfford(RECIPE_BY_ID.workbench?.cost ?? {})) step = 1;
+    if (step > st.goalStep) {
+      st.goalStep = step;
+      this.playerDirty = true;
+    }
+    this.hud?.setGoal(this.goalText());
+  }
+
+  // ---------------------------------------------------------------------------
+  // Bau-Modus (B)
+  private enterBuild(): void {
+    if (this.buildMode) return;
+    this.exitPhoto();
+    this.buildMode = true;
+    this.harvestTarget = null;
+    this.hud.setHarvest(null);
+    this.hud.setPrompt('');
+    this.base.setGhost(BUILD_TYPES[this.buildIndex] as ModuleType);
+    this.refreshPalette();
+    showToast(`${STR.build.enter}: ${STR.build.hint}`, 3500);
+  }
+
+  private exitBuild(): void {
+    if (!this.buildMode) return;
+    this.buildMode = false;
+    this.base.setGhost(null);
+    this.hud.setPalette(null, 0, '');
+  }
+
+  private refreshPalette(): void {
+    const inv = this.state.inventory;
+    this.hud.setPalette(
+      BUILD_TYPES.map((t) => ({ label: `${MODULE_LABELS[t]} ×${inv.getItem(t)}`, affordable: inv.getItem(t) > 0 })),
+      this.buildIndex,
+      STR.build.hint,
+    );
+  }
+
+  private updateBuildInput(): void {
+    const input = this.ctx.input;
+    const slots: Array<'slot1' | 'slot2' | 'slot3' | 'slot4'> = ['slot1', 'slot2', 'slot3', 'slot4'];
+    slots.forEach((a, i) => {
+      if (input.wasPressed(a) && i < BUILD_TYPES.length) {
+        this.buildIndex = i;
+        this.base.setGhost(BUILD_TYPES[i] as ModuleType);
+        this.refreshPalette();
+      }
+    });
+    if (input.wasPressed('rotate')) this.buildRot = (this.buildRot + 1) % 4;
+    if (input.wasPressed('build')) {
+      this.exitBuild();
+      return;
+    }
+    if (input.wasPressed('inventory')) {
+      this.openInventory('hand');
+      return;
+    }
+    const type = BUILD_TYPES[this.buildIndex] as ModuleType;
+    // Zielpunkt: Strahl von der Kamera auf das Terrain (Schrittsuche bis BUILD_RANGE)
+    this.camera.getWorldDirection(this.camDir);
+    let tx = this.camera.position.x + this.camDir.x * 6;
+    let tz = this.camera.position.z + this.camDir.z * 6;
+    for (let t = 1; t <= BUILD_RANGE; t += 0.5) {
+      const x = this.camera.position.x + this.camDir.x * t;
+      const z = this.camera.position.z + this.camDir.z * t;
+      const y = this.camera.position.y + this.camDir.y * t;
+      if (y <= this.model.heightAt(x, z)) {
+        tx = x;
+        tz = z;
+        break;
+      }
+      tx = x;
+      tz = z;
+    }
+    const p = this.base.snap(tx, tz);
+    const check = this.base.validate(type, p.x, p.z);
+    this.buildPos.x = p.x;
+    this.buildPos.z = p.z;
+    this.buildPos.valid = check.ok;
+    this.buildPos.reason = check.reason;
+    this.base.updateGhost(p.x, p.z, this.buildRot, check.ok && this.state.inventory.getItem(type) > 0);
+
+    if (input.mouseButtonPressed(0) && input.pointerLocked) {
+      if (this.state.inventory.getItem(type) <= 0) showToast(STR.build.noItem);
+      else if (!check.ok) showToast(`${STR.build.invalid}: ${check.reason}`);
+      else {
+        this.state.inventory.removeItem(type);
+        this.base.place(type, p.x, p.z, this.buildRot);
+        showToast(`${MODULE_LABELS[type]} ${STR.build.placed.toLowerCase()}${type === 'shelter' ? ` · ${STR.survival.respawnSet}` : ''}`);
+        audio.success(1);
+        this.refreshPalette();
+      }
+    }
+    if (input.wasPressed('remove')) {
+      const m = this.base.pick(this.camera.position, this.camDir, BUILD_RANGE);
+      if (m) {
+        this.base.remove(m.id);
+        const cost = RECIPE_BY_ID[m.type]?.cost ?? {};
+        for (const [id, n] of Object.entries(cost) as [ResourceId, number][]) this.state.inventory.add(id, Math.floor(n / 2));
+        showToast(`${MODULE_LABELS[m.type]} ${STR.build.removed.toLowerCase()}`);
+        audio.blip();
+        this.refreshPalette();
+      }
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Köder
+  private placeLure(): void {
+    const mesh = new Mesh(this.lureGeometry, this.lureMaterial);
+    this.camera.getWorldDirection(this.camDir);
+    const x = this.player.position.x + this.camDir.x * 1.5;
+    const z = this.player.position.z + this.camDir.z * 1.5;
+    mesh.position.set(x, this.model.heightAt(x, z) + 0.2, z);
+    mesh.castShadow = true;
+    this.scene.add(mesh);
+    this.lures.push({ mesh, ttl: LURE_SECONDS });
+    showToast(`Köder ausgelegt (${LURE_SECONDS} s)`);
+    audio.blip();
+  }
+
+  private updateLures(dt: number): void {
+    for (let i = this.lures.length - 1; i >= 0; i--) {
+      const l = this.lures[i]!;
+      l.ttl -= dt;
+      if (l.ttl <= 0) {
+        this.scene.remove(l.mesh);
+        this.lures.splice(i, 1);
+      }
+    }
+    this.lurePositions.length = 0;
+    for (const l of this.lures) this.lurePositions.push(l.mesh.position);
+    this.creatures.setLures(this.lurePositions);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Überleben
+  private survivalTick(dt: number): void {
+    const p = this.player.position;
+    const s = this.model.sample(p.x, p.z);
+    const biome = this.planet.biomes[s.biome]!;
+    const tempC = kelvinToCelsius(pointTemperature(this.planet, biome, s.altitude, this.cycle.daylight));
+    const near = this.base.nearest(p, RECHARGE_RADIUS, ['shelter', 'charger']);
+    const sv = this.state.survival;
+    const events = sv.update({
+      dt,
+      breathable: this.planet.atmosphere.breathable,
+      underwater: this.model.hasWater && this.camera.position.y < this.model.seaLevel,
+      sprinting: this.player.speed > 7,
+      temperatureC: tempC,
+      radiation: this.planet.hazards.includes('radiation'),
+      recharging: near !== null,
+    });
+    for (const ev of events) {
+      switch (ev) {
+        case 'oxygen_low':
+          showToast(STR.survival.oxygenLow);
+          audio.hint();
+          break;
+        case 'energy_low':
+          showToast(STR.survival.energyLow);
+          audio.hint();
+          break;
+        case 'oxygen_critical':
+          if (this.state.inventory.removeItem('oxygen_cell')) {
+            sv.useOxygenCell();
+            showToast(`${STR.survival.cellUsed}: ${STR.inventory.items} – Sauerstoffzelle`);
+          } else showToast(STR.survival.oxygenCritical, 4000);
+          audio.hint();
+          break;
+        case 'energy_critical':
+          if (this.state.inventory.removeItem('energy_cell')) {
+            sv.useEnergyCell();
+            showToast(`${STR.survival.cellUsed}: Energiezelle`);
+          } else showToast(STR.survival.energyCritical, 4000);
+          audio.hint();
+          break;
+        case 'collapse':
+          this.startCollapse();
+          break;
+        case 'recovered':
+          break;
+      }
+    }
+    // Überlebenswerte ändern sich laufend → regelmäßig (gedrosselt) sichern
+    this.playerDirty = true;
+  }
+
+  private startCollapse(): void {
+    if (this.collapsing) return;
+    this.collapsing = true;
+    this.collapseTimer = 0;
+    this.respawned = false;
+    this.exitPhoto();
+    this.exitBuild();
+    this.harvestTarget = null;
+    this.hud.setHarvest(null);
+    this.player.frozen = true;
+    showToast(STR.survival.collapse, 6000);
+  }
+
+  private updateCollapse(dt: number): void {
+    if (!this.collapsing) return;
+    this.collapseTimer += dt;
+    const t = this.collapseTimer;
+    this.hud.setFade(t < 1.2 ? t / 1.2 : t < 1.6 ? 1 : Math.max(0, 1 - (t - 1.6) / 1.2));
+    if (t >= 1.2 && !this.respawned) {
+      this.respawned = true;
+      this.doRespawn();
+    }
+    if (t >= 2.8) {
+      this.collapsing = false;
+      this.player.frozen = false;
+      this.hud.setFade(0);
+    }
+  }
+
+  private doRespawn(): void {
+    const r = this.state.respawn[this.planet.id];
+    let x: number;
+    let z: number;
+    if (r) {
+      x = r.x + 3;
+      z = r.z + 3;
+    } else {
+      const s = this.model.findSpawn();
+      x = s.x;
+      z = s.z;
+    }
+    const y = Math.max(this.model.heightAt(x, z), this.model.hasWater ? this.model.seaLevel : -Infinity) + 0.3;
+    this.player.spawn(x, y, z, this.player.yaw);
+    this.player.applyCamera(1);
+    this.terrain.update(this.camera.position, 1);
+    this.terrain.buildAllNow(this.camera.position, 120);
+    const lost = this.state.inventory.loseFraction(0.1);
+    this.state.survival.respawn();
+    this.state.touch();
+    const lostText = Object.entries(lost).map(([id, n]) => `${n} ${RESOURCES[id as ResourceId].name}`).join(', ');
+    this.progress.addLog('info', `Zusammenbruch – Rückkehr ${r ? 'zur Unterkunft' : 'zum Landeplatz'}${lostText ? `, verloren: ${lostText}` : ''}`, this.elapsed, undefined, this.planet.id);
+  }
+
+  private promptText(): string {
+    if (this.buildMode) return this.buildPos.valid ? '' : `${STR.build.invalid}: ${this.buildPos.reason}`;
+    return [this.harvest.label, this.interaction.label].filter(Boolean).join('   ·   ');
   }
 
   private doInteract(): void {
@@ -621,7 +1188,7 @@ export class PlanetScene implements GameScene {
         const source = it.kind === 'water' ? 'water' : it.kind === 'plant' ? 'plant' : 'soil';
         const biome = it.biome as Biome;
         this.progress.addSample(createSample(source, this.planet, biome, this.elapsed, ++this.sampleCounter, it.species?.entry));
-        showToast(`${STR.interact.taken}: ${it.label.replace(/^E: /, '')} – im Archiv (Tab) unter „Proben“ analysieren`, 3500);
+        showToast(`${STR.interact.taken}: ${it.label.replace(/^F: /, '')} – im Archiv (Tab) unter „Proben“ analysieren`, 3500);
         audio.blip();
         break;
       }
@@ -634,6 +1201,9 @@ export class PlanetScene implements GameScene {
   private pause(): void {
     if (this.paused) return;
     this.exitPhoto();
+    this.exitBuild();
+    this.harvestTarget = null;
+    this.hud.setHarvest(null);
     this.paused = true;
     this.pauseMenu.show();
     this.hud.setCrosshair(false);
@@ -658,6 +1228,10 @@ export class PlanetScene implements GameScene {
     if (!this.progress) return;
     this.dirty = false;
     await this.db.saveProgress(this.progress.toJSON());
+    if (this.state) {
+      this.playerDirty = false;
+      await this.db.setValue(`player:${this.system.seed}`, this.state.toJSON());
+    }
   }
 
   private leave(next: GameScene): void {
@@ -677,33 +1251,48 @@ export class PlanetScene implements GameScene {
     const input = this.ctx.input;
 
     if (input.wasPressed('pause') && performance.now() - this.lockChangedAt > 400) {
-      if (this.archiveUi.isOpen) this.closeCatalog();
+      if (this.inventoryUi.isOpen) this.closeInventory();
+      else if (this.labUi.isOpen) this.closeLab();
+      else if (this.archiveUi.isOpen) this.closeCatalog();
+      else if (this.buildMode) this.exitBuild();
       else if (this.photo.active) this.exitPhoto();
       else if (this.paused) this.resume();
       else this.pause();
     }
     if (this.paused) return;
-    if (input.wasPressed('catalog')) {
+    if (input.wasPressed('catalog') && !this.inventoryUi.isOpen && !this.labUi.isOpen) {
       if (this.archiveUi.isOpen) this.closeCatalog();
       else this.openCatalog();
     }
-    if (this.archiveUi.isOpen) {
+    if (input.wasPressed('inventory') && !this.archiveUi.isOpen && !this.labUi.isOpen && !this.buildMode) {
+      if (this.inventoryUi.isOpen) this.closeInventory();
+      else this.openInventory('hand');
+    }
+    if (this.uiOpen) {
       this.saveTick(dt);
       return;
     }
-    if (input.wasPressed('camera')) {
+    if (input.wasPressed('camera') && !this.collapsing) {
       if (this.photo.active) this.exitPhoto();
-      else this.enterPhoto();
+      else {
+        this.exitBuild();
+        this.enterPhoto();
+      }
     }
     if (this.photo.active) this.updatePhotoInput();
-    else {
+    else if (this.buildMode) this.updateBuildInput();
+    else if (!this.collapsing) {
       if (input.wasPressed('toggle_view')) this.player.thirdPerson = !this.player.thirdPerson;
       if (input.wasPressed('fly')) {
         this.player.fly = !this.player.fly;
         showToast(this.player.fly ? 'Flugmodus an (Debug)' : 'Flugmodus aus');
       }
       if (input.wasPressed('debug_weather')) showToast(`Wetter: ${WEATHER[this.weather.cycle()].name}`);
-      if (input.wasPressed('interact')) this.doInteract();
+      if (input.wasPressed('build')) this.enterBuild();
+      else {
+        if (input.wasPressed('sample')) this.doInteract();
+        this.updateHarvest(dt);
+      }
     }
     this.cycle.timeScale = input.isDown('debug_time') && !this.photo.active ? 60 : 1;
 
@@ -717,7 +1306,11 @@ export class PlanetScene implements GameScene {
     this.props.update(this.camera.position, dt);
     const pl = this.player;
     const noise = pl.fly ? 0.25 : pl.swimming ? 0.4 : pl.speed > 7 ? 1 : pl.speed > 0.8 ? (pl.crouching ? 0.15 : 0.5) : pl.crouching ? 0.04 : 0.08;
+    this.updateLures(dt * slow);
     this.creatures.update(dt * slow, { pos: pl.position, yaw: pl.yaw, noise }, this.creatureEnv());
+    this.nodes.update(this.camera.position, dt);
+    if (!this.collapsing) this.survivalTick(dt * slow);
+    this.updateCollapse(dt);
     if (!this.photo.active) {
       const here = this.model.biomeAt(pl.position.x, pl.position.z);
       this.hints.update(dt, pl.position, here.id, here.name);
@@ -737,8 +1330,10 @@ export class PlanetScene implements GameScene {
 
   private saveTick(dt: number): void {
     this.saveTimer += dt;
-    if (this.dirty && this.saveTimer > 3) {
+    this.playerSaveTimer += dt;
+    if ((this.dirty && this.saveTimer > 3) || (this.playerDirty && this.playerSaveTimer > 10)) {
       this.saveTimer = 0;
+      this.playerSaveTimer = 0;
       void this.saveProgress();
     }
   }
@@ -773,10 +1368,18 @@ export class PlanetScene implements GameScene {
       const beh = c.ai.behavior && c.ai.state !== 'flee' ? (BEHAVIOR_LABELS[c.ai.behavior] ?? c.ai.behavior) : STATE_LABELS[c.ai.state];
       this.hud.setSighting(`Sichtung: ${known ? this.progress.displayName(c.entry) : `${STR.archive.unknown}`}${known || this.progress.isHinted(c.entry.id) ? ` · ${RARITY_LABELS[c.entry.rarity]}` : ''} · ${beh} · ${seen.distance.toFixed(0)} m`);
     } else this.hud.setSighting('');
-    if (!this.photo.active) {
-      this.interaction = this.computeInteraction();
-      this.hud.setPrompt(this.ctx.input.pointerLocked ? this.interaction.label : '');
+    if (!this.photo.active && !this.collapsing) {
+      if (!this.buildMode) {
+        this.interaction = this.computeInteraction();
+        if (!this.harvestTarget) this.harvest = this.computeHarvest();
+      }
+      this.hud.setPrompt(this.ctx.input.pointerLocked ? this.promptText() : '');
     } else this.hud.setPrompt('');
+    const sv = this.state.survival;
+    const near = this.base.nearest(p, RECHARGE_RADIUS, ['shelter', 'charger']);
+    const parts = [...sv.hazards];
+    if (near) parts.push(STR.survival.recharging);
+    this.hud.setSurvival(sv.oxygen, sv.energy, parts.join(' · '), sv.oxygen <= 25 || sv.energy <= 25);
     const d = this.ctx.debug;
     d.set('Chunks', `${this.terrain.stats.chunks} (offen ${this.terrain.stats.pending})`);
     d.set('Vegetation', `${this.vegetation.stats.cells} Zellen · ${this.vegetation.stats.instances} Instanzen · ${this.vegetation.stats.species} Arten`);
@@ -784,6 +1387,7 @@ export class PlanetScene implements GameScene {
     d.set('Props', `${this.props.stats.props} · Hinweise ${this.hints.stats.active}`);
     const c = this.progress.completion();
     d.set('Archiv', `${c.discovered}/${c.total} (${(c.fraction * 100).toFixed(1)} %) · Fotos ${this.progress.photosTaken}`);
+    d.set('Basis', `${this.state.modulesOn(this.planet.id).length} Module · Knoten ${this.nodes.stats.nodes} · O₂ ${sv.oxygen.toFixed(0)} · ⚡ ${sv.energy.toFixed(0)} · Treibstoff ${this.state.inventory.getItem('fuel')}`);
   }
 
   render(_alpha: number, frameDt: number): void {
@@ -832,6 +1436,12 @@ export class PlanetScene implements GameScene {
     this.disposer.dispose();
     this.photo?.dispose();
     this.composer?.dispose();
+    for (const l of this.lures) this.scene.remove(l.mesh);
+    this.lures.length = 0;
+    this.lureGeometry.dispose();
+    this.lureMaterial.dispose();
+    this.base?.dispose();
+    this.nodes?.dispose();
     this.hints?.dispose();
     this.props?.dispose();
     this.creatures?.dispose();
@@ -846,6 +1456,6 @@ export class PlanetScene implements GameScene {
     const gl = this.ctx.renderer.gl;
     gl.shadowMap.enabled = false;
     gl.setClearColor(0x05070d, 1);
-    for (const k of ['Chunks', 'Vegetation', 'Spieler', 'Kreaturen', 'Props', 'Archiv']) this.ctx.debug.set(k, '');
+    for (const k of ['Chunks', 'Vegetation', 'Spieler', 'Kreaturen', 'Props', 'Archiv', 'Basis']) this.ctx.debug.set(k, '');
   }
 }

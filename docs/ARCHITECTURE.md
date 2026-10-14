@@ -53,7 +53,9 @@ Sternsystem, baust ein Raumschiff, synthetisierst Treibstoff und füllst ein Arc
     │   ├── archive/           Familien, Arten, Einträge, Namen, Beschreibungen, Budget
     │   └── index.ts           generateUniverse(seed) → StarSystem inkl. Archiv
     ├── game/                  GameState (Seed, System, Oberflächenzustand), progress/ArchiveProgress (Sterne, Fotos, Hinweise,
-    │                          Proben, Logbuch, Abschluss), photo/PhotoScoring (Bewertung, rein), samples (Proben, Mikro-Zellen)
+    │                          Proben, Logbuch, Abschluss), photo/PhotoScoring (Bewertung, rein), samples (Proben, Mikro-Zellen),
+    │                          Inventory (Rohstoffe/Gegenstände), PlayerState (Inventar, Überleben, Module, Labor-Stufe, Respawn),
+    │                          survival/Survival (Sauerstoff/Energie, rein), crafting/recipes + crafting/fuel (Rezepte, Synthese)
     ├── save/                  Db.ts: IndexedDB (Fotos als JPEG+Thumb-Blob, Fortschritt je Seed, Schlüssel/Wert)
     ├── audio/                 AudioManager: prozedurale UI-Klänge (Auslöser, Erfolg, Hinweis)
     ├── render/                Renderer-Wrapper (DPR, Render-Skalierung), Composer-Fabrik, Starfield, PlanetTexture (prozedural)
@@ -76,6 +78,8 @@ Sternsystem, baust ein Raumschiff, synthetisierst Treibstoff und füllst ein Arc
     │   │                      CreatureAI (FSM, rein), CreatureManager (Spawner nach Bedingungen, Population)
     │   ├── props/             PropBuilder (Erze/Gesteine/Fossilien/Ruinen aus Genom), PropManager (Zellen, Raycast-Interaktion)
     │   ├── photo/PhotoMode.ts Kameraeinstellungen, DoF/Filter-Effekte, Motiverkennung und Bewertung beim Auslösen
+    │   ├── resources/         ResourceNodeManager: abbaubare Knoten (Zellen 128 m, Vorlagen je Rohstoff, Restmenge, Respawn)
+    │   ├── base/BaseModules.ts BaseManager: Modul-Meshes aus dem PlayerState, Geist-Vorschau, Platzierungsprüfung, Nähe-Abfragen
     │   └── HintSystem.ts      Spuren/Kot/Nester als Objekte, Geräusche/Gerüche als Meldung, Gerüchte über seltene Verwandte
     │   └── Player.ts          Ego-/Schulter-Controller, Terrain-Kollision, Schwimmen, Gravitation
     ├── assets/                AssetRegistry: Platzhalter-Geometrien/Materialien, später austauschbar
@@ -165,8 +169,9 @@ Startplanet enthält alle Start- und Treibstoff-Rohstoffe; korrekte Mischung erg
 
 ### 4.3 Spielstand (ab Phase 4/10)
 
-`SaveGame { version, seed, character, inventory, base, ship, probes, mapProgress, archiveProgress, settings, photos (IndexedDB-Refs) }`
-mit `migrate(from, to)`.
+Der Spielstand ist je Seed in zwei IndexedDB-Datensätze geteilt: `progress` (Archiv-Fortschritt, `ArchiveProgress.toJSON()`) und
+`kv['player:<seed>']` (`PlayerStateSnapshot { version, inventory, survival, modules, labLevel, respawn, goalStep }`). Beide haben
+`migrate()`-Funktionen; Phase 10 bündelt sie mit Charakter, Schiff, Sonden, Karte und Einstellungen zu einem Export/Import.
 
 ### 4.4 Terrain-Modell (Phase 2)
 
@@ -209,15 +214,45 @@ deterministischen, flachen Landeplatz. `VegetationProfiles.ts` definiert Dichten
   Geruch als Meldung). Aufsammeln verrät Biom, Tageszeit, Wetter, Gattung und ein Merkmal. Neue Entdeckungen können Gerüchte über
   seltene Verwandte auslösen.
 
+### 4.7 Überleben, Rohstoffe, Basis, Labor (Phase 5)
+
+- **Überleben** (`Survival`, rein): Sauerstoff und Anzug-Energie 0–100. Sauerstoff sinkt nur in nicht atembarer Atmosphäre (8 min)
+  oder unter Wasser (60 s) und erholt sich an atembarer Luft schnell; Energie sinkt immer langsam (15 min), schneller bei Sprint, Kälte,
+  Hitze, Strahlung. In 5 m um Unterkunft/Ladestation laden beide in 20 s voll. Warnungen bei 25 % und 10 %; bei 10 % werden
+  Sauerstoff-/Energiezellen (+50) automatisch eingesetzt. Bei 0: Zusammenbruch → Ausblenden, Rückkehr zur Unterkunft (sonst Landeplatz),
+  10 % der Rohstoffe verloren, Werte auf 60. Kein Permadeath.
+- **Rohstoffe**: `generateResourceNodes` (rein) platziert je 128-m-Zelle deterministisch Knoten aus den Vorkommen des Planeten
+  (Biom-Bindung, nicht im Wasser, nicht zu steil); Vorlagen je Rohstoffart (Metallbrocken, Kristallcluster, Mineralknollen, Gasquellen,
+  Faserbüschel, Harzstumpf, Sporenpolster). **E halten** (1,2 s) baut 2 Einheiten ab; erschöpfte Knoten kehren nach 10 min zurück.
+  Wasser/Sole wird am Ufer gesammelt, Fasern/Harz/Sporen an Pflanzen (Pilz → Sporen, Baum → Harz, sonst Fasern; 5 min Nachwachsen).
+- **Inventar/Fertigung** (`I`): Rohstoffe, Gegenstände, Treibstoff, Zielschritt. Feldfertigung von Hand: Werkbank, Unterkunft. An der
+  Werkbank (`E` am Modul): Ladestation, Labor, Sauerstoff-/Energiezelle, Köder, Labor-Upgrade (max. 2, braucht Labor). Alle Rezepte
+  verwenden nur die vier garantierten Startrohstoffe (Ferrit, Quarz, Wasser, Faser) – jeder Seed bleibt lösbar.
+- **Bau-Modus** (`B`): Geist-Modul am Fadenkreuz (Terrain-Treffer ≤ 12 m, Raster 2 m), 1–4 Modultyp, R drehen, Klick platzieren
+  (verbraucht den gefertigten Gegenstand), X entfernen (50 % der Kosten zurück). Prüfung: nicht im Wasser, Gefälle < 0,35, Abstand zu
+  anderen Modulen. Module liegen im `PlayerState` je Planet; `BaseManager` spiegelt sie als Meshes (Körper + Leuchtteile).
+- **Labor** (`E` am Labor): Treibstoff-Synthese als Forschungsaufgabe. 2–3 Rohstoffe mit Treibstoff-Rolle, 10 Anteile, „Analysieren“
+  (kostet je 1 Einheit) liefert Reinheit/Energiedichte/Stabilität/Qualität der seed-spezifischen Formel (`analyzeMix`); Notizen der
+  letzten Analysen. „Synthetisieren“ (1/2/5 Chargen) erzeugt `round(Chargen × 4 × Ausbeute × Qualität)` Treibstoff, unter 60 % Qualität
+  verpufft die Mischung. Labor-Stufe 2 zeigt die Hinweise der Analyse, Stufe 3 Rollen-Hinweise („X reagiert nicht – anderer Oxidator“,
+  „Es fehlt: Stabilisator“). Ziel: 20 Treibstoff für den ersten Start (Phase 6).
+- **Köder**: an der Werkbank gefertigt, an der Spielerposition ausgelegt (60 s); Tiere in 40 m wechseln in den Zustand `lured` und
+  nähern sich (Foto-Chance).
+- **Zielanzeige**: `goalStep` (nur aufwärts) aus dem Zustand abgeleitet: Rohstoffe → Werkbank → Labor → Formel → 20 Treibstoff → bereit.
+
 ## 5. Laufzeit-Architektur
 
 - **GameLoop**: `requestAnimationFrame`, Akkumulator mit festem Update-Schritt (1/60 s, max. 5 Schritte/Frame), Render pro Frame,
   FPS/Frametime-Statistik. Keine Allokationen im Loop.
 - **SceneManager**: genau eine aktive Szene. `switchTo()` ruft `exit()` + `dispose()` der alten Szene, dann `enter()` der neuen.
 - **Renderer**: `WebGLRenderer` auf `#game-canvas`, Render-Skalierung (50–200 %) × `devicePixelRatio` (gedeckelt), Resize-Handling,
-  `renderer.info` für Debug. Composer (postprocessing) wird pro Szene erzeugt.
+  `renderer.info` für Debug. Composer (postprocessing) wird pro Szene erzeugt. Achtung: `autoRenderToScreen` gibt nur dem zuletzt
+  hinzugefügten Pass `renderToScreen`; optionale Pässe (Foto-Modus) schalten das Flag beim Deaktivieren auf den Vorgänger um, sonst
+  bleibt die Leinwand außerhalb des Modus schwarz.
 - **UI**: `#ui-root` (Spiel-UI) und `#debug-root` (Debug-Overlay, F3). Jede UI-Komponente besitzt ihr DOM und räumt es auf.
 - **Input**: Aktionen statt Tasten (`move_forward`, `interact`, `camera`, `catalog`, `map` …), Bindings in `config/keybindings.ts`.
+  Mehrere Aktionen dürfen dieselbe Taste belegen, wenn sie in unterschiedlichen Modi gelten (F: Filter im Foto-Modus, Probe sonst;
+  R: Blende bzw. Drehen; 1–4: Belichtung bzw. Modulwahl).
 - **PlanetScene**: Ladebildschirm → Terrain in Zeitscheiben → Vegetation → HUD. Pointer-Lock per Klick; Esc/Lock-Verlust öffnet das
   Pausemenü. Zustand (Position, Tageszeit) wird in `GameState.surface` gesichert, damit Systemansicht ↔ Planet nahtlos wechseln.
 - **Terrain-LOD**: Quadtree mit Zellen 64–1024 m, 32 Segmente je Zelle, Skirts gegen Risse, Aufbau nach Entfernung mit Zeitbudget,
@@ -232,7 +267,7 @@ deterministischen, flachen Landeplatz. `VegetationProfiles.ts` definiert Dichten
 | 2 | Planetenoberfläche: Chunk-Terrain, Biome, Himmel, Tag/Nacht, Wetter-Basis, Spieler, Wasser, Vegetation | ✅ |
 | 3 | Kreaturen und Flora: prozedurale Körper, Verhalten, Spawn nach Bedingungen, Seltenheit | ✅ |
 | 4 | Kamera und Katalog (Kernschleife): Foto-Modus, Bewertung, Archiv-UI, Fotospeicherung, Hinweise, Mikroskop | ✅ |
-| 5 | Überleben, Rohstoffe, Basis, Labor, Treibstoff-Synthese | ⬜ |
+| 5 | Überleben, Rohstoffe, Basis, Labor, Treibstoff-Synthese | ✅ |
 | 6 | Schiffbau und Raumflug | ⬜ |
 | 7 | Sonden, Satelliten, Karte | ⬜ |
 | 8 | Charaktererstellung | ⬜ |

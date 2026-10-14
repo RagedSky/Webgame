@@ -116,3 +116,33 @@ Proben-Seed). Mikroorganismen erfordern das Mikroskop mit Fokus-Minispiel. Phase
 ## D-028 · Unbekannte Einträge sind sichtbar, aber nummeriert
 **Entscheidung:** Das Archiv zeigt alle Einträge als Platzhalter („Unbekannt · Erze #3“) mit Planet und Kategorie, damit die Lücken spürbar sind;
 Biome, Bedingungen und Seltenheit werden erst durch Hinweise oder Entdeckung sichtbar.
+
+## D-029 · Überleben entspannt: Sauerstoff situativ, Energie als sanfter Takt
+**Kontext:** Die Säule „Entdecken und Fotografieren“ soll nicht von Überlebensdruck erstickt werden.
+**Entscheidung:** Sauerstoff sinkt nur in nicht atembarer Atmosphäre (8 min) oder unter Wasser (60 s) und erholt sich an Luft binnen
+10 s; Energie sinkt immer, aber langsam (15 min, Sprint/Kälte/Hitze/Strahlung beschleunigen). Zellen werden bei 10 % automatisch
+eingesetzt. Zusammenbruch kostet 10 % der Rohstoffe und versetzt zur Unterkunft – kein Permadeath, kein Verlust von Archiv oder Fotos.
+
+## D-030 · Alle Rezepte nur aus garantierten Startrohstoffen
+**Kontext:** Der Startplanet garantiert Ferrit, Quarz, Wasser und Faser (`LAUNCH_RESOURCES`); andere Rohstoffe sind seedabhängig.
+**Entscheidung:** Werkbank, Unterkunft, Ladestation, Labor, Zellen, Köder und Labor-Upgrades kosten ausschließlich diese vier
+Rohstoffe. Ein Test prüft, dass `recipeResourceIds()` eine Teilmenge der garantierten Rohstoffe ist. Treibstoff-Komponenten sind
+dagegen bewusst seedabhängig (≥ 2 Rollen sind auf dem Startplaneten garantiert, D-010).
+
+## D-031 · Rohstoffknoten statt Abbau an Archiv-Props
+**Kontext:** Erz-/Gestein-Props sind Archiv-Einträge (Proben → Sterne); Abbau würde die Katalog-Objekte verbrauchen.
+**Entscheidung:** Rohstoffe erscheinen als eigene Knoten je 128-m-Zelle (deterministisch aus Vorkommen × Biom), mit Restmenge und
+Respawn nach 10 Minuten; Proben an Archiv-Props bleiben unberührt. Flüssigkeiten werden am Ufer, organische Stoffe an Pflanzen
+gesammelt. Treffererkennung: Raycast plus Kegel-Fallback, damit dünne Kristalle, Büschel und Tischplatten zuverlässig anvisierbar sind.
+
+## D-032 · Spielerzustand getrennt vom Archiv-Fortschritt
+**Entscheidung:** `PlayerState` (Inventar, Überleben, Module, Labor-Stufe, Respawn, Zielschritt) wird als `kv['player:<seed>']`
+gespeichert, `ArchiveProgress` weiterhin unter `progress`. Beide haben eigene Versionen und Migrationen; der Export in Phase 10 fasst
+sie zusammen. Vorteil: Archiv-Snapshots bleiben klein und unabhängig vom Basisbau; Tests der reinen Module brauchen kein Three.js.
+
+## D-033 · Treibstoff-Synthese als Analyse-Schleife mit Labor-Stufen
+**Kontext:** Die Formel ist je Seed geheim (D-010); der Spieler soll sie erforschen, nicht raten.
+**Entscheidung:** Testmischungen kosten 1 Einheit je Komponente und liefern Reinheit (richtige Komponenten), Energiedichte und
+Stabilität (Verhältnis). Stufe 1 zeigt nur Zahlen, Stufe 2 die Hinweise aus `analyzeMix`, Stufe 3 Rollen-Hinweise (welche Komponente
+nicht reagiert, welche Rolle fehlt). Synthese unter 60 % Qualität verpufft (Rohstoffe weg), darüber Ausbeute 4 × Chargen × Stufe ×
+Qualität. Rohstoffe mit Treibstoff-Rolle sind im Inventar markiert – die Suche nach der Formel bleibt Teil des Entdeckens.
