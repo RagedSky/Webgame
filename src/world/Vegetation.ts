@@ -9,10 +9,20 @@ import { RARITY_SPAWN_WEIGHT, matchesPlacement } from '@/gen/archive/conditions'
 import type { PlantType, TreeStyle, VegetationAssets } from './VegetationAssets';
 import type { FloraAssets } from './flora/FloraAssets';
 
+export interface SpeciesPlacement {
+  entry: ArchiveEntry;
+  x: number;
+  y: number;
+  z: number;
+  /** Höhe der Pflanze in Metern (skaliert). */
+  height: number;
+}
+
 interface Cell {
   id: string;
   meshes: Array<InstancedMesh | BatchedMesh>;
   instances: number;
+  species: SpeciesPlacement[];
 }
 
 interface GenericBatch {
@@ -27,6 +37,10 @@ interface SpeciesInstance {
   entry: ArchiveEntry;
   matrix: Matrix4;
   color: Color;
+  x: number;
+  y: number;
+  z: number;
+  height: number;
 }
 
 export interface VegetationOptions {
@@ -194,7 +208,7 @@ export class VegetationManager {
         tmpQuat.setFromAxisAngle(Y_AXIS, rng.float(0, Math.PI * 2));
         tmpScale.set(scale * rng.float(0.9, 1.1), scale, scale * rng.float(0.9, 1.1));
         const l = rng.float(0.85, 1.1);
-        out.push({ entry, matrix: new Matrix4().compose(tmpPos, tmpQuat, tmpScale), color: new Color(l, l, l) });
+        out.push({ entry, matrix: new Matrix4().compose(tmpPos, tmpQuat, tmpScale), color: new Color(l, l, l), x, y: s.height, z, height: genome.heightM * scale });
       }
     }
     return out;
@@ -275,7 +289,7 @@ export class VegetationManager {
     total += species.length;
 
     for (const m of meshes) this.group.add(m);
-    return { id, meshes, instances: total };
+    return { id, meshes, instances: total, species: species.map((i) => ({ entry: i.entry, x: i.x, y: i.y, z: i.z, height: i.height })) };
   }
 
   private removeCell(cell: Cell): void {
@@ -349,6 +363,20 @@ export class VegetationManager {
       } while (this.queue.length && performance.now() - t0 < 4);
       this.updateStats();
     }
+  }
+
+  /** Arten-Pflanzen im Umkreis (für Fotomotive und Pflanzenproben). */
+  querySpecies(x: number, z: number, radius: number, out: SpeciesPlacement[] = []): SpeciesPlacement[] {
+    out.length = 0;
+    const r2 = radius * radius;
+    for (const cell of this.cells.values()) {
+      for (const sp of cell.species) {
+        const dx = sp.x - x;
+        const dz = sp.z - z;
+        if (dx * dx + dz * dz <= r2) out.push(sp);
+      }
+    }
+    return out;
   }
 
   dispose(): void {

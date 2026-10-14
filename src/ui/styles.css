@@ -677,3 +677,463 @@ input[type='range'] {
   font-size: 12.5px;
   white-space: nowrap;
 }
+
+/* ---------- HUD: Interaktion ---------- */
+.hud-prompt {
+  position: absolute;
+  bottom: 44px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 5px 12px;
+  background: rgba(65, 184, 255, 0.18);
+  border: 1px solid rgba(65, 184, 255, 0.45);
+  border-radius: 6px;
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+
+/* ---------- Foto-Modus ---------- */
+.photo-ui {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.photo-frame {
+  position: absolute;
+  inset: 0;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.35), inset 0 0 120px rgba(0, 0, 0, 0.35);
+}
+
+.photo-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.22) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.22) 1px, transparent 1px);
+  background-size: 33.333% 33.333%;
+}
+
+.photo-bar {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+  padding: 6px 10px;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 8px;
+  font-size: 11.5px;
+  white-space: nowrap;
+}
+
+.photo-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 56px;
+}
+
+.photo-item .k {
+  color: var(--accent-2);
+  font-family: var(--mono);
+  font-size: 10px;
+}
+
+.photo-item .l {
+  color: var(--muted);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.photo-item .v {
+  font-family: var(--mono);
+}
+
+.photo-item.photo-hint {
+  justify-content: center;
+  color: var(--muted);
+}
+
+.photo-targets {
+  position: absolute;
+  inset: 0;
+}
+
+.photo-target {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  padding: 2px 6px;
+  font-size: 11px;
+  background: rgba(0, 0, 0, 0.45);
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.photo-target.known {
+  border-color: rgba(94, 227, 154, 0.6);
+}
+
+.photo-target.unknown {
+  border-color: rgba(255, 181, 71, 0.6);
+}
+
+.photo-flash {
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  opacity: 0;
+}
+
+.photo-flash.on {
+  animation: flash 0.35s ease-out;
+}
+
+@keyframes flash {
+  from {
+    opacity: 0.85;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.photo-result {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(560px, 92vw);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  pointer-events: auto;
+  z-index: 30;
+}
+
+.photo-result img {
+  width: 100%;
+  border-radius: 6px;
+}
+
+.photo-subject {
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(120, 170, 255, 0.15);
+  margin-bottom: 4px;
+}
+
+.photo-subject.primary {
+  border-color: var(--accent);
+}
+
+.photo-subject .name {
+  font-weight: 600;
+}
+
+.photo-subject .stars,
+.stars {
+  color: var(--accent-2);
+  letter-spacing: 0.1em;
+}
+
+.stars.big {
+  font-size: 18px;
+}
+
+.photo-subject .meta,
+.photo-subject .notes {
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.photo-subject .tags {
+  font-size: 12px;
+  color: var(--ok);
+}
+
+/* ---------- Archiv ---------- */
+.archive-ui {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(3, 5, 10, 0.6);
+  z-index: 25;
+}
+
+.archive-panel {
+  width: min(1180px, 96vw);
+  height: min(820px, 94vh);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.archive-panel .tabs {
+  display: flex;
+  border-bottom: 1px solid var(--panel-border);
+}
+
+.archive-panel .tabs button {
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  padding: 10px 18px;
+  color: var(--muted);
+}
+
+.archive-panel .tabs button.active {
+  color: var(--text);
+  background: rgba(65, 184, 255, 0.12);
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+
+.archive-panel .tabs button.close {
+  margin-left: auto;
+}
+
+.archive-header {
+  padding: 10px 16px 6px;
+  border-bottom: 1px solid var(--panel-border);
+}
+
+.archive-header h2 {
+  margin: 0 0 6px;
+  font-size: 18px;
+}
+
+.archive-progress {
+  display: grid;
+  grid-template-columns: 180px 1fr 50px;
+  gap: 8px;
+  align-items: center;
+  font-size: 12px;
+  margin: 2px 0;
+}
+
+.archive-planets {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 2px 20px;
+  margin-top: 4px;
+}
+
+.archive-planets .archive-progress {
+  grid-template-columns: 140px 1fr 44px;
+  font-size: 11px;
+}
+
+.sealed {
+  margin: 4px 0;
+  padding: 6px 10px;
+  background: rgba(255, 181, 71, 0.15);
+  border: 1px solid rgba(255, 181, 71, 0.5);
+  border-radius: 6px;
+  color: #ffd38a;
+  font-size: 12.5px;
+}
+
+.archive-body {
+  flex: 1;
+  overflow: auto;
+  padding: 10px 16px;
+  font-size: 13px;
+}
+
+.archive-columns {
+  display: grid;
+  grid-template-columns: minmax(300px, 1fr) minmax(320px, 1.1fr);
+  gap: 16px;
+  height: 100%;
+}
+
+.archive-left .entry-filters {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.archive-left .entry-filters input {
+  grid-column: span 3;
+}
+
+.archive-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.archive-item {
+  display: grid;
+  grid-template-columns: 64px 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 5px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(120, 170, 255, 0.12);
+  background: rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+}
+
+.archive-item.selected {
+  border-color: var(--accent);
+  background: rgba(65, 184, 255, 0.14);
+}
+
+.archive-item.unknown .name {
+  color: var(--muted);
+}
+
+.archive-item.hinted .name {
+  color: #ffd38a;
+}
+
+.archive-item .name {
+  font-weight: 600;
+}
+
+.archive-item .meta {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.thumb {
+  width: 64px;
+  height: 36px;
+  object-fit: cover;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.thumb.empty {
+  opacity: 0.4;
+}
+
+.archive-detail {
+  overflow: auto;
+  padding-right: 6px;
+}
+
+.archive-detail h3 {
+  margin: 0 0 2px;
+  font-size: 18px;
+}
+
+.archive-detail .latin {
+  color: var(--muted);
+  font-style: italic;
+  margin-bottom: 6px;
+}
+
+.best-photo {
+  width: 100%;
+  max-height: 300px;
+  object-fit: cover;
+  border-radius: 6px;
+  margin: 8px 0 4px;
+}
+
+.archive-detail .desc {
+  line-height: 1.5;
+}
+
+.behaviors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.badge.done {
+  background: rgba(94, 227, 154, 0.18);
+  color: var(--ok);
+}
+
+.hints {
+  margin: 4px 0 8px;
+  padding-left: 18px;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.small {
+  font-size: 11.5px;
+}
+
+.archive-log .log-item {
+  display: flex;
+  gap: 10px;
+  padding: 5px 8px;
+  border-bottom: 1px solid rgba(120, 170, 255, 0.1);
+  cursor: pointer;
+}
+
+.log-item .k {
+  color: var(--accent-2);
+  width: 14px;
+}
+
+.log-item.discovery .k {
+  color: var(--ok);
+}
+
+.sample-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(120, 170, 255, 0.12);
+  background: rgba(255, 255, 255, 0.03);
+  margin-bottom: 4px;
+}
+
+.sample-item.analyzed {
+  opacity: 0.8;
+}
+
+.sample-item .name {
+  font-weight: 600;
+}
+
+.sample-item .meta {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.microscope-wrap {
+  margin-bottom: 12px;
+  padding: 10px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.microscope-canvas {
+  width: 100%;
+  max-width: 720px;
+  border-radius: 50% / 40%;
+  border: 6px solid #1a2230;
+  box-shadow: 0 0 0 2px #3a4a60, inset 0 0 60px rgba(0, 0, 0, 0.5);
+  cursor: crosshair;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.microscope input[type='range'] {
+  width: 260px;
+}
+
+.hud.photo .hud-info,
+.hud.photo .hud-status,
+.hud.photo .hud-sighting,
+.hud.photo .hud-prompt {
+  display: none !important;
+}

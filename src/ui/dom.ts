@@ -44,3 +44,13 @@ export function fmt(n: number, decimals = 1): string {
 export function fmtInt(n: number): string {
   return Math.round(n).toLocaleString('de-DE');
 }
+
+/** Lädt einen Blob als Datei herunter. */
+export function downloadBlob(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob);
+  const a = el('a', { href: url, download: filename });
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}

@@ -97,6 +97,11 @@ export class Creature {
     return this.root.position;
   }
 
+  /** Bewegungsanteil 0..1 (für Bewegungsunschärfe in der Fotobewertung). */
+  get motion(): number {
+    return Math.min(1, this.speed / this.maxSpeed);
+  }
+
   /** Mittelpunkt des Körpers in Weltkoordinaten (für Sicht- und Fotoprüfungen). */
   bodyCenter(out: Vector3): Vector3 {
     return out.copy(this.root.position).setY(this.root.position.y + this.template.bodyY);

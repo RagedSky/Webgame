@@ -14,6 +14,8 @@ export interface HudInfo {
   nearEdge: boolean;
   fly: boolean;
   timeScale: number;
+  /** Aktive Himmelsphänomene (fotografierbar). */
+  phenomena?: string;
 }
 
 /** Spiel-HUD der Planetenoberfläche (Phase 2: Orientierung; Sauerstoff/Energie folgen in Phase 5). */
@@ -24,6 +26,7 @@ export class Hud {
   private readonly hint: HTMLElement;
   private readonly crosshair: HTMLElement;
   private readonly sighting: HTMLElement;
+  private readonly prompt: HTMLElement;
 
   constructor(parent: HTMLElement) {
     this.info = el('div', { class: 'hud-info' });
@@ -31,7 +34,8 @@ export class Hud {
     this.hint = el('div', { class: 'hud-hint' });
     this.crosshair = el('div', { class: 'crosshair' });
     this.sighting = el('div', { class: 'hud-sighting', style: 'display:none' });
-    this.root = el('div', { class: 'hud' }, this.info, this.status, this.crosshair, this.hint, this.sighting);
+    this.prompt = el('div', { class: 'hud-prompt', style: 'display:none' });
+    this.root = el('div', { class: 'hud' }, this.info, this.status, this.crosshair, this.hint, this.sighting, this.prompt);
     parent.append(this.root);
   }
 
@@ -46,12 +50,23 @@ export class Hud {
     this.sighting.style.display = text ? 'block' : 'none';
   }
 
+  /** Interaktionshinweis unten (z. B. „E: Probe entnehmen“). */
+  setPrompt(text: string): void {
+    this.prompt.textContent = text;
+    this.prompt.style.display = text ? 'block' : 'none';
+  }
+
+  /** Im Foto-Modus Info- und Statuszeilen ausblenden (sauberer Sucher). */
+  setPhotoMode(on: boolean): void {
+    this.root.classList.toggle('photo', on);
+  }
+
   setCrosshair(visible: boolean): void {
     this.crosshair.style.display = visible ? 'block' : 'none';
   }
 
   update(i: HudInfo): void {
-    this.info.textContent = `${i.planet} · ${i.biome}\n${i.clock} (${i.timeOfDay}) · ${i.weather} · ${i.temperatureC.toFixed(0)} °C`;
+    this.info.textContent = `${i.planet} · ${i.biome}\n${i.clock} (${i.timeOfDay}) · ${i.weather} · ${i.temperatureC.toFixed(0)} °C${i.phenomena ? `\n${i.phenomena}` : ''}`;
     const flags = [i.swimming ? 'Schwimmen' : '', i.fly ? 'Flugmodus' : '', i.nearEdge ? 'Kartenrand' : '', i.timeScale > 1 ? `Zeit ×${i.timeScale}` : ''].filter(Boolean).join(' · ');
     this.status.textContent = `Höhe ${i.altitude.toFixed(0)} m · Position ${i.x.toFixed(0)} / ${i.z.toFixed(0)}${flags ? ` · ${flags}` : ''}`;
   }

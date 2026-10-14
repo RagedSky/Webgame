@@ -22,7 +22,10 @@ Im Hauptmenü einen Seed eingeben oder „Zufälliges Universum“ wählen. „N
 „System anzeigen“ öffnet die 3D-Übersicht des Sternsystems (dort „Hier landen“ für jeden Planeten mit Oberfläche).
 
 Steuerung auf der Oberfläche: Klick übernimmt die Maus, WASD bewegen, Leertaste springen, Shift sprinten, Strg ducken,
-V Ego/Schulter, Esc Pause. Debug: F3 Overlay, T Zeitraffer, Y Wetter, G Flugmodus.
+V Ego/Schulter, Esc Pause. **Q** öffnet den Foto-Modus (Mausrad Zoom, `,`/`.` Fokus, Rechtsklick Autofokus, R Blende,
+1/2 Belichtung, F Filter, H Raster, C Selfie, Leertaste/Klick auslösen). **Tab** öffnet das Archiv mit Logbuch, Proben und
+Mikroskop, **E** nimmt Proben (Wasser, Boden, Pflanzen, Gestein) oder scannt Fossilien. Fotos und Fortschritt liegen in
+IndexedDB des Browsers. Debug: F3 Overlay, T Zeitraffer, Y Wetter, G Flugmodus.
 
 Architektur: `docs/ARCHITECTURE.md` · Entscheidungen: `docs/DECISIONS.md` · Arbeitskontext: `CLAUDE.md`.
 

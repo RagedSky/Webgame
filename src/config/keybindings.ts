@@ -19,7 +19,16 @@ export type GameAction =
   | 'toggle_view'
   | 'fly'
   | 'debug_time'
-  | 'debug_weather';
+  | 'debug_weather'
+  | 'shutter'
+  | 'photo_focus_near'
+  | 'photo_focus_far'
+  | 'photo_aperture'
+  | 'photo_exposure_down'
+  | 'photo_exposure_up'
+  | 'photo_filter'
+  | 'photo_grid'
+  | 'photo_selfie';
 
 export const DEFAULT_BINDINGS: Record<GameAction, string[]> = {
   move_forward: ['KeyW', 'ArrowUp'],
@@ -42,6 +51,15 @@ export const DEFAULT_BINDINGS: Record<GameAction, string[]> = {
   fly: ['KeyG'],
   debug_time: ['KeyT'],
   debug_weather: ['KeyY'],
+  shutter: ['Space'],
+  photo_focus_near: ['Comma'],
+  photo_focus_far: ['Period'],
+  photo_aperture: ['KeyR'],
+  photo_exposure_down: ['Digit1'],
+  photo_exposure_up: ['Digit2'],
+  photo_filter: ['KeyF'],
+  photo_grid: ['KeyH'],
+  photo_selfie: ['KeyC'],
 };
 
 /** Lesbare Namen für die Tastenbelegungs-UI. */
@@ -66,4 +84,13 @@ export const ACTION_LABELS: Record<GameAction, string> = {
   fly: 'Flugmodus (Debug)',
   debug_time: 'Zeitraffer (Debug)',
   debug_weather: 'Wetter wechseln (Debug)',
+  shutter: 'Auslöser (Foto-Modus)',
+  photo_focus_near: 'Fokus näher',
+  photo_focus_far: 'Fokus weiter',
+  photo_aperture: 'Blende wechseln',
+  photo_exposure_down: 'Belichtung −',
+  photo_exposure_up: 'Belichtung +',
+  photo_filter: 'Filter wechseln',
+  photo_grid: 'Raster ein/aus',
+  photo_selfie: 'Selfie-Modus',
 };

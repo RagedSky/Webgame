@@ -52,10 +52,14 @@ Sternsystem, baust ein Raumschiff, synthetisierst Treibstoff und füllst ein Arc
     │   ├── universe/          Stern, Planeten, Biome, Rohstoffe, Treibstoff-Formel, System
     │   ├── archive/           Familien, Arten, Einträge, Namen, Beschreibungen, Budget
     │   └── index.ts           generateUniverse(seed) → StarSystem inkl. Archiv
-    ├── game/                  GameState: Seed, memoisiertes Sternsystem, später Spielstand
+    ├── game/                  GameState (Seed, System, Oberflächenzustand), progress/ArchiveProgress (Sterne, Fotos, Hinweise,
+    │                          Proben, Logbuch, Abschluss), photo/PhotoScoring (Bewertung, rein), samples (Proben, Mikro-Zellen)
+    ├── save/                  Db.ts: IndexedDB (Fotos als JPEG+Thumb-Blob, Fortschritt je Seed, Schlüssel/Wert)
+    ├── audio/                 AudioManager: prozedurale UI-Klänge (Auslöser, Erfolg, Hinweis)
     ├── render/                Renderer-Wrapper (DPR, Render-Skalierung), Composer-Fabrik, Starfield, PlanetTexture (prozedural)
     ├── scenes/                konkrete Szenen: MainMenuScene, SystemViewScene (Debug), später PlanetScene, ShipEditorScene …
-    ├── ui/                    DOM-Overlays: DebugOverlay, Toast, SystemPanel (Übersicht/Planeten/Archiv/Dump), später HUD/Katalog/Karte
+    ├── ui/                    DOM-Overlays: DebugOverlay, Toast, SystemPanel, Hud, PauseMenu, PhotoUi (Sucher + Ergebnis),
+    │                          ArchiveUi (Enzyklopädie, Logbuch, Proben), MicroscopeView (2D-Zellen mit Fokus-Minispiel)
     ├── world/                 Laufzeit-Welt (Three.js)
     │   ├── terrain/           TerrainChunk (Skirts, Vertexfarben, Geometrie-Pool), TerrainManager (Quadtree-LOD, Zeitbudget)
     │   ├── Sky.ts             Kuppel-Shader (Rayleigh/Mie vereinfacht, Wolken, Dämmerung), Sterne, Monde, Gasriese, Sonnen-/Hemisphärenlicht
@@ -68,8 +72,11 @@ Sternsystem, baust ein Raumschiff, synthetisierst Treibstoff und füllst ein Arc
     │   ├── VegetationAssets.ts Platzhalter-Geometrien + Materialien mit Wind-Shader (Instancing und Batching)
     │   ├── geometry.ts        Helfer: colorize, jitter, taperedQuad, mergeParts, hsl
     │   ├── flora/             FloraBuilder (Genom → Geometrie je Wuchsform), FloraAssets (Cache + Materialien)
-    │   └── creatures/         CreatureBuilder (Genom → geskinnte Geometrie + Knochen), Creature (Skelett, Animation, Bewegung),
-    │                          CreatureAI (FSM, rein), CreatureManager (Spawner nach Bedingungen, Population)
+    │   ├── creatures/         CreatureBuilder (Genom → geskinnte Geometrie + Knochen), Creature (Skelett, Animation, Bewegung),
+    │   │                      CreatureAI (FSM, rein), CreatureManager (Spawner nach Bedingungen, Population)
+    │   ├── props/             PropBuilder (Erze/Gesteine/Fossilien/Ruinen aus Genom), PropManager (Zellen, Raycast-Interaktion)
+    │   ├── photo/PhotoMode.ts Kameraeinstellungen, DoF/Filter-Effekte, Motiverkennung und Bewertung beim Auslösen
+    │   └── HintSystem.ts      Spuren/Kot/Nester als Objekte, Geräusche/Gerüche als Meldung, Gerüchte über seltene Verwandte
     │   └── Player.ts          Ego-/Schulter-Controller, Terrain-Kollision, Schwimmen, Gravitation
     ├── assets/                AssetRegistry: Platzhalter-Geometrien/Materialien, später austauschbar
     ├── audio/                 AudioManager (Web Audio), prozedurale Sounds
@@ -184,6 +191,24 @@ deterministischen, flachen Landeplatz. `VegetationProfiles.ts` definiert Dichten
   Flechte, Ranke, Kristallpflanze) aus dem Genom; `VegetationManager` platziert Arten nach Biom, Höhenband, Wasserregel und
   Seltenheit (Dichte je Wuchsform normiert) und zeichnet sie pro Zelle als BatchedMesh.
 
+### 4.6 Kernschleife: Foto, Archiv, Proben (Phase 4)
+
+- **Foto-Modus** (`Q`): Zeitlupe (×0,1), Spieler eingefroren, Umsehen bleibt. Einstellungen: Zoom (Rad), Fokus (`,`/`.`, Autofokus RMT),
+  Blende (R: f/1.4–f/11 → Schärfebereich), Belichtung (1/2), Filter (F), Raster (H), Selfie (C). Effekte als zweiter EffectPass
+  (DepthOfField, HueSaturation, BrightnessContrast, Sepia, Vignette), nur im Foto-Modus aktiv.
+- **Auslösen**: `PhotoMode.evaluate()` sammelt Motive aus Quellen (Kreaturen, Flora-Arten, Fossil-Props, aktive Himmelsphänomene),
+  projiziert sie, prüft Verdeckung per Raycast (Terrain, Props, Wasserlinie) und bewertet mit `PhotoScoring` (Ausschnitt 30 %,
+  Komposition 20 %, Fokus 20 %, Licht 15 %, Sichtbarkeit 15 %, Verhaltensbonus, Abzüge für Belichtung/Bewegung). Hauptmotiv voll,
+  bis zu zwei Nebenmotive mit −15. Das Canvas wird im selben Frame als JPEG (Archiv) und PNG (Export) gelesen; Thumbnail 480 px.
+- **Fortschritt** (`ArchiveProgress`, rein): Sterne nur aufwärts, bestes Foto, Verhaltens-Slots, Hinweise, Proben, Logbuch,
+  Abschluss je Planet/Kategorie, „versiegelt“ ab 80 %. Persistenz per IndexedDB (debounced 3 s, bei Pause/Verlassen sofort).
+- **Proben** (`E`): Kontext im Fadenkreuz – Prop (Erz/Gestein → Probe, Fossil/Ruine → Scan 1★), Wasser, Pflanze, Boden. Analyse im
+  Archiv (Tab → Proben): Mineralproben liefern Reinheit/Struktur/Spuren → Sterne; andere öffnen das Mikroskop (2D-Canvas) mit 1–4 Arten
+  des Bioms in verschiedenen Tiefen; Fokus-Regler, scharfe Zelle fotografieren → Sterne nach Schärfe.
+- **Hinweise**: alle 25–45 s ein Hinweis für eine unentdeckte Art des aktuellen Bioms (Spuren/Kot/Nest als Objekt in 10–32 m, Geräusch/
+  Geruch als Meldung). Aufsammeln verrät Biom, Tageszeit, Wetter, Gattung und ein Merkmal. Neue Entdeckungen können Gerüchte über
+  seltene Verwandte auslösen.
+
 ## 5. Laufzeit-Architektur
 
 - **GameLoop**: `requestAnimationFrame`, Akkumulator mit festem Update-Schritt (1/60 s, max. 5 Schritte/Frame), Render pro Frame,
@@ -206,7 +231,7 @@ deterministischen, flachen Landeplatz. `VegetationProfiles.ts` definiert Dichten
 | 1 | Universum-Generator (Stern, Planeten, Archiv-Einträge, Startplanet, Treibstoff) + Tests + 3D-Debug-Ansicht | ✅ |
 | 2 | Planetenoberfläche: Chunk-Terrain, Biome, Himmel, Tag/Nacht, Wetter-Basis, Spieler, Wasser, Vegetation | ✅ |
 | 3 | Kreaturen und Flora: prozedurale Körper, Verhalten, Spawn nach Bedingungen, Seltenheit | ✅ |
-| 4 | Kamera und Katalog (Kernschleife): Foto-Modus, Bewertung, Archiv-UI, Fotospeicherung, Hinweise, Mikroskop | ⬜ |
+| 4 | Kamera und Katalog (Kernschleife): Foto-Modus, Bewertung, Archiv-UI, Fotospeicherung, Hinweise, Mikroskop | ✅ |
 | 5 | Überleben, Rohstoffe, Basis, Labor, Treibstoff-Synthese | ⬜ |
 | 6 | Schiffbau und Raumflug | ⬜ |
 | 7 | Sonden, Satelliten, Karte | ⬜ |

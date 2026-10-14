@@ -26,6 +26,10 @@ export class Player {
   crouching = false;
   fly = false;
   thirdPerson = false;
+  /** Selfie-Kamera (vor dem Charakter, Blick zurück). */
+  selfie = false;
+  /** Bewegung gesperrt (Foto-Modus), Umsehen bleibt möglich. */
+  frozen = false;
   sensitivity = 0.0022;
   readonly body: Group;
   private readonly gravity: number;
@@ -85,8 +89,8 @@ export class Player {
     const cosY = Math.cos(this.yaw);
     this.forward.set(-sinY, 0, -cosY);
     this.right.set(cosY, 0, -sinY);
-    const mz = input.axis('move_back', 'move_forward');
-    const mx = input.axis('move_left', 'move_right');
+    const mz = this.frozen ? 0 : input.axis('move_back', 'move_forward');
+    const mx = this.frozen ? 0 : input.axis('move_left', 'move_right');
     this.wish.set(0, 0, 0).addScaledVector(this.forward, mz).addScaledVector(this.right, mx);
     if (this.wish.lengthSq() > 1) this.wish.normalize();
 
@@ -122,7 +126,7 @@ export class Player {
         this.velocity.y = clamp(vy, -4, 4);
       } else {
         this.velocity.y -= this.gravity * dt;
-        if (this.grounded && input.wasPressed('jump')) {
+        if (this.grounded && !this.frozen && input.wasPressed('jump')) {
           this.velocity.y = JUMP_SPEED;
           this.grounded = false;
         }
@@ -157,7 +161,7 @@ export class Player {
     this.position.z = clamp(this.position.z, -this.halfWorld, this.halfWorld);
     this.body.position.copy(this.position);
     this.body.rotation.y = this.yaw;
-    this.body.visible = this.thirdPerson;
+    this.body.visible = this.thirdPerson || this.selfie;
   }
 
   get nearWorldEdge(): boolean {
@@ -169,7 +173,15 @@ export class Player {
     this.camPos.copy(this.prevPosition).lerp(this.position, clamp(alpha, 0, 1));
     this.camera.rotation.order = 'YXZ';
     this.camera.rotation.set(this.pitch, this.yaw, 0);
-    if (this.thirdPerson) {
+    if (this.selfie) {
+      // Kamera vor dem Charakter, Blick auf den Kopf (Blickrichtung des Spielers bleibt Richtung Kamera)
+      this.camera.rotation.set(-this.pitch * 0.3, this.yaw + Math.PI, 0);
+      this.camOffset.set(0, 0, -1).applyEuler(this.camera.rotation).multiplyScalar(-2.4);
+      this.camera.position.copy(this.camPos).add(this.camOffset);
+      this.camera.position.y += this.eyeHeight + 0.1;
+      const ground = this.model.heightAt(this.camera.position.x, this.camera.position.z) + 0.4;
+      if (this.camera.position.y < ground) this.camera.position.y = ground;
+    } else if (this.thirdPerson) {
       this.camOffset.set(0, 0, 1).applyEuler(this.camera.rotation).multiplyScalar(4.2);
       this.camera.position.copy(this.camPos).add(this.camOffset);
       this.camera.position.y += this.eyeHeight + 0.4;

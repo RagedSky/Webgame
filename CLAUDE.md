@@ -15,9 +15,11 @@ prozedural erzeugten Archiv-Einträgen pro seed-basiertem Sternsystem. Vollstän
 | `npm run lint`    | ESLint (inkl. Verbot von `Math.random`)                 |
 | `npm run check`   | typecheck + lint + test                                 |
 
-Im Spiel: **F3** Debug-Overlay, **Esc** Pause/zurück. Oberfläche: WASD, Maus, Leertaste, Shift, Strg, **V** Ansicht.
+Im Spiel: **F3** Debug-Overlay, **Esc** Pause/zurück. Oberfläche: WASD, Maus, Leertaste, Shift, Strg, **V** Ansicht,
+**Q** Foto-Modus (Rad Zoom, `,`/`.` Fokus, RMT Autofokus, R Blende, 1/2 Belichtung, F Filter, H Raster, C Selfie, Leertaste/Klick auslösen),
+**Tab** Archiv (Logbuch, Proben, Mikroskop), **E** Probe/Scan.
 Debug auf der Oberfläche: **T** Zeitraffer (halten), **Y** Wetter wechseln, **G** Flugmodus.
-Konsole: `__stellar.scenes.active.setTimeOfDay(0.5)` / `.forceWeather('rain', true)` / `.spawnNearby(8)` in der Planetenszene.
+Konsole: `__stellar.scenes.active.setTimeOfDay(0.5)` / `.forceWeather('rain', true)` / `.spawnNearby(8)` / `.takePhoto()` / `.archive` in der Planetenszene.
 
 ## Konventionen
 
@@ -36,7 +38,7 @@ Konsole: `__stellar.scenes.active.setTimeOfDay(0.5)` / `.forceWeather('rain', tr
 - [x] **Phase 1 Universum-Generator:** Seed/PRNG, Sonnentypen, 3–10 Planeten, Planetenwerte, Archiv-Generator (400–600 Einträge), Startplanet-Garantie, Treibstoff-Formel, Unit-Tests, 3D-Systemansicht + Daten-Dump
 - [x] **Phase 2 Planetenoberfläche:** Chunk-Terrain, Biome, Himmel, Tag/Nacht, Wetter-Basis, Spieler-Controller, Wasser, Vegetation (Instancing)
 - [x] **Phase 3 Kreaturen und Flora:** prozedurale Tiere/Pflanzen aus Familien, Verhalten (FSM), Spawn nach Bedingungen, Seltenheit
-- [ ] **Phase 4 Kamera und Katalog:** Foto-Modus, Bewertung, Archiv-UI, Fotospeicherung (IndexedDB), Hinweissystem, Mikroskop, Proben
+- [x] **Phase 4 Kamera und Katalog:** Foto-Modus, Bewertung, Archiv-UI, Fotospeicherung (IndexedDB), Hinweissystem, Mikroskop, Proben
 - [ ] **Phase 5 Überleben, Rohstoffe, Basis:** Sauerstoff/Energie, Sammeln, Crafting, Labor, Treibstoff-Synthese-Minispiel
 - [ ] **Phase 6 Schiffbau und Raumflug:** Baueditor, Upgrades, Start/Orbit/Landung, Treibstoffverbrauch
 - [ ] **Phase 7 Sonden, Satelliten, Karte:** Satellit, Rover, Spezialsonden, Karten-Layer, Hotspots, Fog of War
@@ -57,4 +59,6 @@ Konsole: `__stellar.scenes.active.setTimeOfDay(0.5)` / `.forceWeather('rain', tr
 - `src/world/creatures/CreatureManager.ts` – Spawner, `CreatureBuilder.ts` – Genom → Mesh, `CreatureAI.ts` – Verhalten
 - `src/world/flora/FloraBuilder.ts` – Genom → Pflanzen-Geometrie, `src/world/Vegetation.ts` – Zellen/Batches
 - `src/gen/archive/conditions.ts` – Spawn-Bedingungen zur Laufzeit (rein)
+- `src/game/progress/ArchiveProgress.ts` – Fortschritt (rein), `src/game/photo/PhotoScoring.ts` – Bewertung (rein)
+- `src/world/photo/PhotoMode.ts` – Foto-Modus, `src/ui/ArchiveUi.ts` – Enzyklopädie, `src/save/Db.ts` – IndexedDB
 - `src/core/GameLoop.ts`, `src/core/SceneManager.ts`, `src/core/Input.ts`

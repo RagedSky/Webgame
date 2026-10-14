@@ -97,3 +97,22 @@ Legendäre Spezialbedingungen (Sonnenwende, Finsternis, nach Sturm) werden gepr�
 ## D-024 · Dichte der Arten-Flora je Wuchsform normiert
 **Kontext:** Ozeanwelten mit 100 Flora-Arten bekamen dreimal so viele Pflanzen wie Welten mit 30 Arten (1,2 Mio. Dreiecke).
 **Entscheidung:** Je Wuchsform ist die Gesamtdichte konstant; Arten teilen sie proportional zu ihrem Seltenheitsgewicht.
+
+## D-025 · Fotos als JPEG + Thumbnail in IndexedDB, PNG nur beim Export
+**Kontext:** Hunderte Fotos in voller Auflösung als PNG würden schnell Gigabytes belegen.
+**Entscheidung:** Archiv-Fotos werden als JPEG (Qualität 0,9) plus 480-px-Thumbnail gespeichert. Der PNG-Export des gerade geschossenen Fotos
+nutzt das verlustfreie Canvas-Bild aus demselben Frame; ältere Fotos werden beim Export aus dem JPEG in PNG gewandelt.
+
+## D-026 · Bewertung als gewichtete Summe mit Identifikationsschwelle
+**Entscheidung:** 0–100 Punkte aus Ausschnitt, Komposition, Fokus, Licht, Sichtbarkeit (+8 Verhalten, −12 Belichtung, bis −18 Bewegung).
+Identifiziert ab 25 Punkten, ≥ 5 % Bildhöhe und < 60 % Verdeckung; Sterne bei 25/60/85. Nebenmotive −15. Toleranz-Parameter für den
+Fotograf-Hintergrund (Phase 8) weitet Fokus- und Kompositionsfenster.
+
+## D-027 · Proben statt Labor in Phase 4
+**Entscheidung:** Erze/Gesteine werden an Props beprobt und sofort im Archiv analysiert (Reinheit/Struktur/Spuren deterministisch aus dem
+Proben-Seed). Mikroorganismen erfordern das Mikroskop mit Fokus-Minispiel. Phase 5 verlegt die Analyse in die Laborstation und erweitert sie
+(Labor-Upgrades erhöhen Qualität).
+
+## D-028 · Unbekannte Einträge sind sichtbar, aber nummeriert
+**Entscheidung:** Das Archiv zeigt alle Einträge als Platzhalter („Unbekannt · Erze #3“) mit Planet und Kategorie, damit die Lücken spürbar sind;
+Biome, Bedingungen und Seltenheit werden erst durch Hinweise oder Entdeckung sichtbar.
