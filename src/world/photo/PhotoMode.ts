@@ -4,9 +4,11 @@ import { clamp } from '@/math/utils';
 import type { ArchiveEntry } from '@/gen/archive/types';
 import { scoreSubject, starsForScore, type CameraSettings, type ScoreBreakdown, type Stars, type SubjectObservation } from '@/game/photo/PhotoScoring';
 
-export type PhotoFilter = 'none' | 'warm' | 'cool' | 'mono' | 'vivid' | 'vintage';
+export type PhotoFilter = 'none' | 'warm' | 'cool' | 'mono' | 'vivid' | 'vintage' | 'infrared' | 'noir';
 export const PHOTO_FILTERS: PhotoFilter[] = ['none', 'warm', 'cool', 'mono', 'vivid', 'vintage'];
-export const FILTER_LABELS: Record<PhotoFilter, string> = { none: 'Neutral', warm: 'Warm', cool: 'Kühl', mono: 'Monochrom', vivid: 'Lebhaft', vintage: 'Vintage' };
+/** Zusätzliche Filter des Fotograf-Hintergrunds (Phase 8). */
+export const EXTRA_FILTERS: PhotoFilter[] = ['infrared', 'noir'];
+export const FILTER_LABELS: Record<PhotoFilter, string> = { none: 'Neutral', warm: 'Warm', cool: 'Kühl', mono: 'Monochrom', vivid: 'Lebhaft', vintage: 'Vintage', infrared: 'Infrarot', noir: 'Noir' };
 
 export interface PhotoSettings {
   /** Blickwinkel in Grad (Zoom). */
@@ -74,6 +76,8 @@ export class PhotoMode {
   private readonly baseFov: number;
   private baseExposure = 1;
   private readonly candidates: SubjectCandidate[] = [];
+  /** Fotograf-Hintergrund: Infrarot- und Noir-Filter freigeschaltet. */
+  extraFilters = false;
 
   constructor(
     private readonly gl: WebGLRenderer,
@@ -135,12 +139,12 @@ export class PhotoMode {
     this.dof.cocMaterial.focusRange = this.focusRange;
     this.dof.bokehScale = 1 + (1 - s.aperture) * 4;
     const f = s.filter;
-    this.hueSat.hue = f === 'warm' ? 0.06 : f === 'cool' ? -0.08 : 0;
-    this.hueSat.saturation = f === 'mono' ? -1 : f === 'vivid' ? 0.35 : f === 'vintage' ? -0.3 : f === 'warm' ? 0.1 : 0;
-    this.brightness.contrast = f === 'vivid' ? 0.15 : f === 'vintage' ? -0.08 : 0;
-    this.brightness.brightness = f === 'vintage' ? 0.05 : 0;
+    this.hueSat.hue = f === 'warm' ? 0.06 : f === 'cool' ? -0.08 : f === 'infrared' ? 2.6 : 0;
+    this.hueSat.saturation = f === 'mono' || f === 'noir' ? -1 : f === 'vivid' ? 0.35 : f === 'vintage' ? -0.3 : f === 'warm' ? 0.1 : f === 'infrared' ? 0.45 : 0;
+    this.brightness.contrast = f === 'vivid' ? 0.15 : f === 'vintage' ? -0.08 : f === 'noir' ? 0.35 : f === 'infrared' ? 0.2 : 0;
+    this.brightness.brightness = f === 'vintage' ? 0.05 : f === 'noir' ? -0.05 : 0;
     this.sepia.intensity = f === 'vintage' ? 0.5 : 0;
-    this.vignette.darkness = f === 'vintage' ? 0.7 : 0.45;
+    this.vignette.darkness = f === 'vintage' ? 0.7 : f === 'noir' ? 0.85 : 0.45;
   }
 
   zoom(delta: number): void {
@@ -195,8 +199,9 @@ export class PhotoMode {
   }
 
   cycleFilter(): void {
-    const i = PHOTO_FILTERS.indexOf(this.settings.filter);
-    this.settings.filter = PHOTO_FILTERS[(i + 1) % PHOTO_FILTERS.length] as PhotoFilter;
+    const list = this.extraFilters ? [...PHOTO_FILTERS, ...EXTRA_FILTERS] : PHOTO_FILTERS;
+    const i = list.indexOf(this.settings.filter);
+    this.settings.filter = list[(i + 1) % list.length] as PhotoFilter;
     this.apply();
   }
 

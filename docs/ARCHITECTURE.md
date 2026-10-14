@@ -59,11 +59,14 @@ Sternsystem, baust ein Raumschiff, synthetisierst Treibstoff und füllst ein Arc
     │                          crafting/fuel (Rezepte, Synthese), ship/parts + ship/ShipDesign + ship/travel + ship/blueprints
     │                          (Schiffsteile, Entwurf/Werte, Reisekosten, Baupläne – alles rein), playerStore (Laden/Speichern),
     │                          map/MapGrid (Fog of War je Planet, Base64) + map/hotspots (Katalog-Lücken, Sondenziele, Hinweistexte),
-    │                          progressStore (gemeinsamer Archiv-Fortschritt für Planet und Orbit)
+    │                          progressStore (gemeinsamer Archiv-Fortschritt für Planet und Orbit),
+    │                          character/Character (Konfiguration, Begrenzung, Zufall, Share-Code, Presets), character/backgrounds
+    │                          (Hintergründe mit Boni), character/presetStore (eigene Presets in IndexedDB)
     ├── save/                  Db.ts: IndexedDB (Fotos als JPEG+Thumb-Blob, Fortschritt je Seed, Schlüssel/Wert)
     ├── audio/                 AudioManager: prozedurale UI-Klänge (Auslöser, Erfolg, Hinweis)
     ├── render/                Renderer-Wrapper (DPR, Render-Skalierung), Composer-Fabrik, Starfield, PlanetTexture (prozedural)
-    ├── scenes/                MainMenuScene, SystemViewScene (Debug), PlanetScene, ShipEditorScene (Werft), SpaceScene (Orbit/Flug)
+    ├── scenes/                MainMenuScene, SystemViewScene (Debug), PlanetScene, ShipEditorScene (Werft), SpaceScene (Orbit/Flug),
+    │                          CharacterScene (Charaktererstellung mit Studio-Bühne)
     ├── ui/                    DOM-Overlays: DebugOverlay, Toast, SystemPanel, Hud, PauseMenu, PhotoUi (Sucher + Ergebnis),
     │                          ArchiveUi (Enzyklopädie, Logbuch, Proben), MicroscopeView (2D-Zellen mit Fokus-Minispiel),
     │                          InventoryUi, LabUi, ShipUi, ShipEditorUi, MapUi (Canvas-Karte mit Layern, Fog of War, Markern)
@@ -89,6 +92,7 @@ Sternsystem, baust ein Raumschiff, synthetisierst Treibstoff und füllst ein Arc
     │   ├── ship/ShipActor.ts  Lander auf der Oberfläche: Position, Schub/Licht, Start- und Landehöhe, Raycast-Auswahl
     │   ├── probes/Rover.ts    Ferngesteuerter Rover: Fahrphysik auf dem Terrain (Nick/Roll), Wasser-/Grenzsperre, Augpunkt
     │   ├── probes/Buoys.ts    Bojen der Tiefseesonden (wippen auf dem Wasser)
+    │   ├── character/CharacterBuilder.ts  Konfiguration → Avatar aus Primitiven (Gelenke, Gesicht, Frisur, Anzug, Helm, Animation)
     │   └── HintSystem.ts      Spuren/Kot/Nester als Objekte, Geräusche/Gerüche als Meldung, Gerüchte über seltene Verwandte
     │   └── Player.ts          Ego-/Schulter-Controller, Terrain-Kollision, Schwimmen, Gravitation
     ├── assets/                AssetRegistry: Platzhalter-Geometrien/Materialien, später austauschbar
@@ -307,6 +311,28 @@ deterministischen, flachen Landeplatz. `VegetationProfiles.ts` definiert Dichten
 - **Gemeinsamer Fortschritt:** `gameState.progress` hält den `ArchiveProgress` je Seed (`progressStore`), damit die Orbit-Szene
   Entdeckungen und Proben der Atmosphärensonde verbuchen kann.
 
+### 4.10 Charaktererstellung und Hintergründe (Phase 8)
+
+- **Konfiguration** (`CharacterConfig`, rein, Version 1): Name, Körper (Größe, Statur, Schultern, Beinlänge), Gesicht (Kiefer,
+  Augengröße/-abstand, Nase, Hautton/-stich, Augenfarbe, Markierungen), Haare (8 Frisuren, Farbe, 4 Bärte), Anzug (Primär/Sekundär/
+  Akzent, 5 Muster, 5 Abzeichen, Helm-Modus), Hintergrund. `sanitizeCharacter()` begrenzt alle Regler auf 0..1, prüft Farben und
+  Enums und dient als Migration (unbekannte Felder fallen weg). Zufall ist seedbar (`randomCharacter(rng, base, locks)`), Gruppen
+  lassen sich sperren. **Share-Code** `SA1.<base36>.<name>` (unter 110 Zeichen) kodiert alle Werte (Regler mit 1/1295 Auflösung),
+  JSON-Export/-Import ergänzt ihn. Sechs mitgelieferte Presets, eigene Presets in IndexedDB (`character-presets`).
+- **Hintergründe** (`backgrounds.ts`): Biologe (Hinweise ×1,7, Sichtungsweite +35 %), Geologin (Scan-Qualität +0,25,
+  Analyse +0,2, +1 Einheit je Abbau), Ingenieur (Rezepte und Schiffsteile −20 %, Sammeltempo +35 %), Fotografin (Bewertungstoleranz
+  0,35, Filter Infrarot/Noir). Die Boni sind ein `BackgroundBonus`-Objekt, das die Planetenszene an HintSystem, Foto-Modus,
+  Analyse, Abbau und Kosten reicht (`effectiveCost` in InventoryUi/ShipEditor).
+- **Avatar** (`CharacterBuilder`, Three.js): Gelenkgruppen für Hüften, Schultern und Kopf; Gliedmaßen als Kapseln, Gesicht aus
+  Kugeln/Kegel, Frisur je Stil, Bart, Anzugmuster als Ringe/Panels/Platten, Abzeichen auf der Brust, Helm als Visierkugel. Die
+  Geh-Animation schwenkt Gliedmaßen phasengesteuert nach Geschwindigkeit, Idle-Atmung über die Torso-Skalierung. Der Spieler
+  (`Player.setCharacter`) ersetzt damit die Platzhalterkapsel; Augenhöhe folgt der Körpergröße, Helm bei nicht atembarer Atmosphäre
+  (Modus „auto“) oder nach Wahl. Sichtbar in Schulterperspektive (V) und Selfie-Modus (C).
+- **Szene** (`CharacterScene`): Studio-Licht (Key/Fill/Rim), Boden, Sterne, Orbit-Kamera mit Drehteller und Schnellansichten
+  (Gesicht/Ganzkörper), Live-Neuaufbau bei jeder Änderung. Vor dem ersten Spiel eines Seeds öffnet „Neues Spiel“ den Editor
+  (`character === null` im `PlayerState` v4); „Charakter“ im Hauptmenü bearbeitet ihn später (Boni greifen beim nächsten
+  Planetenbesuch).
+
 ## 5. Laufzeit-Architektur
 
 - **GameLoop**: `requestAnimationFrame`, Akkumulator mit festem Update-Schritt (1/60 s, max. 5 Schritte/Frame), Render pro Frame,
@@ -337,7 +363,7 @@ deterministischen, flachen Landeplatz. `VegetationProfiles.ts` definiert Dichten
 | 5 | Überleben, Rohstoffe, Basis, Labor, Treibstoff-Synthese | ✅ |
 | 6 | Schiffbau und Raumflug: Werft, Teile/Stufen, Baupläne, Start/Orbit/Landung, Treibstoffverbrauch | ✅ |
 | 7 | Sonden, Satelliten, Karte: Fog of War, Layer, Hotspots/Lücken, Marker, Rover, Tiefsee- und Atmosphärensonde | ✅ |
-| 8 | Charaktererstellung | ⬜ |
+| 8 | Charaktererstellung: Editor mit Live-Vorschau, Hintergründe mit Boni, Presets, Share-Code, Avatar im Spiel | ✅ |
 | 9 | Grafik und Einstellungen, adaptive Qualität | ⬜ |
 | 10 | Politur: Tutorial, Audio, Speichern/Laden, Balancing, README | ⬜ |
 

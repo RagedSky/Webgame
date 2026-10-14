@@ -31,6 +31,8 @@ export interface HintEvent {
 export class HintSystem {
   readonly group = new Group();
   readonly stats = { active: 0, given: 0 };
+  /** Hinweis-Häufigkeit (Biologe: 1,7). */
+  rate = 1;
   private readonly props: HintProp[] = [];
   private readonly rng: Random;
   private timer = 20;
@@ -153,7 +155,7 @@ export class HintSystem {
   update(dt: number, playerPos: Vector3, biomeId: string, biomeName: string): void {
     this.timer -= dt;
     if (this.timer <= 0) {
-      this.timer = this.rng.float(25, 45);
+      this.timer = this.rng.float(25, 45) / Math.max(0.1, this.rate);
       if (this.props.length < 3) this.spawnHint(playerPos, biomeId, biomeName);
     }
     for (let i = this.props.length - 1; i >= 0; i--) {

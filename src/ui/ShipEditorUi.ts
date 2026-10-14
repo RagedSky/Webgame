@@ -1,6 +1,6 @@
 import { clear, el } from './dom';
 import { STR } from './strings';
-import { costLabel } from './InventoryUi';
+import { costLabel, effectiveCost } from './InventoryUi';
 import type { PlayerState } from '@/game/PlayerState';
 import type { ResourceCost } from '@/game/Inventory';
 import { PART_DEFS, PART_TYPE_LABELS, type PartDef, type PartType } from '@/game/ship/parts';
@@ -51,7 +51,7 @@ export class ShipEditorUi {
 
   render(saved: ShipDesign, working: ShipDesign): void {
     const inv = this.state.inventory;
-    const delta = costDelta(saved, working);
+    const delta = effectiveCost(costDelta(saved, working), this.state);
     const pay = ShipEditorUi.toPay(delta);
     const affordable = inv.canAfford(pay);
 
@@ -113,7 +113,7 @@ export class ShipEditorUi {
     const inv = this.state.inventory;
     const available = isPartAvailable(def.id, this.state.blueprints);
     const projected: ResourceCost = { ...pending };
-    for (const [id, n] of Object.entries(def.cost) as [ResourceId, number][]) projected[id] = (projected[id] ?? 0) + n;
+    for (const [id, n] of Object.entries(effectiveCost(def.cost, this.state)) as [ResourceId, number][]) projected[id] = (projected[id] ?? 0) + n;
     const affordable = inv.canAfford(projected);
     const isHull = def.type === 'hull';
     const current = isHull ? working.hullId === def.id : false;

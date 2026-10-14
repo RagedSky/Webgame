@@ -42,6 +42,8 @@ import { deepSeaTargets, probeHintText } from '@/game/map/hotspots';
 import { ensureProgress } from '@/game/progressStore';
 import { NODE_CELL, generateResourceNodes, type ResourceNode } from '@/gen/terrain/ResourceNodes';
 import { ROVER_RANGE, ROVER_REVEAL, Rover } from '@/world/probes/Rover';
+import { bonusesFor, type BackgroundBonus, NEUTRAL_BONUS } from '@/game/character/backgrounds';
+import { effectiveCost } from '@/ui/InventoryUi';
 import { Buoys } from '@/world/probes/Buoys';
 import { ShipEditorScene } from './ShipEditorScene';
 import { SpaceScene } from './SpaceScene';
@@ -203,6 +205,8 @@ export class PlanetScene implements GameScene {
   private roverSaveAccum = 0;
   private allNodes: ResourceNode[] | null = null;
   private unsubProgress: (() => void) | null = null;
+  // Phase 8: Hintergrund-Boni
+  private bonus: BackgroundBonus = NEUTRAL_BONUS;
   private readonly roverEye = new Vector3();
   private readonly roverFwd = new Vector3();
   private readonly roverCamOffset = new Vector3();
@@ -259,6 +263,11 @@ export class PlanetScene implements GameScene {
     this.nodes = new ResourceNodeManager(this.scene, this.model, planet);
     this.base = new BaseManager(this.scene, this.model, planet, this.state);
     this.grid = this.state.mapGrid(planet.id, this.model.size);
+    this.bonus = bonusesFor(this.state.character?.background);
+    if (this.state.character) {
+      this.player.setCharacter(this.state.character);
+      this.player.setHelmet(!planet.atmosphere.breathable, this.state.character.suit.helmet);
+    }
     const roverState = this.state.rovers[planet.id];
     if (roverState) this.rover = new Rover(this.scene, this.model, roverState.x, roverState.z, roverState.yaw);
     if (this.model.hasWater) {
@@ -301,6 +310,7 @@ export class PlanetScene implements GameScene {
       { collectSubjects: (pos, maxDist, out) => this.collectProps(pos, maxDist, out) },
       { collectSubjects: (_pos, _maxDist, out) => this.collectSky(out) },
     ]);
+    this.photo.extraFilters = this.bonus.extraFilters;
 
     // Terrain in Scheiben aufbauen
     this.terrain.update(this.camera.position, 1);
@@ -320,6 +330,7 @@ export class PlanetScene implements GameScene {
     this.progress = await ensureProgress(this.system.seed, this.system.entries);
     this.unsubProgress = this.progress.onChange(() => (this.dirty = true));
     this.hints = new HintSystem(this.scene, this.model, planet, this.system.entries, this.system.families, this.progress, this.system.seed);
+    this.hints.rate = this.bonus.hintRate;
     loading.dispose();
 
     this.hud = new Hud(ctx.uiRoot);
@@ -376,7 +387,7 @@ export class PlanetScene implements GameScene {
       onResume: () => this.resume(),
       onSystemView: () => this.leave(new SystemViewScene()),
       onMainMenu: () => this.leave(new MainMenuScene()),
-    }, [STR.pause.phase4, STR.pause.phase5, STR.pause.phase6]);
+    }, [STR.pause.phase4, STR.pause.phase5, STR.pause.phase6, STR.pause.phase8]);
     const canvas = ctx.renderer.canvas;
     this.disposer.listen(canvas, 'click', () => {
       audio.unlock();
@@ -588,7 +599,7 @@ export class PlanetScene implements GameScene {
       sunDir: this.cycle.sunDir,
       cameraUnderwater: this.model.hasWater && this.camera.position.y < this.model.seaLevel,
       occluders: this.ship ? [this.terrain.group, this.props.group, this.ship.group] : [this.terrain.group, this.props.group],
-      tolerance: 0,
+      tolerance: this.bonus.photoTolerance,
     };
   }
 
@@ -767,7 +778,7 @@ export class PlanetScene implements GameScene {
       const a = analyzeMineralSample(sample);
       const entry = this.system.entries.find((e) => e.id === sample.entryId);
       if (!entry) return;
-      const r = this.progress.discoverByAnalysis(entry.id, a.quality, this.elapsed);
+      const r = this.progress.discoverByAnalysis(entry.id, Math.min(1, a.quality + this.bonus.analysisQuality), this.elapsed);
       sample.analyzed = true;
       showToast(`${this.progress.displayName(entry)}: ${'★'.repeat(r.stars)} · Reinheit ${(a.purity * 100).toFixed(0)} % · ${a.notes.join(' ')}`, 5000);
       audio.success(r.stars);
@@ -943,7 +954,7 @@ export class PlanetScene implements GameScene {
       this.hud.setHarvest(null);
       return;
     }
-    this.harvestProgress += dt / HARVEST_SECONDS;
+    this.harvestProgress += (dt * this.bonus.harvestSpeed) / HARVEST_SECONDS;
     this.hud.setHarvest(Math.min(1, this.harvestProgress));
     if (this.harvestProgress >= 1) {
       this.performHarvest(this.harvestTarget);
@@ -959,7 +970,7 @@ export class PlanetScene implements GameScene {
     const id = h.resourceId as ResourceId;
     let got = 0;
     if (h.kind === 'node' && h.node) {
-      got = inv.add(id, this.nodes.harvest(h.node, 2));
+      got = inv.add(id, this.nodes.harvest(h.node, 2 + this.bonus.harvestBonus));
       if (h.node.remaining <= 0) showToast(STR.interact.depleted, 2500);
     } else if (h.kind === 'water') got = inv.add(id, 2);
     else if (h.kind === 'plant') {
@@ -1024,8 +1035,9 @@ export class PlanetScene implements GameScene {
     const st = this.state;
     if (r.requiresLab && !st.hasModule(this.planet.id, 'lab')) return;
     if (r.max !== undefined && st.labLevel >= r.max) return;
-    if (!st.inventory.pay(r.cost)) {
-      const miss = Object.entries(st.inventory.missing(r.cost)).map(([id, n]) => `${n} ${RESOURCES[id as ResourceId].name}`);
+    const cost = effectiveCost(r.cost, st);
+    if (!st.inventory.pay(cost)) {
+      const miss = Object.entries(st.inventory.missing(cost)).map(([id, n]) => `${n} ${RESOURCES[id as ResourceId].name}`);
       showToast(`Fehlt: ${miss.join(', ')}`);
       return;
     }
@@ -1195,7 +1207,7 @@ export class PlanetScene implements GameScene {
       const m = this.base.pick(this.camera.position, this.camDir, BUILD_RANGE);
       if (m) {
         this.base.remove(m.id);
-        const cost = RECIPE_BY_ID[m.type]?.cost ?? {};
+        const cost = effectiveCost(RECIPE_BY_ID[m.type]?.cost ?? {}, this.state);
         for (const [id, n] of Object.entries(cost) as [ResourceId, number][]) this.state.inventory.add(id, Math.floor(n / 2));
         showToast(`${MODULE_LABELS[m.type]} ${STR.build.removed.toLowerCase()}`);
         audio.blip();
@@ -1724,7 +1736,7 @@ export class PlanetScene implements GameScene {
         const prop = it.prop as WorldProp;
         const e = prop.entry;
         if (e.category === 'fossil') {
-          const r = this.progress.discoverByAnalysis(e.id, 0.4, this.elapsed);
+          const r = this.progress.discoverByAnalysis(e.id, 0.4 + this.bonus.scanQuality, this.elapsed);
           showToast(`${STR.interact.scanned}: ${this.progress.displayName(e)} ${'★'.repeat(r.stars)} – Foto für bessere Bewertung`, 3500);
           audio.success(r.stars);
           if (e.subcategory === 'ruin') {
@@ -1951,7 +1963,7 @@ export class PlanetScene implements GameScene {
       ...(this.skyActive.length ? { phenomena: `${STR.interact.phenomenon}: ${this.skyActive.map((e) => (this.progress.isDiscovered(e.id) ? this.progress.displayName(e) : e.name)).join(', ')}` } : {}),
     });
     this.camera.getWorldDirection(this.camDir);
-    const seen = this.creatures.nearestInView(this.camera.position, this.camDir, 60, 0.93);
+    const seen = this.creatures.nearestInView(this.camera.position, this.camDir, 60 * this.bonus.sightingRange, 0.93);
     if (seen) {
       const c = seen.creature;
       const known = this.progress.isDiscovered(c.entry.id);
@@ -1982,6 +1994,7 @@ export class PlanetScene implements GameScene {
     const c = this.progress.completion();
     d.set('Archiv', `${c.discovered}/${c.total} (${(c.fraction * 100).toFixed(1)} %) · Fotos ${this.progress.photosTaken}`);
     d.set('Basis', `${this.state.modulesOn(this.planet.id).length} Module · Knoten ${this.nodes.stats.nodes} · O₂ ${sv.oxygen.toFixed(0)} · ⚡ ${sv.energy.toFixed(0)} · Treibstoff ${this.state.inventory.getItem('fuel')}`);
+    d.set('Charakter', this.state.character ? `${this.state.character.name} · ${this.state.character.background}` : '–');
     d.set('Karte', `${(this.grid.fraction() * 100).toFixed(1)} % erkundet · Satellit ${this.state.satellites[this.planet.id] ?? 0} · Rover ${this.rover ? (this.roverMode ? 'gesteuert' : 'abgestellt') : '–'} · Sonden ${(this.state.deepProbes[this.planet.id] ?? []).length}`);
     d.set('Schiff', this.ship ? `${this.state.ship.design.parts.length + 1} Teile · Tank ${this.state.ship.fuel}/${shipStats(this.state.ship.design).maxFuel} · Flüge ${this.state.ship.flights} · Baupläne ${this.state.blueprints.length}` : `nicht hier (${this.state.ship.location?.kind ?? '–'})`);
   }
@@ -2064,6 +2077,6 @@ export class PlanetScene implements GameScene {
     const gl = this.ctx.renderer.gl;
     gl.shadowMap.enabled = false;
     gl.setClearColor(0x05070d, 1);
-    for (const k of ['Chunks', 'Vegetation', 'Spieler', 'Kreaturen', 'Props', 'Archiv', 'Basis', 'Schiff', 'Karte']) this.ctx.debug.set(k, '');
+    for (const k of ['Chunks', 'Vegetation', 'Spieler', 'Kreaturen', 'Props', 'Archiv', 'Basis', 'Schiff', 'Karte', 'Charakter']) this.ctx.debug.set(k, '');
   }
 }

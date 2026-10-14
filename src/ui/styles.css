@@ -1632,3 +1632,59 @@ input[type='range'] {
   align-items: flex-end;
   gap: 4px;
 }
+
+/* ---------- Phase 8: Charakter ---------- */
+.char-panel {
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  bottom: 60px;
+  width: 380px;
+  overflow-y: auto;
+}
+
+.char-side {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  width: 340px;
+  max-height: calc(100% - 80px);
+  overflow-y: auto;
+}
+
+.char-tabs {
+  margin-bottom: 8px;
+}
+
+.char-row {
+  display: grid;
+  grid-template-columns: 110px 1fr auto;
+  gap: 8px;
+  align-items: center;
+  padding: 5px 0;
+  font-size: 13px;
+}
+
+.char-row input[type='range'] {
+  width: 100%;
+}
+
+.char-row input[type='color'] {
+  width: 44px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: none;
+  border-radius: 4px;
+}
+
+.swatch {
+  width: 42px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.char-actions {
+  margin-top: 12px;
+}

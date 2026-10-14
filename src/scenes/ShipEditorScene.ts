@@ -12,6 +12,7 @@ import { canPlace, costDelta, placePart, removePart, setHull, shipStats, type Sh
 import { createStarfield } from '@/render/Starfield';
 import { buildShip, ShipMaterials, type BuiltShip } from '@/world/ship/ShipBuilder';
 import { ShipEditorUi } from '@/ui/ShipEditorUi';
+import { effectiveCost } from '@/ui/InventoryUi';
 import { STR } from '@/ui/strings';
 import { showToast } from '@/ui/toast';
 import { PlanetScene } from './PlanetScene';
@@ -154,7 +155,7 @@ export class ShipEditorScene implements GameScene {
   }
 
   private apply(): void {
-    const delta = costDelta(this.saved, this.working);
+    const delta = effectiveCost(costDelta(this.saved, this.working), this.state);
     const pay = ShipEditorUi.toPay(delta);
     const inv = this.state.inventory;
     if (!inv.canAfford(pay)) {

@@ -6,6 +6,7 @@ import { RESOURCES } from '@/gen/universe/catalog';
 import { FUEL_ROLE_LABELS } from '@/gen/universe/Fuel';
 import type { ResourceId, ResourceKind } from '@/gen/universe/types';
 import type { ResourceCost } from '@/game/Inventory';
+import { bonusesFor, scaleCost } from '@/game/character/backgrounds';
 
 export interface CraftCallbacks {
   /** Gegenstand fertigen (bezahlt) bzw. Modul zum Platzieren auswählen. */
@@ -32,7 +33,13 @@ export const ITEM_LABELS: Record<ItemId, string> = {
 
 export const KIND_LABELS: Record<ResourceKind, string> = { metal: 'Metall', crystal: 'Kristall', mineral: 'Mineral', gas: 'Gas', liquid: 'Flüssigkeit', organic: 'Organisch' };
 
-export function costLabel(cost: ResourceCost, state: PlayerState): HTMLElement {
+/** Effektive Kosten mit Hintergrund-Bonus (Ingenieur: −20 %). */
+export function effectiveCost(cost: ResourceCost, state: PlayerState): ResourceCost {
+  return scaleCost(cost, bonusesFor(state.character?.background).costFactor);
+}
+
+export function costLabel(rawCost: ResourceCost, state: PlayerState): HTMLElement {
+  const cost = effectiveCost(rawCost, state);
   const row = el('span', { class: 'cost' });
   for (const [id, n] of Object.entries(cost) as [ResourceId, number][]) {
     const have = state.inventory.get(id);
@@ -120,7 +127,7 @@ export class InventoryUi {
     const recipes = RECIPES.filter((r) => this.station === 'workbench' || r.station === 'hand');
     const rec = el('div', { class: 'recipes' });
     for (const r of recipes) {
-      const affordable = inv.canAfford(r.cost);
+      const affordable = inv.canAfford(effectiveCost(r.cost, this.state));
       const count = inv.getItem(r.id);
       const maxed = r.max !== undefined && this.state.labLevel >= r.max;
       const needsLab = r.requiresLab && !this.state.hasModule(this.planetIdForLab, 'lab');

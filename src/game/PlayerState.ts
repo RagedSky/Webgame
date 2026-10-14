@@ -8,8 +8,9 @@ import type { ModuleType } from './crafting/recipes';
 import { starterDesign, type ShipDesign } from './ship/ShipDesign';
 import { milestonesEarned, nextBlueprint } from './ship/blueprints';
 import { MapGrid } from './map/MapGrid';
+import { migrateCharacter, type CharacterConfig } from './character/Character';
 
-export const PLAYER_STATE_VERSION = 3;
+export const PLAYER_STATE_VERSION = 4;
 
 export interface MapMarker {
   x: number;
@@ -84,6 +85,8 @@ export interface PlayerStateSnapshot {
   deepProbes: Record<string, Array<{ x: number; z: number }>>;
   /** Gasriesen mit gestarteter Atmosphärensonde. */
   atmoProbes: string[];
+  /** Charakter (null = noch nicht erstellt → Editor vor dem ersten Spiel). */
+  character: CharacterConfig | null;
   updatedAt: number;
 }
 
@@ -104,6 +107,7 @@ export class PlayerState {
   readonly deepProbes: Record<string, Array<{ x: number; z: number }>> = {};
   readonly atmoProbes: string[] = [];
   readonly markers: Record<string, MapMarker[]> = {};
+  character: CharacterConfig | null = null;
   private readonly grids = new Map<string, MapGrid>();
   private readonly gridData: Record<string, string> = {};
   private counter = 0;
@@ -226,6 +230,7 @@ export class PlayerState {
       rovers: Object.fromEntries(Object.entries(this.rovers).map(([k, v]) => [k, { ...v }])),
       deepProbes: Object.fromEntries(Object.entries(this.deepProbes).map(([k, v]) => [k, v.map((p) => ({ ...p }))])),
       atmoProbes: this.atmoProbes.slice(),
+      character: this.character ? migrateCharacter(this.character) : null,
       updatedAt: Date.now(),
     };
   }
@@ -263,6 +268,7 @@ export class PlayerState {
     for (const [id, r] of Object.entries(s.rovers)) p.rovers[id] = { ...r };
     for (const [id, list] of Object.entries(s.deepProbes)) p.deepProbes[id] = list.map((x) => ({ ...x }));
     p.atmoProbes.push(...s.atmoProbes);
+    p.character = s.character ? migrateCharacter(s.character) : null;
     p.counter = s.modules.length;
     return p;
   }
@@ -299,5 +305,7 @@ export function migratePlayerState(s: PlayerStateSnapshot): PlayerStateSnapshot 
   out.rovers ??= {};
   out.deepProbes ??= {};
   out.atmoProbes ??= [];
+  if (out.version < 4) out.version = 4;
+  out.character ??= null;
   return out;
 }

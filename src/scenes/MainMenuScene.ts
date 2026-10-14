@@ -12,6 +12,7 @@ import { showToast } from '@/ui/toast';
 import { SystemViewScene } from './SystemViewScene';
 import { PlanetScene } from './PlanetScene';
 import { SpaceScene } from './SpaceScene';
+import { CharacterScene } from './CharacterScene';
 import { ensurePlayerState } from '@/game/playerStore';
 
 /**
@@ -70,13 +71,14 @@ export class MainMenuScene implements GameScene {
         'div',
         { class: 'menu-buttons' },
         el('button', { class: 'primary', text: STR.newGame, title: STR.newGameHint, onClick: () => this.newGame() }),
+        el('button', { text: STR.character.menu, onClick: () => this.openCharacter() }),
         el('button', { text: STR.showSystem, onClick: () => this.openSystemView() }),
         el('button', { text: STR.load, onClick: () => showToast(STR.comingSoon) }),
         el('button', { text: STR.settings, onClick: () => showToast(STR.comingSoon) }),
         el('button', { text: STR.credits, onClick: () => showToast('Stellar Archive · prozedural, Three.js, TypeScript') }),
       ),
       el('div', { class: 'hint', text: STR.debugOverlayHint }),
-      el('div', { class: 'version', text: `v${GAME_VERSION} · Phase 6` }),
+      el('div', { class: 'version', text: `v${GAME_VERSION} · Phase 8` }),
     );
     this.root = el('div', { class: 'main-menu' }, panel);
     this.ctx.uiRoot.append(this.root);
@@ -90,17 +92,32 @@ export class MainMenuScene implements GameScene {
     this.ctx.debug.setSeed(seed);
   }
 
-  /** Neues Spiel bzw. Weiterspielen: Im Orbit → Raumflug, sonst Planet des Schiffs (Spielstand je Seed). */
+  /** Neues Spiel bzw. Weiterspielen: ohne Charakter zuerst der Editor; im Orbit → Raumflug, sonst Planet des Schiffs. */
   private newGame(): void {
     gameState.seed = this.seedInput?.value ?? gameState.seed;
-    const system = gameState.getSystem();
     const seed = gameState.seed;
     void ensurePlayerState(seed).then((state) => {
       if (gameState.seed !== seed || !this.root) return;
-      const loc = state.ship.location;
-      if (loc?.kind === 'orbit') this.ctx.scenes.switchTo(new SpaceScene());
-      else this.ctx.scenes.switchTo(new PlanetScene(loc?.kind === 'surface' && system.planets.some((p) => p.id === loc.planetId) ? loc.planetId : system.startPlanetId));
+      if (!state.character) {
+        this.ctx.scenes.switchTo(new CharacterScene({ onDone: () => this.enterWorld(), onCancel: () => this.ctx.scenes.switchTo(new MainMenuScene()), applyLabel: STR.character.start }));
+        return;
+      }
+      this.enterWorld();
     });
+  }
+
+  private enterWorld(): void {
+    const system = gameState.getSystem();
+    const state = gameState.player;
+    const loc = state?.ship.location ?? null;
+    if (loc?.kind === 'orbit') this.ctx.scenes.switchTo(new SpaceScene());
+    else this.ctx.scenes.switchTo(new PlanetScene(loc?.kind === 'surface' && system.planets.some((p) => p.id === loc.planetId) ? loc.planetId : system.startPlanetId));
+  }
+
+  /** Charakter des aktuellen Seeds bearbeiten (auch nachträglich; Boni gelten ab dem nächsten Planetenbesuch). */
+  private openCharacter(): void {
+    gameState.seed = this.seedInput?.value ?? gameState.seed;
+    this.ctx.scenes.switchTo(new CharacterScene({ onDone: () => this.ctx.scenes.switchTo(new MainMenuScene()), onCancel: () => this.ctx.scenes.switchTo(new MainMenuScene()) }));
   }
 
   private openSystemView(): void {

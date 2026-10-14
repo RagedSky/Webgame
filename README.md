@@ -45,8 +45,15 @@ Orbital-Satellit (im Orbit aussetzen) liefert die Höhenkarte, mit Tiefenscanner
 Lebenszeichen-Layer, die Katalog-Lücken je Biom zeigen („fehlen 7“). Klick setzt Marker. Der Rover wird über das Inventar
 ausgesetzt und mit **E** ferngesteuert (WASD, Fotos mit Q, Proben mit F, Reichweite 900 m), **X** packt ihn ein. Die Tiefseesonde
 kartiert am Ufer ein Gewässer und liefert Hinweise und eine Tiefenprobe, die Atmosphärensonde erfasst aus dem Orbit die
-Phänomene eines Gasriesen. Fotos, Fortschritt und Spielerzustand liegen in IndexedDB des Browsers; „Neues Spiel“ setzt beim
-gespeicherten Schiff fort. Debug: F3 Overlay, T Zeitraffer, Y Wetter, G Flugmodus.
+Phänomene eines Gasriesen.
+
+Charakter: Vor dem ersten Spiel eines Seeds öffnet sich der Charakter-Editor mit Live-3D-Vorschau (Körper, Gesicht, Haare,
+Anzug mit Farben, Mustern und Abzeichen, Helm). Der Hintergrund bringt einen kleinen Spielstil-Bonus: Biologe (mehr Hinweise,
+weitere Sichtungen), Geologin (bessere Scans und Analysen, mehr Abbau), Ingenieur (günstiger und schneller bauen), Fotografin
+(großzügigere Bewertung, Infrarot- und Noir-Filter). Presets, Zufall mit Sperren, Share-Code und JSON-Export sind eingebaut;
+„Charakter“ im Hauptmenü bearbeitet ihn später. Der Avatar ist in der Schulterperspektive (V) und im Selfie-Modus (C) sichtbar.
+Fotos, Fortschritt und Spielerzustand liegen in IndexedDB des Browsers; „Neues Spiel“ setzt beim gespeicherten Schiff fort.
+Debug: F3 Overlay, T Zeitraffer, Y Wetter, G Flugmodus.
 
 Architektur: `docs/ARCHITECTURE.md` · Entscheidungen: `docs/DECISIONS.md` · Arbeitskontext: `CLAUDE.md`.
 

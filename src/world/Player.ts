@@ -3,6 +3,8 @@ import type { Input } from '@/core/Input';
 import { clamp, lerp } from '@/math/utils';
 import type { TerrainModel } from '@/gen/terrain/TerrainModel';
 import type { Planet } from '@/gen/universe/types';
+import type { CharacterConfig } from '@/game/character/Character';
+import { buildCharacter, type BuiltCharacter } from '@/world/character/CharacterBuilder';
 
 const WALK_SPEED = 5.2;
 const SPRINT_SPEED = 9.5;
@@ -41,6 +43,9 @@ export class Player {
   private readonly halfWorld: number;
   private readonly bodyMaterial: MeshStandardMaterial;
   private readonly bodyGeometry: CapsuleGeometry;
+  private readonly placeholder: Mesh;
+  private built: BuiltCharacter | null = null;
+  private helmet = false;
 
   constructor(
     private readonly model: TerrainModel,
@@ -55,13 +60,30 @@ export class Player {
     const mesh = new Mesh(this.bodyGeometry, this.bodyMaterial);
     mesh.position.y = 0.85;
     mesh.castShadow = true;
+    this.placeholder = mesh;
     this.body = new Group();
     this.body.add(mesh);
     this.body.visible = false;
   }
 
   get eyeHeight(): number {
-    return this.crouching ? 1.05 : 1.62;
+    const stand = this.built?.eyeHeight ?? 1.62;
+    return this.crouching ? stand * 0.65 : stand;
+  }
+
+  /** Prozeduralen Charakter als Körper verwenden (ersetzt die Platzhalter-Kapsel). */
+  setCharacter(cfg: CharacterConfig): void {
+    this.built?.dispose();
+    this.built = buildCharacter(cfg);
+    this.placeholder.visible = false;
+    this.body.add(this.built.group);
+    this.setHelmet(this.helmet);
+  }
+
+  /** Helm sichtbar (nicht atembare Atmosphäre) – Modus 'on'/'off' des Charakters hat Vorrang. */
+  setHelmet(on: boolean, mode: 'auto' | 'on' | 'off' = 'auto'): void {
+    this.helmet = on;
+    this.built?.setHelmet(mode === 'on' ? true : mode === 'off' ? false : on);
   }
 
   spawn(x: number, y: number, z: number, yaw = 0): void {
@@ -162,6 +184,7 @@ export class Player {
     this.body.position.copy(this.position);
     this.body.rotation.y = this.yaw;
     this.body.visible = this.thirdPerson || this.selfie;
+    if (this.built && this.body.visible) this.built.animate(dt, this.fly || this.swimming ? 0 : this.speed, this.grounded && !this.swimming);
   }
 
   get nearWorldEdge(): boolean {
@@ -199,6 +222,7 @@ export class Player {
   }
 
   dispose(): void {
+    this.built?.dispose();
     this.bodyGeometry.dispose();
     this.bodyMaterial.dispose();
     this.body.removeFromParent();

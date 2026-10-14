@@ -46,7 +46,7 @@ Konsole: `__stellar.scenes.active.setTimeOfDay(0.5)` / `.forceWeather('rain', tr
 - [x] **Phase 5 Überleben, Rohstoffe, Basis:** Sauerstoff/Energie, Sammeln, Crafting, Labor, Treibstoff-Synthese-Minispiel
 - [x] **Phase 6 Schiffbau und Raumflug:** Baueditor, Upgrades, Start/Orbit/Landung, Treibstoffverbrauch
 - [x] **Phase 7 Sonden, Satelliten, Karte:** Satellit, Rover, Spezialsonden, Karten-Layer, Hotspots, Fog of War
-- [ ] **Phase 8 Charaktererstellung:** Editor mit Live-Vorschau, Hintergründe/Boni, Presets
+- [x] **Phase 8 Charaktererstellung:** Editor mit Live-Vorschau, Hintergründe/Boni, Presets
 - [ ] **Phase 9 Grafik und Einstellungen:** 720p–4K, Render-Skalierung, Presets, Postprocessing, adaptive Qualität
 - [ ] **Phase 10 Politur:** Tutorial, Audio, Speichern/Laden/Export, Balancing, Bugfixing, README
 
@@ -70,6 +70,8 @@ Konsole: `__stellar.scenes.active.setTimeOfDay(0.5)` / `.forceWeather('rain', tr
 - `src/game/ship/{parts,ShipDesign,travel,blueprints}.ts` – Schiffsteile, Entwurf/Werte, Reisekosten, Baupläne (rein)
 - `src/scenes/ShipEditorScene.ts` – Werft, `src/scenes/SpaceScene.ts` – Orbit/Transfer/Landung, `src/world/ship/*` – Schiffsmesh/-aktor
 - `src/game/map/{MapGrid,hotspots}.ts` – Fog of War, Katalog-Lücken (rein); `src/ui/MapUi.ts` – Karte; `src/world/probes/*` – Rover, Bojen
+- `src/game/character/{Character,backgrounds}.ts` – Charakter-Konfiguration, Share-Code, Presets, Hintergrund-Boni (rein);
+  `src/world/character/CharacterBuilder.ts` – Avatar; `src/scenes/CharacterScene.ts` + `src/ui/CharacterUi.ts` – Editor
 - `src/game/progress/ArchiveProgress.ts` – Fortschritt (rein), `src/game/photo/PhotoScoring.ts` – Bewertung (rein)
 - `src/world/photo/PhotoMode.ts` – Foto-Modus, `src/ui/ArchiveUi.ts` – Enzyklopädie, `src/save/Db.ts` – IndexedDB
 - `src/core/GameLoop.ts`, `src/core/SceneManager.ts`, `src/core/Input.ts`

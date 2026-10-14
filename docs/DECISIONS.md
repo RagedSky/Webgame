@@ -199,3 +199,26 @@ und motiviert zielgerichtete Erkundung.
 nutzen dieselben Routinen wie der Spieler mit anderem Augpunkt. Signalreichweite 900 m, kein Sauerstoffverbrauch des Rovers; der
 Spieler bleibt eingefroren und sollte an Unterkunft oder Schiff stehen. Rover-Fotos können so Gefahrenzonen abdecken, ohne die
 Kernschleife zu doppeln.
+
+## D-043 · Prozeduraler Charakter aus Primitiven statt Asset-Pipeline
+**Kontext:** Eine frühere Spezifikation sah glTF/DRACO/KTX2-Module, Morph Targets und Haar-Cards vor. Stellar Archive läuft ohne
+externe Assets (D-004-Linie: alles prozedural, austauschbar).
+**Entscheidung:** Der Avatar entsteht aus Kapseln, Kugeln und Boxen mit Gelenkgruppen und einfacher Geh-/Idle-Animation. Die
+`CharacterConfig` ist versioniert und UI-frei, `CharacterBuilder` ist die einzige Darstellungsschicht – ein späterer HD-Pfad
+(geladene Meshes) kann dieselbe Konfiguration lesen, ohne Editor oder Spielstand zu ändern.
+
+## D-044 · Hintergrund-Boni als kleines Faktor-Objekt
+**Entscheidung:** Jeder Hintergrund liefert ein `BackgroundBonus` (Hinweisrate, Sichtungsweite, Scan-/Analysequalität,
+Abbau-Bonus, Kostenfaktor, Sammeltempo, Foto-Toleranz, Zusatzfilter). Die Szene reicht die Werte an bestehende Systeme, statt
+dort Sonderfälle einzubauen. Boni bleiben moderat (max. ±35 %), damit kein Hintergrund Pflicht ist und die Kernschleife für alle
+gleich bleibt.
+
+## D-045 · Share-Code als kompakte Base36-Kodierung
+**Entscheidung:** Statt JSON im Link kodiert `SA1.<werte>.<name>` alle Regler (2 Zeichen je Wert) und Auswahlen (1 Zeichen),
+Farben als Hex. Der Code bleibt unter 110 Zeichen, ist tippbar und wird beim Import begrenzt und validiert; JSON bleibt für
+vollständige Sicherungen.
+
+## D-046 · Charakter vor dem ersten Spiel, danach jederzeit änderbar
+**Entscheidung:** Fehlt im `PlayerState` ein Charakter, öffnet „Neues Spiel“ zuerst den Editor; „Charakter“ im Hauptmenü erlaubt
+spätere Änderungen inklusive Hintergrund (Boni gelten ab dem nächsten Planetenbesuch). Das hält den Einstieg kurz und bestraft
+keine Experimente.
