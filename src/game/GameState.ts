@@ -1,6 +1,7 @@
 import { DEFAULT_SEED } from '@/config/constants';
 import { generateUniverse } from '@/gen';
 import type { StarSystem } from '@/gen/universe/types';
+import type { PlayerState } from './PlayerState';
 
 /**
  * Szenenübergreifender Spielzustand (Seed, generiertes System; später Spielstand und Einstellungen).
@@ -21,6 +22,10 @@ export class GameState {
   private _seed: string = DEFAULT_SEED;
   /** Letzter Zustand auf einer Planetenoberfläche (für Rückkehr aus Systemansicht/Pause). */
   surface: SurfaceState | null = null;
+  /** Nächster Planeteneintritt: 'landing' spielt die Landesequenz mit dem Schiff ab. */
+  arrival: 'landing' | null = null;
+  /** Geladener Spielerzustand (eine Instanz für alle Szenen; Persistenz über playerStore). */
+  player: PlayerState | null = null;
   private cachedSystem: StarSystem | null = null;
   private cachedSeed = '';
 
@@ -31,7 +36,11 @@ export class GameState {
   set seed(value: string) {
     const cleaned = value.trim().toUpperCase().replace(/\s+/g, '-');
     const next = cleaned.length ? cleaned : DEFAULT_SEED;
-    if (next !== this._seed) this.surface = null;
+    if (next !== this._seed) {
+      this.surface = null;
+      this.arrival = null;
+      this.player = null;
+    }
     this._seed = next;
   }
 

@@ -31,8 +31,15 @@ Fasern/Harz/Sporen an Pflanzen. **I** öffnet Inventar und Feldfertigung (Werkba
 (1–4 Modul, R drehen, Klick platzieren, X entfernen). **E** an der Werkbank fertigt Ladestation, Labor, Zellen, Köder und
 Labor-Upgrades; **E** am Labor öffnet die Treibstoff-Synthese (Mischung aus 2–3 Rohstoffen mit Treibstoff-Rolle analysieren und
 synthetisieren, Ziel 20 Treibstoff). Sauerstoff sinkt in nicht atembarer Luft und unter Wasser, Energie langsam immer; Unterkunft und
-Ladestation laden auf, bei 0 folgt ein Zusammenbruch mit Rückkehr zur Unterkunft (10 % Rohstoffverlust). Fotos, Fortschritt und
-Spielerzustand liegen in IndexedDB des Browsers. Debug: F3 Overlay, T Zeitraffer, Y Wetter, G Flugmodus.
+Ladestation laden auf, bei 0 folgt ein Zusammenbruch mit Rückkehr zur Unterkunft (10 % Rohstoffverlust).
+
+Schiff und Raumflug: Der beschädigte Lander steht nahe dem Landeplatz. **E** am Schiff öffnet das Schiffspanel mit Werten,
+Betanken, Werft und Start. In der Werft (3D-Editor) wählst du ein Teil und klickst einen passenden Sockel an: Triebwerk, Tank und
+drei Landebeine machen den Lander startklar; bessere Teile (Stufe 2/3) brauchen Baupläne aus gescannten Ruinen und
+Archiv-Meilensteinen. Der Start braucht Treibstoff für Start und Rückkehr. Im Orbit zeigt die Liste alle Planeten mit
+Transfer- und Landekosten sowie den nötigen Triebwerks- und Schildstufen; „Fliegen“ wechselt den Orbit, „Landen“ spielt die
+Landesequenz. Fotos, Fortschritt und Spielerzustand liegen in IndexedDB des Browsers; „Neues Spiel“ setzt beim gespeicherten
+Schiff fort. Debug: F3 Overlay, T Zeitraffer, Y Wetter, G Flugmodus.
 
 Architektur: `docs/ARCHITECTURE.md` · Entscheidungen: `docs/DECISIONS.md` · Arbeitskontext: `CLAUDE.md`.
 

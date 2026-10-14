@@ -29,7 +29,15 @@ import { PhotoMode, type PhotoEnv, type ScoredSubject, type SubjectCandidate } f
 import { ArchiveProgress, type Sample } from '@/game/progress/ArchiveProgress';
 import { analyzeMineralSample, createSample, microCellsForSample } from '@/game/samples';
 import { getDb, type GameDb } from '@/save/Db';
-import { PlayerState, type BaseModule, type PlayerStateSnapshot } from '@/game/PlayerState';
+import type { PlayerState, BaseModule } from '@/game/PlayerState';
+import { ensurePlayerState } from '@/game/playerStore';
+import { shipStats, validateDesign } from '@/game/ship/ShipDesign';
+import { launchCheck, launchCost } from '@/game/ship/travel';
+import { partDef } from '@/game/ship/parts';
+import { LANDING_SECONDS, LANDING_START_HEIGHT, LAUNCH_SECONDS, SHIP_RECHARGE_RADIUS, ShipActor } from '@/world/ship/ShipActor';
+import { ShipUi } from '@/ui/ShipUi';
+import { ShipEditorScene } from './ShipEditorScene';
+import { SpaceScene } from './SpaceScene';
 import { LAUNCH_FUEL_TARGET, MODULE_LABELS, RECIPE_BY_ID, type ItemId, type ModuleType, type Recipe } from '@/game/crafting/recipes';
 import { ResourceNodeManager, type LiveNode } from '@/world/resources/ResourceNodeManager';
 import { BaseManager, RECHARGE_RADIUS } from '@/world/base/BaseModules';
@@ -67,7 +75,7 @@ interface Interaction {
 
 /** Ziel der E-Taste: Modul öffnen oder Rohstoff sammeln (halten). */
 interface Harvest {
-  kind: 'none' | 'module' | 'node' | 'water' | 'plant';
+  kind: 'none' | 'module' | 'node' | 'water' | 'plant' | 'ship';
   label: string;
   module?: BaseModule;
   node?: LiveNode;
@@ -165,6 +173,14 @@ export class PlanetScene implements GameScene {
   private respawned = false;
   private playerDirty = false;
   private playerSaveTimer = 0;
+  private unsubState: (() => void) | null = null;
+
+  // Phase 6: Schiff
+  private ship: ShipActor | null = null;
+  private shipUi!: ShipUi;
+  private cinematic: { kind: 'launch' | 'landing'; t: number; countdownShown: number } | null = null;
+  private pendingLanding = false;
+  private readonly cinLookAt = new Vector3();
 
   constructor(private readonly planetId: string) {}
 
@@ -208,19 +224,34 @@ export class PlanetScene implements GameScene {
     this.player = new Player(this.model, planet, ctx.input, this.camera);
     this.scene.add(this.player.body);
 
-    // Spielerzustand (Inventar, Überleben, Basis) laden – vor dem Spawn, damit der Respawn-Punkt zählt
+    // Spielerzustand (Inventar, Überleben, Basis, Schiff) laden – vor dem Spawn, damit Respawn-Punkt und Schiff zählen
     this.db = await dbPromise;
-    const playerSnapshot = await this.db.getValue<PlayerStateSnapshot>(`player:${this.system.seed}`);
-    this.state = playerSnapshot ? PlayerState.fromJSON(playerSnapshot) : new PlayerState(this.system.seed);
-    this.state.onChange(() => {
+    this.state = await ensurePlayerState(this.system.seed);
+    this.unsubState = this.state.onChange(() => {
       this.playerDirty = true;
       this.checkGoal();
     });
     this.nodes = new ResourceNodeManager(this.scene, this.model, planet);
     this.base = new BaseManager(this.scene, this.model, planet, this.state);
 
+    // Schiff: steht es auf diesem Planeten? (Startplanet beim ersten Betreten, sonst gespeicherter Landeplatz)
+    const loc = this.state.ship.location;
+    const shipHere = (loc === null && planet.isStart) || (loc?.kind === 'surface' && loc.planetId === planet.id);
+    if (shipHere) {
+      let site: { x: number; z: number; rot: number };
+      if (loc?.kind === 'surface' && Number.isFinite(loc.x) && Number.isFinite(loc.z)) site = { x: loc.x, z: loc.z, rot: loc.rot };
+      else site = this.state.sites[planet.id] ?? this.findShipSite();
+      this.state.sites[planet.id] = site;
+      this.state.ship.location = { kind: 'surface', planetId: planet.id, x: site.x, z: site.z, rot: site.rot };
+      this.ship = new ShipActor(this.scene, this.model, this.state.ship.design, site.x, site.z, site.rot);
+      this.playerDirty = true;
+    }
+    this.pendingLanding = gameState.arrival === 'landing' && this.ship !== null;
+    gameState.arrival = null;
+
     const respawn = this.state.respawn[planet.id];
     if (saved) this.player.spawn(saved.x, saved.y, saved.z, saved.yaw);
+    else if (this.ship) this.spawnBesideShip();
     else if (respawn) this.player.spawn(respawn.x + 3, this.model.heightAt(respawn.x + 3, respawn.z + 3), respawn.z + 3, 0);
     else {
       const s = this.model.findSpawn();
@@ -280,22 +311,29 @@ export class PlanetScene implements GameScene {
     this.inventoryUi = new InventoryUi(ctx.uiRoot, this.state, { onCraft: (r) => this.craft(r), onUseItem: (id) => this.useItem(id), onClose: () => this.closeInventory() }, () => this.goalText());
     this.inventoryUi.planetIdForLab = planet.id;
     this.labUi = new LabUi(ctx.uiRoot, this.state, this.system.fuelFormula, { onClose: () => this.closeLab(), onFuelProduced: (n) => this.onFuelProduced(n) });
+    this.shipUi = new ShipUi(ctx.uiRoot, this.state, planet, {
+      onRefuel: () => this.refuel(),
+      onUnload: () => this.unloadFuel(),
+      onShipyard: () => this.openShipyard(),
+      onLaunch: () => this.startLaunch(),
+      onClose: () => this.closeShip(),
+    });
     this.pauseMenu = new PauseMenu(ctx.uiRoot, {
       onResume: () => this.resume(),
       onSystemView: () => this.leave(new SystemViewScene()),
       onMainMenu: () => this.leave(new MainMenuScene()),
-    }, [STR.pause.phase4, STR.pause.phase5]);
+    }, [STR.pause.phase4, STR.pause.phase5, STR.pause.phase6]);
     const canvas = ctx.renderer.canvas;
     this.disposer.listen(canvas, 'click', () => {
       audio.unlock();
-      if (!this.paused && !this.uiOpen && !ctx.input.pointerLocked) ctx.input.requestPointerLock();
+      if (!this.paused && !this.uiOpen && !this.cinematic && !ctx.input.pointerLocked) ctx.input.requestPointerLock();
     });
     this.disposer.listen(document, 'pointerlockchange', () => {
       const locked = ctx.input.pointerLocked;
       this.lockChangedAt = performance.now();
-      this.hud.setHint(locked ? '' : this.uiOpen ? '' : STR.planet.clickToStart);
+      this.hud.setHint(locked ? '' : this.uiOpen || this.cinematic ? '' : STR.planet.clickToStart);
       this.hud.setCrosshair(locked && !this.photo.active);
-      if (!locked && !this.switching && !this.paused && !this.uiOpen) this.pause();
+      if (!locked && !this.switching && !this.paused && !this.uiOpen && !this.cinematic) this.pause();
     });
     this.disposer.addFn(() => {
       this.hud.dispose();
@@ -304,12 +342,47 @@ export class PlanetScene implements GameScene {
       this.archiveUi.dispose();
       this.inventoryUi.dispose();
       this.labUi.dispose();
+      this.shipUi.dispose();
       this.closeMicroscope();
     });
     this.checkGoal();
     this.ready = true;
     const c = this.progress.completion(planet.id);
     showToast(`${planet.name} · ${planet.typeLabel} · Archiv ${c.discovered}/${c.total}`);
+    if (this.pendingLanding) {
+      this.pendingLanding = false;
+      this.startLanding();
+    } else if (this.ship && !saved && validateDesign(this.state.ship.design, planet.gravity).length > 0) showToast(STR.ship.damaged, 6000);
+  }
+
+  /** Flacher, trockener Landeplatz nahe dem Spawn (Startplanet / erste Landung). */
+  private findShipSite(): { x: number; z: number; rot: number } {
+    const s = this.model.findSpawn();
+    let best: { x: number; z: number; rot: number; score: number } | null = null;
+    for (let r = 14; r <= 70; r += 3) {
+      for (let a = 0; a < Math.PI * 2; a += 0.35) {
+        const x = s.x + Math.cos(a) * r;
+        const z = s.z + Math.sin(a) * r;
+        if (this.model.hasWater && this.model.heightAt(x, z) < this.model.seaLevel + 1.5) continue;
+        let slope = 0;
+        for (const [ox, oz] of [[0, 0], [3, 0], [-3, 0], [0, 3], [0, -3]] as Array<[number, number]>) slope = Math.max(slope, this.model.slopeAt(x + ox, z + oz, 1.5));
+        const score = slope + r * 0.004;
+        if (slope < 0.22 && (!best || score < best.score)) best = { x, z, rot: Math.atan2(s.x - x, s.z - z), score };
+      }
+      if (best && r >= 26) break;
+    }
+    return best ? { x: best.x, z: best.z, rot: best.rot } : { x: s.x + 16, z: s.z, rot: Math.PI / 2 };
+  }
+
+  /** Spieler neben dem Schiff absetzen (Blick zum Schiff). */
+  private spawnBesideShip(): void {
+    if (!this.ship) return;
+    const sp = this.ship.position;
+    const a = this.ship.group.rotation.y;
+    const d = this.ship.radius + 4.5;
+    const x = sp.x + Math.sin(a) * d;
+    const z = sp.z + Math.cos(a) * d;
+    this.player.spawn(x, Math.max(this.model.heightAt(x, z), this.model.hasWater ? this.model.seaLevel : -Infinity), z, Math.atan2(-(sp.x - x), -(sp.z - z)));
   }
 
   // ---------------------------------------------------------------------------
@@ -354,7 +427,7 @@ export class PlanetScene implements GameScene {
   /** Debug/Test: aktuelles E-Ziel sofort sammeln (ohne Halten). */
   harvestNow(): string {
     this.harvest = this.computeHarvest();
-    if (this.harvest.kind === 'none' || this.harvest.kind === 'module') return this.harvest.kind;
+    if (this.harvest.kind === 'none' || this.harvest.kind === 'module' || this.harvest.kind === 'ship') return this.harvest.kind;
     this.performHarvest(this.harvest);
     return this.harvest.kind;
   }
@@ -368,8 +441,18 @@ export class PlanetScene implements GameScene {
     return true;
   }
 
+  get shipActor(): ShipActor | null {
+    return this.ship;
+  }
+
+  /** Debug/Test: Startsequenz direkt auslösen (prüft Startklarheit). */
+  debugLaunch(): boolean {
+    this.startLaunch();
+    return this.cinematic !== null;
+  }
+
   private get uiOpen(): boolean {
-    return this.archiveUi.isOpen || this.inventoryUi.isOpen || this.labUi.isOpen;
+    return this.archiveUi.isOpen || this.inventoryUi.isOpen || this.labUi.isOpen || this.shipUi.isOpen;
   }
 
   // ---------------------------------------------------------------------------
@@ -441,7 +524,7 @@ export class PlanetScene implements GameScene {
       daylight: this.cycle.daylight,
       sunDir: this.cycle.sunDir,
       cameraUnderwater: this.model.hasWater && this.camera.position.y < this.model.seaLevel,
-      occluders: [this.terrain.group, this.props.group],
+      occluders: this.ship ? [this.terrain.group, this.props.group, this.ship.group] : [this.terrain.group, this.props.group],
       tolerance: 0,
     };
   }
@@ -543,6 +626,7 @@ export class PlanetScene implements GameScene {
       }
     }
     if (maxStars > 0) setTimeout(() => audio.success(maxStars), 150);
+    this.checkMilestones();
     const primary = subjects[0];
     await this.db.savePhoto({
       id: photoId,
@@ -623,6 +707,7 @@ export class PlanetScene implements GameScene {
       sample.analyzed = true;
       showToast(`${this.progress.displayName(entry)}: ${'★'.repeat(r.stars)} · Reinheit ${(a.purity * 100).toFixed(0)} % · ${a.notes.join(' ')}`, 5000);
       audio.success(r.stars);
+      this.checkMilestones();
       this.archiveUi.selectEntry(entry.id);
       return;
     }
@@ -647,6 +732,7 @@ export class PlanetScene implements GameScene {
       labels.set(cell.entry.id, this.progress.displayName(cell.entry));
       showToast(`${this.progress.displayName(cell.entry)}: ${'★'.repeat(r.stars)}${r.newDiscovery ? ` · ${STR.photo.newEntry}` : ''}`, 3500);
       audio.success(r.stars);
+      this.checkMilestones();
     });
   }
 
@@ -720,6 +806,7 @@ export class PlanetScene implements GameScene {
 
   private computeHarvest(): Harvest {
     this.camera.getWorldDirection(this.camDir);
+    if (this.ship && this.ship.pick(this.camera.position, this.camDir, HARVEST_RANGE + 2.5) > 0) return { kind: 'ship', label: `E: ${STR.ship.open} – ${STR.ship.title}` };
     const mod = this.base.pick(this.camera.position, this.camDir, HARVEST_RANGE);
     if (mod) return { kind: 'module', label: `E: ${STR.interact.open} – ${MODULE_LABELS[mod.type]}`, module: mod };
     const hit = this.nodes.pick(this.camera.position, this.camDir, HARVEST_RANGE);
@@ -758,6 +845,10 @@ export class PlanetScene implements GameScene {
       this.harvest = this.computeHarvest();
       if (this.harvest.kind === 'module') {
         this.openModule(this.harvest.module as BaseModule);
+        return;
+      }
+      if (this.harvest.kind === 'ship') {
+        this.openShip();
         return;
       }
       if (this.harvest.kind !== 'none') {
@@ -908,8 +999,12 @@ export class PlanetScene implements GameScene {
     const st = this.state;
     const inv = st.inventory;
     let step = 0;
-    if (inv.getItem('fuel') >= LAUNCH_FUEL_TARGET) step = 5;
-    else if (inv.getItem('fuel') > 0) step = 4;
+    const totalFuel = inv.getItem('fuel') + st.ship.fuel;
+    const designOk = validateDesign(st.ship.design, this.planet.gravity, shipStats(st.ship.design).maxFuel).length === 0;
+    if (st.ship.flights > 0) step = 7;
+    else if (designOk && totalFuel >= LAUNCH_FUEL_TARGET) step = 6;
+    else if (totalFuel >= LAUNCH_FUEL_TARGET) step = 5;
+    else if (totalFuel > 0) step = 4;
     else if (st.modules.some((m) => m.type === 'lab')) step = 3;
     else if (st.modules.some((m) => m.type === 'workbench')) step = 2;
     else if (inv.getItem('workbench') > 0 || inv.canAfford(RECIPE_BY_ID.workbench?.cost ?? {})) step = 1;
@@ -1019,6 +1114,173 @@ export class PlanetScene implements GameScene {
   }
 
   // ---------------------------------------------------------------------------
+  // Schiff: Panel, Betanken, Werft, Start- und Landesequenz
+  private openShip(): void {
+    if (this.shipUi.isOpen || this.cinematic) return;
+    this.exitPhoto();
+    this.exitBuild();
+    this.shipUi.show();
+    this.hud.setPrompt('');
+    this.ctx.input.exitPointerLock();
+    this.ctx.input.reset();
+  }
+
+  private closeShip(): void {
+    if (!this.shipUi.isOpen) return;
+    this.shipUi.hide();
+    this.ctx.input.requestPointerLock();
+  }
+
+  private refuel(): void {
+    const st = this.state;
+    const max = shipStats(st.ship.design).maxFuel;
+    const n = Math.min(st.inventory.getItem('fuel'), Math.max(0, max - st.ship.fuel));
+    if (n <= 0) return;
+    st.inventory.removeItem('fuel', n);
+    st.ship.fuel += n;
+    st.touch();
+    audio.blip();
+  }
+
+  private unloadFuel(): void {
+    const st = this.state;
+    if (st.ship.fuel <= 0) return;
+    st.inventory.addItem('fuel', st.ship.fuel);
+    st.ship.fuel = 0;
+    st.touch();
+    audio.blip();
+  }
+
+  private openShipyard(): void {
+    this.shipUi.hide();
+    this.leave(new ShipEditorScene(this.planet.id));
+  }
+
+  private startLaunch(): void {
+    if (this.cinematic || !this.ship) return;
+    const st = this.state;
+    const s = shipStats(st.ship.design);
+    const errors = validateDesign(st.ship.design, this.planet.gravity, st.ship.fuel);
+    const check = launchCheck(s, st.ship.fuel, this.planet);
+    if (errors.length || !check.ok) {
+      showToast(`${STR.ship.notReady}: ${[...errors, ...check.reasons].join(' · ')}`, 4000);
+      return;
+    }
+    audio.unlock();
+    this.shipUi.hide();
+    this.exitBuild();
+    this.exitPhoto();
+    this.harvestTarget = null;
+    this.hud.setHarvest(null);
+    this.hud.setPrompt('');
+    this.hud.setCrosshair(false);
+    this.ctx.input.exitPointerLock();
+    this.player.frozen = true;
+    this.cinematic = { kind: 'launch', t: 0, countdownShown: 0 };
+  }
+
+  private finishLaunch(): void {
+    const st = this.state;
+    const s = shipStats(st.ship.design);
+    st.ship.fuel = Math.max(0, st.ship.fuel - launchCost(s, st.ship.fuel, this.planet.gravity));
+    st.ship.location = { kind: 'orbit', planetId: this.planet.id };
+    st.ship.flights++;
+    st.touch();
+    this.progress.addLog('info', `Start von ${this.planet.name} – ${st.ship.fuel} ${STR.ship.fuel} im Tank`, this.elapsed, undefined, this.planet.id);
+    this.cinematic = null;
+    this.leave(new SpaceScene());
+    gameState.surface = null;
+  }
+
+  private startLanding(): void {
+    if (!this.ship) return;
+    this.cinematic = { kind: 'landing', t: 0, countdownShown: 0 };
+    this.player.frozen = true;
+    this.ship.lift = LANDING_START_HEIGHT;
+    this.ship.setThrottle(1);
+    this.hud.setFade(1);
+    this.hud.setHint('');
+    this.hud.setCrosshair(false);
+  }
+
+  private finishLanding(): void {
+    if (!this.ship) return;
+    this.cinematic = null;
+    this.ship.lift = 0;
+    this.ship.setThrottle(0);
+    this.hud.setFade(0);
+    this.player.frozen = false;
+    this.spawnBesideShip();
+    this.player.applyCamera(1);
+    this.progress.addLog('info', `${STR.ship.landed}: ${this.planet.name}`, this.elapsed, undefined, this.planet.id);
+    showToast(`${STR.ship.landed}: ${this.planet.name} · ${STR.ship.fuel} ${this.state.ship.fuel}`, 4000);
+    this.hud.setHint(this.ctx.input.pointerLocked ? '' : STR.planet.clickToStart);
+    audio.success(1);
+  }
+
+  private updateCinematic(dt: number): void {
+    const c = this.cinematic;
+    if (!c || !this.ship) return;
+    c.t += dt;
+    if (c.kind === 'launch') {
+      const COUNT = 3;
+      if (c.t < COUNT) {
+        const n = Math.ceil(COUNT - c.t);
+        if (n !== c.countdownShown) {
+          c.countdownShown = n;
+          showToast(`${STR.ship.countdown} ${n}`, 900);
+          audio.blip();
+        }
+        this.ship.setThrottle(0.15 + (c.t / COUNT) * 0.35);
+        this.ship.lift = 0;
+      } else {
+        const t = c.t - COUNT;
+        if (c.countdownShown !== -1) {
+          c.countdownShown = -1;
+          showToast(STR.ship.liftoff, 1500);
+          audio.success(2);
+        }
+        this.ship.setThrottle(1);
+        this.ship.lift = this.ship.launchLift(t);
+        this.hud.setFade(Math.max(0, (t - (LAUNCH_SECONDS - 1.2)) / 1.2));
+        if (t >= LAUNCH_SECONDS) this.finishLaunch();
+      }
+    } else {
+      const t = c.t;
+      this.ship.lift = this.ship.landingLift(t);
+      this.ship.setThrottle(t < LANDING_SECONDS - 0.4 ? 0.55 + 0.45 * (1 - t / LANDING_SECONDS) : 0);
+      this.hud.setFade(Math.max(0, 1 - t / 1.2));
+      if (t >= LANDING_SECONDS) this.finishLanding();
+    }
+  }
+
+  /** Kamera während Start/Landung: Außenansicht, die dem Schiff folgt. */
+  private applyCinematicCamera(): void {
+    const c = this.cinematic;
+    if (!c || !this.ship) return;
+    const sp = this.ship.position;
+    const lift = this.ship.lift;
+    const dist = this.ship.radius * 5 + 10;
+    const ang = this.ship.group.rotation.y + 0.9 + c.t * 0.04;
+    const cx = sp.x + Math.cos(ang) * dist;
+    const cz = sp.z + Math.sin(ang) * dist;
+    const cy = Math.max(sp.y + 5 + lift * 0.25, this.model.heightAt(cx, cz) + 2.2);
+    this.camera.position.set(cx, cy, cz);
+    this.cinLookAt.set(sp.x, sp.y + lift + this.ship.height * 0.45, sp.z);
+    this.camera.lookAt(this.cinLookAt);
+  }
+
+  /** Archiv-Meilensteine prüfen und Baupläne vergeben. */
+  private checkMilestones(): void {
+    const ids = this.state.claimMilestones(this.progress.completion().fraction);
+    for (const id of ids) {
+      showToast(`${STR.ship.milestone}: ${STR.ship.blueprint} – ${partDef(id).name}`, 5000);
+      this.progress.addLog('info', `${STR.ship.milestone}: ${STR.ship.blueprint} ${partDef(id).name}`, this.elapsed);
+    }
+    if (ids.length) audio.success(2);
+  }
+
+  // ---------------------------------------------------------------------------
   // Köder
   private placeLure(): void {
     const mesh = new Mesh(this.lureGeometry, this.lureMaterial);
@@ -1054,7 +1316,7 @@ export class PlanetScene implements GameScene {
     const s = this.model.sample(p.x, p.z);
     const biome = this.planet.biomes[s.biome]!;
     const tempC = kelvinToCelsius(pointTemperature(this.planet, biome, s.altitude, this.cycle.daylight));
-    const near = this.base.nearest(p, RECHARGE_RADIUS, ['shelter', 'charger']);
+    const recharging = this.base.nearest(p, RECHARGE_RADIUS, ['shelter', 'charger']) !== null || this.nearShip();
     const sv = this.state.survival;
     const events = sv.update({
       dt,
@@ -1063,7 +1325,7 @@ export class PlanetScene implements GameScene {
       sprinting: this.player.speed > 7,
       temperatureC: tempC,
       radiation: this.planet.hazards.includes('radiation'),
-      recharging: near !== null,
+      recharging,
     });
     for (const ev of events) {
       switch (ev) {
@@ -1098,6 +1360,10 @@ export class PlanetScene implements GameScene {
     }
     // Überlebenswerte ändern sich laufend → regelmäßig (gedrosselt) sichern
     this.playerDirty = true;
+  }
+
+  private nearShip(): boolean {
+    return this.ship !== null && Math.hypot(this.ship.position.x - this.player.position.x, this.ship.position.z - this.player.position.z) < SHIP_RECHARGE_RADIUS;
   }
 
   private startCollapse(): void {
@@ -1169,6 +1435,15 @@ export class PlanetScene implements GameScene {
           const r = this.progress.discoverByAnalysis(e.id, 0.4, this.elapsed);
           showToast(`${STR.interact.scanned}: ${this.progress.displayName(e)} ${'★'.repeat(r.stars)} – Foto für bessere Bewertung`, 3500);
           audio.success(r.stars);
+          if (e.subcategory === 'ruin') {
+            const bp = this.state.grantRuinBlueprint(e.id);
+            if (bp) {
+              showToast(`${STR.ship.blueprint}: ${partDef(bp).name}`, 5500);
+              this.progress.addLog('info', `${STR.ship.blueprint}: ${partDef(bp).name} (${this.progress.displayName(e)})`, this.elapsed, e.id, this.planet.id);
+              setTimeout(() => audio.success(3), 400);
+            }
+          }
+          this.checkMilestones();
         } else {
           if (this.sampledProps.has(prop.id)) {
             showToast(STR.interact.sampled);
@@ -1250,8 +1525,9 @@ export class PlanetScene implements GameScene {
     if (!this.ready || this.switching) return;
     const input = this.ctx.input;
 
-    if (input.wasPressed('pause') && performance.now() - this.lockChangedAt > 400) {
+    if (input.wasPressed('pause') && !this.cinematic && performance.now() - this.lockChangedAt > 400) {
       if (this.inventoryUi.isOpen) this.closeInventory();
+      else if (this.shipUi.isOpen) this.closeShip();
       else if (this.labUi.isOpen) this.closeLab();
       else if (this.archiveUi.isOpen) this.closeCatalog();
       else if (this.buildMode) this.exitBuild();
@@ -1272,7 +1548,10 @@ export class PlanetScene implements GameScene {
       this.saveTick(dt);
       return;
     }
-    if (input.wasPressed('camera') && !this.collapsing) {
+    if (this.cinematic) {
+      this.updateCinematic(dt);
+      if (!this.ready || this.switching) return;
+    } else if (input.wasPressed('camera') && !this.collapsing) {
       if (this.photo.active) this.exitPhoto();
       else {
         this.exitBuild();
@@ -1281,7 +1560,7 @@ export class PlanetScene implements GameScene {
     }
     if (this.photo.active) this.updatePhotoInput();
     else if (this.buildMode) this.updateBuildInput();
-    else if (!this.collapsing) {
+    else if (!this.collapsing && !this.cinematic) {
       if (input.wasPressed('toggle_view')) this.player.thirdPerson = !this.player.thirdPerson;
       if (input.wasPressed('fly')) {
         this.player.fly = !this.player.fly;
@@ -1309,7 +1588,7 @@ export class PlanetScene implements GameScene {
     this.updateLures(dt * slow);
     this.creatures.update(dt * slow, { pos: pl.position, yaw: pl.yaw, noise }, this.creatureEnv());
     this.nodes.update(this.camera.position, dt);
-    if (!this.collapsing) this.survivalTick(dt * slow);
+    if (!this.collapsing && !this.cinematic) this.survivalTick(dt * slow);
     this.updateCollapse(dt);
     if (!this.photo.active) {
       const here = this.model.biomeAt(pl.position.x, pl.position.z);
@@ -1368,7 +1647,7 @@ export class PlanetScene implements GameScene {
       const beh = c.ai.behavior && c.ai.state !== 'flee' ? (BEHAVIOR_LABELS[c.ai.behavior] ?? c.ai.behavior) : STATE_LABELS[c.ai.state];
       this.hud.setSighting(`Sichtung: ${known ? this.progress.displayName(c.entry) : `${STR.archive.unknown}`}${known || this.progress.isHinted(c.entry.id) ? ` · ${RARITY_LABELS[c.entry.rarity]}` : ''} · ${beh} · ${seen.distance.toFixed(0)} m`);
     } else this.hud.setSighting('');
-    if (!this.photo.active && !this.collapsing) {
+    if (!this.photo.active && !this.collapsing && !this.cinematic) {
       if (!this.buildMode) {
         this.interaction = this.computeInteraction();
         if (!this.harvestTarget) this.harvest = this.computeHarvest();
@@ -1376,7 +1655,7 @@ export class PlanetScene implements GameScene {
       this.hud.setPrompt(this.ctx.input.pointerLocked ? this.promptText() : '');
     } else this.hud.setPrompt('');
     const sv = this.state.survival;
-    const near = this.base.nearest(p, RECHARGE_RADIUS, ['shelter', 'charger']);
+    const near = this.base.nearest(p, RECHARGE_RADIUS, ['shelter', 'charger']) !== null || this.nearShip();
     const parts = [...sv.hazards];
     if (near) parts.push(STR.survival.recharging);
     this.hud.setSurvival(sv.oxygen, sv.energy, parts.join(' · '), sv.oxygen <= 25 || sv.energy <= 25);
@@ -1388,11 +1667,14 @@ export class PlanetScene implements GameScene {
     const c = this.progress.completion();
     d.set('Archiv', `${c.discovered}/${c.total} (${(c.fraction * 100).toFixed(1)} %) · Fotos ${this.progress.photosTaken}`);
     d.set('Basis', `${this.state.modulesOn(this.planet.id).length} Module · Knoten ${this.nodes.stats.nodes} · O₂ ${sv.oxygen.toFixed(0)} · ⚡ ${sv.energy.toFixed(0)} · Treibstoff ${this.state.inventory.getItem('fuel')}`);
+    d.set('Schiff', this.ship ? `${this.state.ship.design.parts.length + 1} Teile · Tank ${this.state.ship.fuel}/${shipStats(this.state.ship.design).maxFuel} · Flüge ${this.state.ship.flights} · Baupläne ${this.state.blueprints.length}` : `nicht hier (${this.state.ship.location?.kind ?? '–'})`);
   }
 
   render(_alpha: number, frameDt: number): void {
     if (!this.ready) return;
     this.player.applyCamera(this.paused ? 1 : _alpha);
+    if (this.cinematic) this.applyCinematicCamera();
+    this.ship?.update(this.elapsed);
     const params = this.weather.params;
     const slow = this.photo.active ? PHOTO_SLOWMO : 1;
     this.sky.update(this.cycle, params, this.weather.lightningFlash, this.camera, this.paused ? 0 : frameDt * slow, this.player.position);
@@ -1440,6 +1722,9 @@ export class PlanetScene implements GameScene {
     this.lures.length = 0;
     this.lureGeometry.dispose();
     this.lureMaterial.dispose();
+    this.unsubState?.();
+    this.unsubState = null;
+    this.ship?.dispose();
     this.base?.dispose();
     this.nodes?.dispose();
     this.hints?.dispose();
@@ -1456,6 +1741,6 @@ export class PlanetScene implements GameScene {
     const gl = this.ctx.renderer.gl;
     gl.shadowMap.enabled = false;
     gl.setClearColor(0x05070d, 1);
-    for (const k of ['Chunks', 'Vegetation', 'Spieler', 'Kreaturen', 'Props', 'Archiv', 'Basis']) this.ctx.debug.set(k, '');
+    for (const k of ['Chunks', 'Vegetation', 'Spieler', 'Kreaturen', 'Props', 'Archiv', 'Basis', 'Schiff']) this.ctx.debug.set(k, '');
   }
 }

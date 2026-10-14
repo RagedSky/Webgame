@@ -5,8 +5,26 @@
 import { Inventory, type InventorySnapshot } from './Inventory';
 import { Survival, type SurvivalState } from './survival/Survival';
 import type { ModuleType } from './crafting/recipes';
+import { starterDesign, type ShipDesign } from './ship/ShipDesign';
+import { milestonesEarned, nextBlueprint } from './ship/blueprints';
 
-export const PLAYER_STATE_VERSION = 1;
+export const PLAYER_STATE_VERSION = 2;
+
+export type ShipLocation = { kind: 'surface'; planetId: string; x: number; z: number; rot: number } | { kind: 'orbit'; planetId: string };
+
+export interface ShipState {
+  design: ShipDesign;
+  /** Treibstoff im Tank (Einheiten). */
+  fuel: number;
+  /** null = noch nicht platziert (Landeplatz des Startplaneten wird beim ersten Betreten gesetzt). */
+  location: ShipLocation | null;
+  /** Anzahl erfolgreicher Starts. */
+  flights: number;
+}
+
+export function defaultShip(): ShipState {
+  return { design: starterDesign(), fuel: 0, location: null, flights: 0 };
+}
 
 export interface BaseModule {
   id: string;
@@ -29,6 +47,15 @@ export interface PlayerStateSnapshot {
   respawn: Record<string, { x: number; z: number }>;
   /** Tutorial-/Zielschritt für das HUD. */
   goalStep: number;
+  ship: ShipState;
+  /** Freigeschaltete Baupläne (Teil-IDs ab Stufe 2). */
+  blueprints: string[];
+  /** Ruinen-Einträge, die bereits einen Bauplan geliefert haben. */
+  scannedRuins: string[];
+  /** Bereits eingelöste Archiv-Meilensteine. */
+  milestonesClaimed: number;
+  /** Landeplätze je Planet (Rückkehr landet an derselben Stelle). */
+  sites: Record<string, { x: number; z: number; rot: number }>;
   updatedAt: number;
 }
 
@@ -39,6 +66,11 @@ export class PlayerState {
   labLevel = 0;
   readonly respawn: Record<string, { x: number; z: number }> = {};
   goalStep = 0;
+  ship: ShipState = defaultShip();
+  readonly blueprints: string[] = [];
+  readonly scannedRuins: string[] = [];
+  milestonesClaimed = 0;
+  readonly sites: Record<string, { x: number; z: number; rot: number }> = {};
   private counter = 0;
   private listeners = new Set<() => void>();
 
@@ -81,6 +113,37 @@ export class PlayerState {
     return m;
   }
 
+  /** Nächsten Bauplan freischalten (null, wenn alle gefunden). */
+  unlockBlueprint(): string | null {
+    const id = nextBlueprint(this.seed, this.blueprints);
+    if (!id) return null;
+    this.blueprints.push(id);
+    this.emit();
+    return id;
+  }
+
+  /** Ruine zum ersten Mal gescannt → Bauplan (sofern noch welche offen sind). */
+  grantRuinBlueprint(entryId: string): string | null {
+    if (this.scannedRuins.includes(entryId)) return null;
+    this.scannedRuins.push(entryId);
+    const id = this.unlockBlueprint();
+    if (!id) this.emit();
+    return id;
+  }
+
+  /** Archiv-Meilensteine einlösen; liefert die neu freigeschalteten Pläne. */
+  claimMilestones(fraction: number): string[] {
+    const earned = milestonesEarned(fraction);
+    const out: string[] = [];
+    while (this.milestonesClaimed < earned) {
+      this.milestonesClaimed++;
+      const id = this.unlockBlueprint();
+      if (id) out.push(id);
+    }
+    if (out.length === 0 && earned > 0) this.emit();
+    return out;
+  }
+
   removeModule(id: string): BaseModule | null {
     const i = this.modules.findIndex((m) => m.id === id);
     if (i < 0) return null;
@@ -104,6 +167,11 @@ export class PlayerState {
       labLevel: this.labLevel,
       respawn: { ...this.respawn },
       goalStep: this.goalStep,
+      ship: { design: { hullId: this.ship.design.hullId, parts: this.ship.design.parts.map((p) => ({ ...p })) }, fuel: this.ship.fuel, location: this.ship.location ? { ...this.ship.location } : null, flights: this.ship.flights },
+      blueprints: this.blueprints.slice(),
+      scannedRuins: this.scannedRuins.slice(),
+      milestonesClaimed: this.milestonesClaimed,
+      sites: { ...this.sites },
       updatedAt: Date.now(),
     };
   }
@@ -115,6 +183,11 @@ export class PlayerState {
     p.labLevel = s.labLevel;
     Object.assign(p.respawn, s.respawn);
     p.goalStep = s.goalStep;
+    p.ship = { design: { hullId: s.ship.design.hullId, parts: s.ship.design.parts.map((x) => ({ ...x })) }, fuel: s.ship.fuel, location: s.ship.location ? { ...s.ship.location } : null, flights: s.ship.flights };
+    p.blueprints.push(...s.blueprints);
+    p.scannedRuins.push(...s.scannedRuins);
+    p.milestonesClaimed = s.milestonesClaimed;
+    Object.assign(p.sites, s.sites);
     p.counter = s.modules.length;
     return p;
   }
@@ -129,5 +202,21 @@ export function migratePlayerState(s: PlayerStateSnapshot): PlayerStateSnapshot 
   out.labLevel ??= 0;
   out.respawn ??= {};
   out.goalStep ??= 0;
+  if (out.version < 2) {
+    out.version = 2;
+    out.ship = defaultShip();
+    out.blueprints = [];
+    out.scannedRuins = [];
+    out.milestonesClaimed = 0;
+  }
+  out.ship ??= defaultShip();
+  out.ship.design ??= starterDesign();
+  out.ship.fuel ??= 0;
+  out.ship.location ??= null;
+  out.ship.flights ??= 0;
+  out.blueprints ??= [];
+  out.scannedRuins ??= [];
+  out.milestonesClaimed ??= 0;
+  out.sites ??= {};
   return out;
 }

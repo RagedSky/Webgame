@@ -54,12 +54,14 @@ Sternsystem, baust ein Raumschiff, synthetisierst Treibstoff und füllst ein Arc
     │   └── index.ts           generateUniverse(seed) → StarSystem inkl. Archiv
     ├── game/                  GameState (Seed, System, Oberflächenzustand), progress/ArchiveProgress (Sterne, Fotos, Hinweise,
     │                          Proben, Logbuch, Abschluss), photo/PhotoScoring (Bewertung, rein), samples (Proben, Mikro-Zellen),
-    │                          Inventory (Rohstoffe/Gegenstände), PlayerState (Inventar, Überleben, Module, Labor-Stufe, Respawn),
-    │                          survival/Survival (Sauerstoff/Energie, rein), crafting/recipes + crafting/fuel (Rezepte, Synthese)
+    │                          Inventory (Rohstoffe/Gegenstände), PlayerState (Inventar, Überleben, Module, Labor-Stufe, Respawn,
+    │                          Schiff, Baupläne, Landeplätze), survival/Survival (Sauerstoff/Energie, rein), crafting/recipes +
+    │                          crafting/fuel (Rezepte, Synthese), ship/parts + ship/ShipDesign + ship/travel + ship/blueprints
+    │                          (Schiffsteile, Entwurf/Werte, Reisekosten, Baupläne – alles rein), playerStore (Laden/Speichern)
     ├── save/                  Db.ts: IndexedDB (Fotos als JPEG+Thumb-Blob, Fortschritt je Seed, Schlüssel/Wert)
     ├── audio/                 AudioManager: prozedurale UI-Klänge (Auslöser, Erfolg, Hinweis)
     ├── render/                Renderer-Wrapper (DPR, Render-Skalierung), Composer-Fabrik, Starfield, PlanetTexture (prozedural)
-    ├── scenes/                konkrete Szenen: MainMenuScene, SystemViewScene (Debug), später PlanetScene, ShipEditorScene …
+    ├── scenes/                MainMenuScene, SystemViewScene (Debug), PlanetScene, ShipEditorScene (Werft), SpaceScene (Orbit/Flug)
     ├── ui/                    DOM-Overlays: DebugOverlay, Toast, SystemPanel, Hud, PauseMenu, PhotoUi (Sucher + Ergebnis),
     │                          ArchiveUi (Enzyklopädie, Logbuch, Proben), MicroscopeView (2D-Zellen mit Fokus-Minispiel)
     ├── world/                 Laufzeit-Welt (Three.js)
@@ -80,6 +82,8 @@ Sternsystem, baust ein Raumschiff, synthetisierst Treibstoff und füllst ein Arc
     │   ├── photo/PhotoMode.ts Kameraeinstellungen, DoF/Filter-Effekte, Motiverkennung und Bewertung beim Auslösen
     │   ├── resources/         ResourceNodeManager: abbaubare Knoten (Zellen 128 m, Vorlagen je Rohstoff, Restmenge, Respawn)
     │   ├── base/BaseModules.ts BaseManager: Modul-Meshes aus dem PlayerState, Geist-Vorschau, Platzierungsprüfung, Nähe-Abfragen
+    │   ├── ship/ShipBuilder.ts Entwurf → Gruppe (Rumpf, Kanzel, Düsen + Flammen, Beine, Anbauten), Sockelmarker für die Werft
+    │   ├── ship/ShipActor.ts  Lander auf der Oberfläche: Position, Schub/Licht, Start- und Landehöhe, Raycast-Auswahl
     │   └── HintSystem.ts      Spuren/Kot/Nester als Objekte, Geräusche/Gerüche als Meldung, Gerüchte über seltene Verwandte
     │   └── Player.ts          Ego-/Schulter-Controller, Terrain-Kollision, Schwimmen, Gravitation
     ├── assets/                AssetRegistry: Platzhalter-Geometrien/Materialien, später austauschbar
@@ -240,6 +244,35 @@ deterministischen, flachen Landeplatz. `VegetationProfiles.ts` definiert Dichten
   nähern sich (Foto-Chance).
 - **Zielanzeige**: `goalStep` (nur aufwärts) aus dem Zustand abgeleitet: Rohstoffe → Werkbank → Labor → Formel → 20 Treibstoff → bereit.
 
+### 4.8 Schiffbau und Raumflug (Phase 6)
+
+- **Entwurf** (`ShipDesign`, rein): genau ein Rumpf (Stufe 1–3) mit Sockeln (oben: Kanzel, unten: 1–3 Triebwerke, Beinhalterungen,
+  Seiten: Tank/Fracht/Scanner/Schild). `shipStats()` liefert Leermasse, Schub, Tank, Effizienz, Stufen (Triebwerk, Schild, Scanner),
+  Beine und deren g-Auslegung. `validateDesign(design, g)` prüft Kanzel, Triebwerk, Tank, ≥ 3 Beine, Bein-Auslegung und
+  Schub/Gewicht ≥ 1,1 (Masse = Leermasse + Treibstoff × 0,05 t). Rumpfwechsel behält Teile, für die ein freier Sockel gleicher Art
+  existiert.
+- **Startzustand:** der beschädigte Lander (Rumpf + Kanzel) steht auf einem flachen Landeplatz nahe dem Spawn des Startplaneten; der
+  Spieler erwacht daneben. Triebwerk, Tank und Beine werden in der Werft gebaut (alle Teile kosten nur Startrohstoffe).
+- **Werft** (`ShipEditorScene`, E am Schiff → „Werft öffnen“): 3D-Editor mit Orbit-Kamera, Teileliste links (Bauplan-/Rohstoffstatus),
+  Live-Werte rechts, freie Sockel als pulsierende Marker (grün = passend zum gewählten Teil). Änderungen werden erst mit „Übernehmen“
+  bezahlt (`costDelta`: Zugänge kosten, Abgänge werden voll erstattet). Zu viel Treibstoff beim Tankwechsel geht ins Inventar.
+- **Treibstoff** (`travel.ts`): Start `⌈(2 + 0,25·g·Masse)/Effizienz⌉`, Landung `⌈(1 + 0,15·g·Masse)/Effizienz⌉`,
+  Transfer `⌈1,5·ΔAU·Masse/15/Effizienz⌉`. Der Start erfordert Treibstoff für Start + Rückkehr auf denselben Planeten.
+  Ein Test belegt, dass der Stufe-1-Lander auf jedem Startplaneten mit 20 Einheiten starten und landen kann.
+- **Start** (`PlanetScene`): Countdown 3 s, Schub hoch, Aufstieg 6 s mit Außenkamera, Ausblenden → `SpaceScene`; Treibstoff abgezogen,
+  Schiff im Orbit, `flights++`. **Orbit** (`SpaceScene`): stilisiertes System (feste Planetenpositionen), Lander beim aktuellen Planeten,
+  Liste nach Distanz mit Transfer-/Landekosten, Stufen-Prüfung (`reachCheck`: Triebwerk-/Schildstufe des Planeten) und Landeprüfung
+  (`landCheck`: keine Gasriesen, Beine, Schub/Gewicht). Transfer als animierte Bahn, Kamera folgt. **Landung**: Landekosten
+  (wer sie nicht mehr hat, darf an Ort und Stelle kostenlos landen – nie stranden), `gameState.arrival = 'landing'` → `PlanetScene`
+  spielt den Abstieg aus 160 m mit Außenkamera, setzt den Spieler neben dem Schiff ab und merkt sich den Landeplatz je Planet.
+- **Baupläne** (`blueprints.ts`): Stufe-2/3-Teile sind gesperrt, bis ein Bauplan freigeschaltet ist. Quellen: jede zum ersten Mal
+  gescannte Ruine (F) und Archiv-Meilensteine (10/20/30/40/50/60 %). Reihenfolge je Seed fest (Stufe 2 vor 3, erster Plan ist
+  Triebwerk II oder Schild I). Ein Test belegt: jeder Startplanet hat Ruinen oder einen Stufe-1-Nachbarn.
+- **Spielerzustand v2:** `ship { design, fuel, location (surface x/z/rot | orbit), flights }`, `blueprints`, `scannedRuins`,
+  `milestonesClaimed`, `sites` (Landeplatz je Planet). Eine Instanz lebt in `gameState.player` (über `playerStore`), damit
+  Szenenwechsel (Planet ↔ Werft ↔ Orbit) keinen Lese-/Schreib-Wettlauf mit IndexedDB haben. „Neues Spiel“ setzt beim gespeicherten
+  Schiff fort (Orbit → Raumflug, sonst Planet des Schiffs).
+
 ## 5. Laufzeit-Architektur
 
 - **GameLoop**: `requestAnimationFrame`, Akkumulator mit festem Update-Schritt (1/60 s, max. 5 Schritte/Frame), Render pro Frame,
@@ -268,7 +301,7 @@ deterministischen, flachen Landeplatz. `VegetationProfiles.ts` definiert Dichten
 | 3 | Kreaturen und Flora: prozedurale Körper, Verhalten, Spawn nach Bedingungen, Seltenheit | ✅ |
 | 4 | Kamera und Katalog (Kernschleife): Foto-Modus, Bewertung, Archiv-UI, Fotospeicherung, Hinweise, Mikroskop | ✅ |
 | 5 | Überleben, Rohstoffe, Basis, Labor, Treibstoff-Synthese | ✅ |
-| 6 | Schiffbau und Raumflug | ⬜ |
+| 6 | Schiffbau und Raumflug: Werft, Teile/Stufen, Baupläne, Start/Orbit/Landung, Treibstoffverbrauch | ✅ |
 | 7 | Sonden, Satelliten, Karte | ⬜ |
 | 8 | Charaktererstellung | ⬜ |
 | 9 | Grafik und Einstellungen, adaptive Qualität | ⬜ |

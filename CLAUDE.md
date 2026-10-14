@@ -18,10 +18,11 @@ prozedural erzeugten Archiv-Einträgen pro seed-basiertem Sternsystem. Vollstän
 Im Spiel: **F3** Debug-Overlay, **Esc** Pause/zurück. Oberfläche: WASD, Maus, Leertaste, Shift, Strg, **V** Ansicht,
 **Q** Foto-Modus (Rad Zoom, `,`/`.` Fokus, RMT Autofokus, R Blende, 1/2 Belichtung, F Filter, H Raster, C Selfie, Leertaste/Klick auslösen),
 **Tab** Archiv (Logbuch, Proben, Mikroskop), **F** Probe/Scan, **E** halten sammeln / Modul öffnen, **I** Inventar/Fertigung,
-**B** Bau-Modus (1–4 Modul, R drehen, Klick platzieren, X entfernen).
+**B** Bau-Modus (1–4 Modul, R drehen, Klick platzieren, X entfernen), **E** am Schiff: Werft / Betanken / Start; im Orbit Planet wählen,
+Fliegen, Landen.
 Debug auf der Oberfläche: **T** Zeitraffer (halten), **Y** Wetter wechseln, **G** Flugmodus.
 Konsole: `__stellar.scenes.active.setTimeOfDay(0.5)` / `.forceWeather('rain', true)` / `.spawnNearby(8)` / `.takePhoto()` / `.archive` /
-`.harvestNow()` / `.placeModule('workbench', x, z)` / `.playerState.inventory.add('ferrite', 20)` in der Planetenszene.
+`.harvestNow()` / `.placeModule('workbench', x, z)` / `.playerState.inventory.add('ferrite', 20)` / `.debugLaunch()` in der Planetenszene.
 
 ## Konventionen
 
@@ -42,7 +43,7 @@ Konsole: `__stellar.scenes.active.setTimeOfDay(0.5)` / `.forceWeather('rain', tr
 - [x] **Phase 3 Kreaturen und Flora:** prozedurale Tiere/Pflanzen aus Familien, Verhalten (FSM), Spawn nach Bedingungen, Seltenheit
 - [x] **Phase 4 Kamera und Katalog:** Foto-Modus, Bewertung, Archiv-UI, Fotospeicherung (IndexedDB), Hinweissystem, Mikroskop, Proben
 - [x] **Phase 5 Überleben, Rohstoffe, Basis:** Sauerstoff/Energie, Sammeln, Crafting, Labor, Treibstoff-Synthese-Minispiel
-- [ ] **Phase 6 Schiffbau und Raumflug:** Baueditor, Upgrades, Start/Orbit/Landung, Treibstoffverbrauch
+- [x] **Phase 6 Schiffbau und Raumflug:** Baueditor, Upgrades, Start/Orbit/Landung, Treibstoffverbrauch
 - [ ] **Phase 7 Sonden, Satelliten, Karte:** Satellit, Rover, Spezialsonden, Karten-Layer, Hotspots, Fog of War
 - [ ] **Phase 8 Charaktererstellung:** Editor mit Live-Vorschau, Hintergründe/Boni, Presets
 - [ ] **Phase 9 Grafik und Einstellungen:** 720p–4K, Render-Skalierung, Presets, Postprocessing, adaptive Qualität
@@ -65,6 +66,8 @@ Konsole: `__stellar.scenes.active.setTimeOfDay(0.5)` / `.forceWeather('rain', tr
 - `src/game/crafting/recipes.ts` – Rezepte/Module, `fuel.ts` – Synthese; `src/game/survival/Survival.ts` – Sauerstoff/Energie
 - `src/world/resources/ResourceNodeManager.ts` – Rohstoffknoten, `src/world/base/BaseModules.ts` – Basis-Module + Bau-Geist
 - `src/ui/InventoryUi.ts` (Inventar/Werkbank), `src/ui/LabUi.ts` (Treibstoff-Synthese)
+- `src/game/ship/{parts,ShipDesign,travel,blueprints}.ts` – Schiffsteile, Entwurf/Werte, Reisekosten, Baupläne (rein)
+- `src/scenes/ShipEditorScene.ts` – Werft, `src/scenes/SpaceScene.ts` – Orbit/Transfer/Landung, `src/world/ship/*` – Schiffsmesh/-aktor
 - `src/game/progress/ArchiveProgress.ts` – Fortschritt (rein), `src/game/photo/PhotoScoring.ts` – Bewertung (rein)
 - `src/world/photo/PhotoMode.ts` – Foto-Modus, `src/ui/ArchiveUi.ts` – Enzyklopädie, `src/save/Db.ts` – IndexedDB
 - `src/core/GameLoop.ts`, `src/core/SceneManager.ts`, `src/core/Input.ts`

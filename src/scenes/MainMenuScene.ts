@@ -11,6 +11,8 @@ import { el } from '@/ui/dom';
 import { showToast } from '@/ui/toast';
 import { SystemViewScene } from './SystemViewScene';
 import { PlanetScene } from './PlanetScene';
+import { SpaceScene } from './SpaceScene';
+import { ensurePlayerState } from '@/game/playerStore';
 
 /**
  * Hauptmenü: Seed-Eingabe, „Zufälliges Universum“, Debug-Systemansicht.
@@ -74,7 +76,7 @@ export class MainMenuScene implements GameScene {
         el('button', { text: STR.credits, onClick: () => showToast('Stellar Archive · prozedural, Three.js, TypeScript') }),
       ),
       el('div', { class: 'hint', text: STR.debugOverlayHint }),
-      el('div', { class: 'version', text: `v${GAME_VERSION} · Phase 2` }),
+      el('div', { class: 'version', text: `v${GAME_VERSION} · Phase 6` }),
     );
     this.root = el('div', { class: 'main-menu' }, panel);
     this.ctx.uiRoot.append(this.root);
@@ -88,10 +90,17 @@ export class MainMenuScene implements GameScene {
     this.ctx.debug.setSeed(seed);
   }
 
+  /** Neues Spiel bzw. Weiterspielen: Im Orbit → Raumflug, sonst Planet des Schiffs (Spielstand je Seed). */
   private newGame(): void {
     gameState.seed = this.seedInput?.value ?? gameState.seed;
     const system = gameState.getSystem();
-    this.ctx.scenes.switchTo(new PlanetScene(system.startPlanetId));
+    const seed = gameState.seed;
+    void ensurePlayerState(seed).then((state) => {
+      if (gameState.seed !== seed || !this.root) return;
+      const loc = state.ship.location;
+      if (loc?.kind === 'orbit') this.ctx.scenes.switchTo(new SpaceScene());
+      else this.ctx.scenes.switchTo(new PlanetScene(loc?.kind === 'surface' && system.planets.some((p) => p.id === loc.planetId) ? loc.planetId : system.startPlanetId));
+    });
   }
 
   private openSystemView(): void {

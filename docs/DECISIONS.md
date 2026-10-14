@@ -146,3 +146,33 @@ sie zusammen. Vorteil: Archiv-Snapshots bleiben klein und unabhängig vom Basisb
 Stabilität (Verhältnis). Stufe 1 zeigt nur Zahlen, Stufe 2 die Hinweise aus `analyzeMix`, Stufe 3 Rollen-Hinweise (welche Komponente
 nicht reagiert, welche Rolle fehlt). Synthese unter 60 % Qualität verpufft (Rohstoffe weg), darüber Ausbeute 4 × Chargen × Stufe ×
 Qualität. Rohstoffe mit Treibstoff-Rolle sind im Inventar markiert – die Suche nach der Formel bleibt Teil des Entdeckens.
+
+## D-034 · Ein Rumpf mit Sockeln statt freiem Baukasten
+**Kontext:** Ein freier Snap-Editor mit beliebigen Verbindungen braucht Kollisions- und Stabilitätsprüfung und verleitet zu unspielbaren
+Konstruktionen.
+**Entscheidung:** Der Entwurf hat genau einen Rumpf; dessen Stufe bestimmt die Sockel (oben Kanzel, unten Triebwerke, Beinhalterungen,
+seitliche Anbauten). Jede Teileart passt an genau eine Sockelart. Rumpfwechsel übernimmt Teile, für die ein freier Sockel gleicher Art
+existiert. Live-Werte und Validierung bleiben reine Funktionen (`ShipDesign.ts`), der 3D-Editor zeigt nur Sockel und Teile.
+
+## D-035 · Baupläne aus Ruinen und Meilensteinen in fester Seed-Reihenfolge
+**Kontext:** Höhere Stufen sollen durch Erkunden freigeschaltet werden, nicht durch Rohstoffmengen allein.
+**Entscheidung:** Stufe-2/3-Teile brauchen Baupläne. Jede erstmals gescannte Ruine und jeder Archiv-Meilenstein (10–60 %) schaltet den
+nächsten Plan der seed-festen Reihenfolge frei (Stufe 2 vor 3, zuerst Triebwerk II oder Schild I). So bleibt der Fortschritt planbar und
+Rückkehr mit besserem Schiff lohnt sich. Test: jeder Startplanet hat Ruinen oder einen Stufe-1-Nachbarn.
+
+## D-036 · Treibstoffmodell mit Start, Transfer und Landung; nie stranden
+**Entscheidung:** Kosten hängen von Masse, Schwerkraft, Distanz (AU) und Triebwerkseffizienz ab (Formeln in `travel.ts`). Ein Start
+verlangt Treibstoff für Start plus Rückkehr auf denselben Planeten. Wer im Orbit die Landekosten nicht mehr aufbringt, darf an Ort und
+Stelle kostenlos landen – ein Softlock im Orbit ist ausgeschlossen. Stufe-1-Lander + 20 Treibstoff reichen auf jedem Startplaneten
+(Test).
+
+## D-037 · Ein PlayerState für alle Szenen
+**Kontext:** Planet → Werft → Planet → Orbit wechselt Szenen schnell; Laden aus IndexedDB in jeder Szene lief dem asynchronen Speichern
+der vorigen Szene davon (veralteter Zustand).
+**Entscheidung:** `gameState.player` hält genau eine `PlayerState`-Instanz je Seed (`ensurePlayerState`); Szenen abonnieren Änderungen
+und melden sich in `dispose()` ab. IndexedDB bleibt die Persistenz (debounced, bei Szenenwechsel sofort).
+
+## D-038 · Start und Landung als kurze Außenkamera-Sequenzen
+**Entscheidung:** Start: 3 s Countdown, 6 s Aufstieg, Ausblenden; Landung: 6,5 s Abstieg aus 160 m mit Einblenden. Die Kamera umkreist
+das Schiff außen (kein Cockpit-Interieur in Phase 6). Spieler ist eingefroren, Überleben pausiert, Esc deaktiviert. Danach steht der
+Spieler neben dem Schiff. Der Orbit ist stilisiert (feste Planetenpositionen, Transfer als Bogen), keine Orbitalmechanik.
