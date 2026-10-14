@@ -44,6 +44,8 @@ import { NODE_CELL, generateResourceNodes, type ResourceNode } from '@/gen/terra
 import { ROVER_RANGE, ROVER_REVEAL, Rover } from '@/world/probes/Rover';
 import { bonusesFor, type BackgroundBonus, NEUTRAL_BONUS } from '@/game/character/backgrounds';
 import { effectiveCost } from '@/ui/InventoryUi';
+import { SettingsUi } from '@/ui/SettingsUi';
+import { SHADOW_MAP_SIZES, type GraphicsSettings } from '@/game/settings/Settings';
 import { Buoys } from '@/world/probes/Buoys';
 import { ShipEditorScene } from './ShipEditorScene';
 import { SpaceScene } from './SpaceScene';
@@ -65,7 +67,7 @@ import { downloadBlob, el } from '@/ui/dom';
 import { MainMenuScene } from './MainMenuScene';
 import { SystemViewScene } from './SystemViewScene';
 
-const VIEW_DISTANCE = 1700;
+const DEFAULT_VIEW_DISTANCE = 1700;
 const PHOTO_SLOWMO = 0.1;
 const HARVEST_SECONDS = 1.2;
 const HARVEST_RANGE = 4.5;
@@ -207,6 +209,11 @@ export class PlanetScene implements GameScene {
   private unsubProgress: (() => void) | null = null;
   // Phase 8: Hintergrund-Boni
   private bonus: BackgroundBonus = NEUTRAL_BONUS;
+  // Phase 9: Einstellungen
+  private settingsUi!: SettingsUi;
+  private unsubSettings: (() => void) | null = null;
+  private bloomPass: EffectPass | null = null;
+  private viewDistance = DEFAULT_VIEW_DISTANCE;
   private readonly roverEye = new Vector3();
   private readonly roverFwd = new Vector3();
   private readonly roverCamOffset = new Vector3();
@@ -226,7 +233,9 @@ export class PlanetScene implements GameScene {
     ctx.debug.setScene(`${this.name}:${planet.name}`);
     ctx.debug.setSeed(this.system.seed);
     const gl = ctx.renderer.gl;
-    gl.shadowMap.enabled = true;
+    const quality = ctx.settings.current;
+    this.viewDistance = quality.viewDistance;
+    gl.shadowMap.enabled = quality.shadows !== 'off';
     gl.shadowMap.type = PCFShadowMap;
 
     const loading = new LoadingOverlay(ctx.uiRoot, `${STR.planet.landing}: ${planet.name}`, STR.planet.buildingTerrain);
@@ -237,14 +246,17 @@ export class PlanetScene implements GameScene {
     this.fog = new FogExp2(0x000000, this.baseFog);
     this.scene.fog = this.fog;
     this.sky = new Sky(this.scene, this.system, planet);
+    this.sky.setShadowQuality(SHADOW_MAP_SIZES[quality.shadows]);
+    this.camera.far = Math.max(4200, this.viewDistance * 2.5);
+    this.camera.updateProjectionMatrix();
     const saved = gameState.surface?.planetId === planet.id ? gameState.surface : null;
     this.cycle = new DayCycle(planet, 1200, saved?.dayT ?? 0.3);
     if (saved) this.cycle.totalDays = saved.totalDays;
     this.weather = new WeatherSystem(planet, this.system.seed);
-    this.terrain = new TerrainManager(this.scene, this.model, { viewDistance: VIEW_DISTANCE });
+    this.terrain = new TerrainManager(this.scene, this.model, { viewDistance: this.viewDistance });
     this.assets = new VegetationAssets();
     this.flora = new FloraAssets(this.assets);
-    this.vegetation = new VegetationManager(this.scene, this.model, planet, this.assets, this.flora, this.system.entries);
+    this.vegetation = new VegetationManager(this.scene, this.model, planet, this.assets, this.flora, this.system.entries, { density: quality.vegetationDensity });
     this.creatures = new CreatureManager(this.scene, this.system, planet, this.model);
     this.props = new PropManager(this.scene, this.model, planet, this.system.entries);
     if (this.model.hasWater) this.water = new Water(this.scene, planet, this.model.seaLevel);
@@ -299,11 +311,14 @@ export class PlanetScene implements GameScene {
       this.player.spawn(s.x, s.y, s.z, 0);
     }
     this.player.applyCamera(1);
-    this.baseFog = (0.95 / VIEW_DISTANCE) * Math.max(0.12, Math.min(1, this.sky.look.density));
+    this.baseFog = (0.95 / this.viewDistance) * Math.max(0.12, Math.min(1, this.sky.look.density));
     this.waterFog.set(this.planet.biomes.find((b) => b.hasWater)?.palette.ground ?? '#2f6f9a').multiplyScalar(0.5);
 
     this.composer = ctx.renderer.createComposer(this.scene, this.camera);
-    this.composer.addPass(new EffectPass(this.camera, new BloomEffect({ luminanceThreshold: 1.0, luminanceSmoothing: 0.3, intensity: 0.45, mipmapBlur: true })));
+    this.bloomPass = new EffectPass(this.camera, new BloomEffect({ luminanceThreshold: 1.0, luminanceSmoothing: 0.3, intensity: 0.45, mipmapBlur: true }));
+    this.bloomPass.enabled = quality.postprocessing;
+    this.composer.addPass(this.bloomPass);
+    this.unsubSettings = ctx.settings.onChange((s) => this.applySettings(s));
     this.photo = new PhotoMode(gl, this.camera, this.composer, [
       { collectSubjects: (pos, maxDist, out) => this.collectCreatures(pos, maxDist, out) },
       { collectSubjects: (pos, maxDist, out) => this.collectFlora(pos, maxDist, out) },
@@ -383,8 +398,10 @@ export class PlanetScene implements GameScene {
       onLaunch: () => this.startLaunch(),
       onClose: () => this.closeShip(),
     });
+    this.settingsUi = new SettingsUi(ctx.uiRoot, ctx.settings, ctx.renderer, ctx.loop, () => this.closeSettings());
     this.pauseMenu = new PauseMenu(ctx.uiRoot, {
       onResume: () => this.resume(),
+      onSettings: () => this.openSettings(),
       onSystemView: () => this.leave(new SystemViewScene()),
       onMainMenu: () => this.leave(new MainMenuScene()),
     }, [STR.pause.phase4, STR.pause.phase5, STR.pause.phase6, STR.pause.phase8]);
@@ -409,6 +426,7 @@ export class PlanetScene implements GameScene {
       this.labUi.dispose();
       this.shipUi.dispose();
       this.mapUi.dispose();
+      this.settingsUi.dispose();
       this.closeMicroscope();
     });
     this.checkGoal();
@@ -419,6 +437,32 @@ export class PlanetScene implements GameScene {
       this.pendingLanding = false;
       this.startLanding();
     } else if (this.ship && !saved && validateDesign(this.state.ship.design, planet.gravity).length > 0) showToast(STR.ship.damaged, 6000);
+  }
+
+  /** Einstellungen live übernehmen (Schatten, Sichtweite, Vegetation, Postprocessing). */
+  private applySettings(s: GraphicsSettings): void {
+    const gl = this.ctx.renderer.gl;
+    gl.shadowMap.enabled = s.shadows !== 'off';
+    this.sky?.setShadowQuality(SHADOW_MAP_SIZES[s.shadows]);
+    if (s.viewDistance !== this.viewDistance) {
+      this.viewDistance = s.viewDistance;
+      this.terrain?.setViewDistance(s.viewDistance);
+      this.baseFog = (0.95 / this.viewDistance) * Math.max(0.12, Math.min(1, this.sky.look.density));
+      this.camera.far = Math.max(4200, this.viewDistance * 2.5);
+      this.camera.updateProjectionMatrix();
+    }
+    this.vegetation?.setDensity(s.vegetationDensity);
+    if (this.bloomPass) this.bloomPass.enabled = s.postprocessing;
+  }
+
+  private openSettings(): void {
+    this.pauseMenu.hide();
+    this.settingsUi.show();
+  }
+
+  private closeSettings(): void {
+    this.settingsUi.hide();
+    if (this.paused) this.pauseMenu.show();
   }
 
   /** Flacher, trockener Landeplatz nahe dem Spawn (Startplanet / erste Landung). */
@@ -1831,7 +1875,8 @@ export class PlanetScene implements GameScene {
     const input = this.ctx.input;
 
     if (input.wasPressed('pause') && !this.cinematic && performance.now() - this.lockChangedAt > 400) {
-      if (this.inventoryUi.isOpen) this.closeInventory();
+      if (this.settingsUi.isOpen) this.closeSettings();
+      else if (this.inventoryUi.isOpen) this.closeInventory();
       else if (this.shipUi.isOpen) this.closeShip();
       else if (this.mapUi.isOpen) this.closeMap();
       else if (this.labUi.isOpen) this.closeLab();
@@ -2021,7 +2066,8 @@ export class PlanetScene implements GameScene {
     this.water?.update(this.elapsed, this.camera.position, this.cycle.sunDir, this.sky.sun.color, this.sky.zenithColor, this.cycle.daylight);
     this.precipitation.setKind(params.precipitation, params.precipIntensity, params.wind);
     if (!this.paused) this.precipitation.update(frameDt * slow, this.camera.position);
-    this.composer.render(frameDt);
+    if (this.ctx.renderer.postprocessing || this.photo.active) this.composer.render(frameDt);
+    else this.ctx.renderer.gl.render(this.scene, this.camera);
     if (this.captureRequested) {
       this.captureRequested = false;
       this.capture();
@@ -2047,8 +2093,10 @@ export class PlanetScene implements GameScene {
     this.ready = false;
     void this.saveProgress();
     this.disposer.dispose();
+    this.unsubSettings?.();
+    this.unsubSettings = null;
     this.photo?.dispose();
-    this.composer?.dispose();
+    if (this.composer) this.ctx.renderer.disposeComposer(this.composer);
     for (const l of this.lures) this.scene.remove(l.mesh);
     this.lures.length = 0;
     this.lureGeometry.dispose();

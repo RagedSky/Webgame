@@ -21,6 +21,8 @@ Im Spiel: **F3** Debug-Overlay, **Esc** Pause/zurück. Oberfläche: WASD, Maus, 
 **B** Bau-Modus (1–4 Modul, R drehen, Klick platzieren, X entfernen), **E** am Schiff: Werft / Betanken / Start; im Orbit Planet wählen,
 Fliegen, Landen, Satellit/Atmosphärensonde. **M** Karte (Layer, Marker per Klick). Rover: I aussetzen, **E** steuern (WASD, Q Foto,
 F Probe, E/Esc zurück), **X** einpacken. Tiefseesonde über I am Ufer.
+Einstellungen (Hauptmenü und Pause): Presets Niedrig–Ultra, Auflösung, Render-Skalierung, Schatten, Vegetation, Sichtweite,
+Postprocessing, MSAA, FPS-Limit, Vollbild, adaptive Qualität.
 Debug auf der Oberfläche: **T** Zeitraffer (halten), **Y** Wetter wechseln, **G** Flugmodus.
 Konsole: `__stellar.scenes.active.setTimeOfDay(0.5)` / `.forceWeather('rain', true)` / `.spawnNearby(8)` / `.takePhoto()` / `.archive` /
 `.harvestNow()` / `.placeModule('workbench', x, z)` / `.playerState.inventory.add('ferrite', 20)` / `.debugLaunch()` in der Planetenszene.
@@ -47,7 +49,7 @@ Konsole: `__stellar.scenes.active.setTimeOfDay(0.5)` / `.forceWeather('rain', tr
 - [x] **Phase 6 Schiffbau und Raumflug:** Baueditor, Upgrades, Start/Orbit/Landung, Treibstoffverbrauch
 - [x] **Phase 7 Sonden, Satelliten, Karte:** Satellit, Rover, Spezialsonden, Karten-Layer, Hotspots, Fog of War
 - [x] **Phase 8 Charaktererstellung:** Editor mit Live-Vorschau, Hintergründe/Boni, Presets
-- [ ] **Phase 9 Grafik und Einstellungen:** 720p–4K, Render-Skalierung, Presets, Postprocessing, adaptive Qualität
+- [x] **Phase 9 Grafik und Einstellungen:** 720p–4K, Render-Skalierung, Presets, Postprocessing, adaptive Qualität
 - [ ] **Phase 10 Politur:** Tutorial, Audio, Speichern/Laden/Export, Balancing, Bugfixing, README
 
 ## Wichtige Dateien
@@ -72,6 +74,7 @@ Konsole: `__stellar.scenes.active.setTimeOfDay(0.5)` / `.forceWeather('rain', tr
 - `src/game/map/{MapGrid,hotspots}.ts` – Fog of War, Katalog-Lücken (rein); `src/ui/MapUi.ts` – Karte; `src/world/probes/*` – Rover, Bojen
 - `src/game/character/{Character,backgrounds}.ts` – Charakter-Konfiguration, Share-Code, Presets, Hintergrund-Boni (rein);
   `src/world/character/CharacterBuilder.ts` – Avatar; `src/scenes/CharacterScene.ts` + `src/ui/CharacterUi.ts` – Editor
+- `src/game/settings/{Settings,SettingsManager}.ts` – Grafik-Einstellungen (Presets, adaptive Qualität); `src/ui/SettingsUi.ts`
 - `src/game/progress/ArchiveProgress.ts` – Fortschritt (rein), `src/game/photo/PhotoScoring.ts` – Bewertung (rein)
 - `src/world/photo/PhotoMode.ts` – Foto-Modus, `src/ui/ArchiveUi.ts` – Enzyklopädie, `src/save/Db.ts` – IndexedDB
 - `src/core/GameLoop.ts`, `src/core/SceneManager.ts`, `src/core/Input.ts`

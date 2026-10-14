@@ -61,7 +61,9 @@ Sternsystem, baust ein Raumschiff, synthetisierst Treibstoff und füllst ein Arc
     │                          map/MapGrid (Fog of War je Planet, Base64) + map/hotspots (Katalog-Lücken, Sondenziele, Hinweistexte),
     │                          progressStore (gemeinsamer Archiv-Fortschritt für Planet und Orbit),
     │                          character/Character (Konfiguration, Begrenzung, Zufall, Share-Code, Presets), character/backgrounds
-    │                          (Hintergründe mit Boni), character/presetStore (eigene Presets in IndexedDB)
+    │                          (Hintergründe mit Boni), character/presetStore (eigene Presets in IndexedDB),
+    │                          settings/Settings (Presets, Begrenzung, adaptiver Monitor – rein), settings/SettingsManager
+    │                          (Anwendung auf Renderer/Loop/Debug, Persistenz)
     ├── save/                  Db.ts: IndexedDB (Fotos als JPEG+Thumb-Blob, Fortschritt je Seed, Schlüssel/Wert)
     ├── audio/                 AudioManager: prozedurale UI-Klänge (Auslöser, Erfolg, Hinweis)
     ├── render/                Renderer-Wrapper (DPR, Render-Skalierung), Composer-Fabrik, Starfield, PlanetTexture (prozedural)
@@ -69,7 +71,8 @@ Sternsystem, baust ein Raumschiff, synthetisierst Treibstoff und füllst ein Arc
     │                          CharacterScene (Charaktererstellung mit Studio-Bühne)
     ├── ui/                    DOM-Overlays: DebugOverlay, Toast, SystemPanel, Hud, PauseMenu, PhotoUi (Sucher + Ergebnis),
     │                          ArchiveUi (Enzyklopädie, Logbuch, Proben), MicroscopeView (2D-Zellen mit Fokus-Minispiel),
-    │                          InventoryUi, LabUi, ShipUi, ShipEditorUi, MapUi (Canvas-Karte mit Layern, Fog of War, Markern)
+    │                          InventoryUi, LabUi, ShipUi, ShipEditorUi, MapUi (Canvas-Karte mit Layern, Fog of War, Markern),
+    │                          SettingsUi (Grafik, Leistung, Tastenübersicht), CharacterUi
     ├── world/                 Laufzeit-Welt (Three.js)
     │   ├── terrain/           TerrainChunk (Skirts, Vertexfarben, Geometrie-Pool), TerrainManager (Quadtree-LOD, Zeitbudget)
     │   ├── Sky.ts             Kuppel-Shader (Rayleigh/Mie vereinfacht, Wolken, Dämmerung), Sterne, Monde, Gasriese, Sonnen-/Hemisphärenlicht
@@ -333,6 +336,27 @@ deterministischen, flachen Landeplatz. `VegetationProfiles.ts` definiert Dichten
   (`character === null` im `PlayerState` v4); „Charakter“ im Hauptmenü bearbeitet ihn später (Boni greifen beim nächsten
   Planetenbesuch).
 
+### 4.11 Grafik und Einstellungen (Phase 9)
+
+- **Modell** (`GraphicsSettings`, rein): Preset (Niedrig/Mittel/Hoch/Ultra/Benutzerdefiniert), interne Auflösung
+  (auto/720p/1080p/1440p/2160p als Höhendeckel), Render-Skalierung 0,5–2,0, DPR-Deckel 1–3, Schatten (aus/1024/2048/4096),
+  Vegetationsdichte 0,25–1,5, Sichtweite 800–3000 m, Postprocessing, Anti-Aliasing (MSAA 0/2/4/8), FPS-Limit (0/30/60/120),
+  adaptive Qualität, Debug-Overlay. `sanitizeSettings()` begrenzt, `detectPreset()` erkennt ein Preset exakt, sonst
+  „Benutzerdefiniert“. Persistenz global in IndexedDB (`kv['settings']`).
+- **Anwendung** (`SettingsManager`): Renderer (`setQuality`: Pixel-Faktor = min(DPR, Deckel, Zielhöhe/Fensterhöhe) ×
+  Skalierung; MSAA live auf alle registrierten Composer; Postprocessing-Flag), GameLoop (`fpsLimit`), Debug-Overlay.
+  Szenen abonnieren Änderungen: die Planetenszene schaltet Schatten (`Sky.setShadowQuality` legt die Schattenkarte neu an),
+  Sichtweite (`TerrainManager.setViewDistance`, Nebel und Kamera-Far folgen), Vegetationsdichte
+  (`VegetationManager.setDensity` verwirft Zellen und baut sie neu) und Bloom live um. Ohne Postprocessing rendern Planet,
+  Orbit und Systemansicht direkt (`gl.render`), nur der Foto-Modus nutzt weiter den Composer (Tiefenschärfe).
+- **UI** (`SettingsUi`): im Hauptmenü und im Pausemenü. Preset-Buttons, alle Regler, Vollbild (Fullscreen-API), V-Sync-Hinweis,
+  Statuszeile mit Fenster- und interner Auflösung sowie FPS, Tastenbelegung als Übersicht (Umbelegung Phase 10).
+- **Adaptive Qualität** (`AdaptiveMonitor`): liegen die FPS auf der Planetenoberfläche 8 s lang unter 75 % des Ziels
+  (FPS-Limit oder 60), schlägt ein Aktions-Toast das nächstniedrigere Preset vor (Übernehmen / Später / Nicht mehr fragen),
+  danach 120 s Abkühlzeit. Nie ein Zwang.
+- **Optimierung:** Rohstoffknoten als `InstancedMesh` je Rohstoffart (Instanz-Index → Knoten beim Raycast, Matrizen nur bei
+  Änderungen neu geschrieben) – ein Draw-Call je Art statt je Knoten. Composer werden zentral registriert und freigegeben.
+
 ## 5. Laufzeit-Architektur
 
 - **GameLoop**: `requestAnimationFrame`, Akkumulator mit festem Update-Schritt (1/60 s, max. 5 Schritte/Frame), Render pro Frame,
@@ -364,7 +388,7 @@ deterministischen, flachen Landeplatz. `VegetationProfiles.ts` definiert Dichten
 | 6 | Schiffbau und Raumflug: Werft, Teile/Stufen, Baupläne, Start/Orbit/Landung, Treibstoffverbrauch | ✅ |
 | 7 | Sonden, Satelliten, Karte: Fog of War, Layer, Hotspots/Lücken, Marker, Rover, Tiefsee- und Atmosphärensonde | ✅ |
 | 8 | Charaktererstellung: Editor mit Live-Vorschau, Hintergründe mit Boni, Presets, Share-Code, Avatar im Spiel | ✅ |
-| 9 | Grafik und Einstellungen, adaptive Qualität | ⬜ |
+| 9 | Grafik und Einstellungen: Presets, Auflösung/Skalierung, Schatten, Vegetation, Sichtweite, AA, FPS-Limit, adaptive Qualität | ✅ |
 | 10 | Politur: Tutorial, Audio, Speichern/Laden, Balancing, README | ⬜ |
 
 ## 7. Performance-Leitlinien

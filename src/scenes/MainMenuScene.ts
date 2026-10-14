@@ -14,6 +14,7 @@ import { PlanetScene } from './PlanetScene';
 import { SpaceScene } from './SpaceScene';
 import { CharacterScene } from './CharacterScene';
 import { ensurePlayerState } from '@/game/playerStore';
+import { SettingsUi } from '@/ui/SettingsUi';
 
 /**
  * Hauptmenü: Seed-Eingabe, „Zufälliges Universum“, Debug-Systemansicht.
@@ -28,6 +29,7 @@ export class MainMenuScene implements GameScene {
   private stars: Points | null = null;
   private root: HTMLElement | null = null;
   private seedInput: HTMLInputElement | null = null;
+  private settingsUi: SettingsUi | null = null;
   private time = 0;
 
   enter(ctx: GameContext): void {
@@ -74,15 +76,17 @@ export class MainMenuScene implements GameScene {
         el('button', { text: STR.character.menu, onClick: () => this.openCharacter() }),
         el('button', { text: STR.showSystem, onClick: () => this.openSystemView() }),
         el('button', { text: STR.load, onClick: () => showToast(STR.comingSoon) }),
-        el('button', { text: STR.settings, onClick: () => showToast(STR.comingSoon) }),
+        el('button', { text: STR.settings, onClick: () => this.settingsUi?.show() }),
         el('button', { text: STR.credits, onClick: () => showToast('Stellar Archive · prozedural, Three.js, TypeScript') }),
       ),
       el('div', { class: 'hint', text: STR.debugOverlayHint }),
-      el('div', { class: 'version', text: `v${GAME_VERSION} · Phase 8` }),
+      el('div', { class: 'version', text: `v${GAME_VERSION} · Phase 9` }),
     );
     this.root = el('div', { class: 'main-menu' }, panel);
     this.ctx.uiRoot.append(this.root);
     this.disposer.addDom(this.root);
+    this.settingsUi = new SettingsUi(this.ctx.uiRoot, this.ctx.settings, this.ctx.renderer, this.ctx.loop, () => this.settingsUi?.hide());
+    this.disposer.addFn(() => this.settingsUi?.dispose());
   }
 
   private randomSeed(): void {

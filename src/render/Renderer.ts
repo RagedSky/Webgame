@@ -2,6 +2,16 @@ import { ACESFilmicToneMapping, SRGBColorSpace, WebGLRenderer, type Camera, type
 import { EffectComposer, RenderPass } from 'postprocessing';
 import { clamp } from '@/math/utils';
 
+export interface RenderQuality {
+  renderScale: number;
+  maxPixelRatio: number;
+  /** Obergrenze der internen Render-Höhe in Pixeln (null = keine). */
+  resolutionHeight: number | null;
+  /** MSAA-Samples für Composer (0 = aus). */
+  multisampling: number;
+  postprocessing: boolean;
+}
+
 /**
  * Wrapper um den WebGLRenderer:
  * - Render-Skalierung (0,5–2,0) × devicePixelRatio (gedeckelt)
@@ -14,6 +24,11 @@ export class Renderer {
   readonly size = { width: 1, height: 1 };
   private _renderScale = 1;
   private _maxPixelRatio = 2;
+  private _resolutionHeight: number | null = null;
+  private _multisampling = 4;
+  /** Postprocessing (Bloom usw.) aktiv – Szenen rendern sonst direkt. */
+  postprocessing = true;
+  private readonly composers = new Set<EffectComposer>();
   private readonly observer: ResizeObserver;
   private readonly resizeListeners = new Set<(w: number, h: number) => void>();
 
@@ -55,9 +70,28 @@ export class Renderer {
     this.resize();
   }
 
-  /** Effektiver Pixel-Faktor (DPR × Render-Skalierung). */
+  /** Effektiver Pixel-Faktor (DPR × Render-Skalierung, gedeckelt durch die Ziel-Höhe). */
   get effectivePixelRatio(): number {
-    return Math.min(window.devicePixelRatio || 1, this._maxPixelRatio) * this._renderScale;
+    let ratio = Math.min(window.devicePixelRatio || 1, this._maxPixelRatio);
+    if (this._resolutionHeight && this.size.height > 0) ratio = Math.min(ratio, this._resolutionHeight / this.size.height);
+    return ratio * this._renderScale;
+  }
+
+  get multisampling(): number {
+    return this._multisampling;
+  }
+
+  /** Alle Qualitätsparameter auf einmal setzen (Einstellungen). */
+  setQuality(q: RenderQuality): void {
+    this._renderScale = clamp(q.renderScale, 0.5, 2);
+    this._maxPixelRatio = clamp(q.maxPixelRatio, 0.5, 4);
+    this._resolutionHeight = q.resolutionHeight;
+    this.postprocessing = q.postprocessing;
+    if (q.multisampling !== this._multisampling) {
+      this._multisampling = q.multisampling;
+      for (const c of this.composers) c.multisampling = q.multisampling;
+    }
+    this.resize();
   }
 
   onResize(listener: (w: number, h: number) => void): () => void {
@@ -78,11 +112,18 @@ export class Renderer {
     for (const l of this.resizeListeners) l(width, height);
   }
 
-  /** Erzeugt einen Composer mit RenderPass; Szenen hängen eigene Effekte an. */
-  createComposer(scene: Scene, camera: Camera, multisampling = 4): EffectComposer {
+  /** Erzeugt einen Composer mit RenderPass (MSAA nach Einstellung); Szenen hängen eigene Effekte an. */
+  createComposer(scene: Scene, camera: Camera, multisampling = this._multisampling): EffectComposer {
     const composer = new EffectComposer(this.gl, { multisampling });
     composer.addPass(new RenderPass(scene, camera));
+    this.composers.add(composer);
     return composer;
+  }
+
+  /** Composer freigeben (Szene wird verlassen). */
+  disposeComposer(composer: EffectComposer): void {
+    this.composers.delete(composer);
+    composer.dispose();
   }
 
   get info(): WebGLRenderer['info'] {

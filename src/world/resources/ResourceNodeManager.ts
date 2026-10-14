@@ -1,5 +1,4 @@
-import type { BufferGeometry, Vector3} from 'three';
-import { Color, ConeGeometry, CylinderGeometry, DodecahedronGeometry, Group, Mesh, MeshStandardMaterial, OctahedronGeometry, Raycaster, SphereGeometry, type Scene } from 'three';
+import { Color, ConeGeometry, CylinderGeometry, DodecahedronGeometry, Group, InstancedMesh, Matrix4, MeshStandardMaterial, OctahedronGeometry, Quaternion, Raycaster, SphereGeometry, Vector3, type BufferGeometry, type Scene } from 'three';
 import type { TerrainModel } from '@/gen/terrain/TerrainModel';
 import { NODE_CELL, generateResourceNodes, type ResourceNode } from '@/gen/terrain/ResourceNodes';
 import { RESOURCES } from '@/gen/universe/catalog';
@@ -19,11 +18,13 @@ interface NodeTemplate {
   material: MeshStandardMaterial;
   radius: number;
   centerY: number;
+  /** Ein InstancedMesh je Rohstoffart (ein Draw-Call), Instanz-Index → Knoten. */
+  mesh: InstancedMesh;
+  slots: LiveNode[];
 }
 
 interface LiveNode {
   node: ResourceNode;
-  mesh: Mesh;
   remaining: number;
   respawnAt: number;
 }
@@ -35,8 +36,11 @@ interface Cell {
 
 const ROCK = new Color(0.4, 0.38, 0.36);
 const RESPAWN_SECONDS = 600;
+const CAPACITY = 768;
+const UP = new Vector3(0, 1, 0);
+const ONE = new Vector3(1, 1, 1);
 
-function buildTemplate(id: ResourceId): NodeTemplate {
+function buildTemplateGeometry(id: ResourceId): { geometry: BufferGeometry; material: MeshStandardMaterial; radius: number; centerY: number } {
   const def = RESOURCES[id];
   const col = new Color(RESOURCE_COLORS[id]);
   const parts: BufferGeometry[] = [];
@@ -152,17 +156,21 @@ function buildTemplate(id: ResourceId): NodeTemplate {
 }
 
 /**
- * Abbaubare Rohstoffknoten in Zellen (128 m) um den Spieler: Vorlagen je Rohstoff, Raycast-Auswahl,
- * Abbau mit Restmenge und Respawn nach 10 Minuten.
+ * Abbaubare Rohstoffknoten in Zellen (128 m) um den Spieler. Je Rohstoffart ein InstancedMesh (ein Draw-Call,
+ * Phase 9), Raycast per Instanz-Index plus Kegel-Fallback, Abbau mit Restmenge und Respawn nach 10 Minuten.
  */
 export class ResourceNodeManager {
   readonly group = new Group();
-  readonly stats = { nodes: 0 };
+  readonly stats = { nodes: 0, drawCalls: 0 };
   private readonly cells = new Map<string, Cell>();
   private readonly templates = new Map<ResourceId, NodeTemplate>();
-  /** Abgebaute Knoten (id → Zeitpunkt des Respawns) über Zellwechsel hinweg. */
+  /** Abgebaute Knoten (id → Restmenge/Respawn) über Zellwechsel hinweg. */
   private readonly depleted = new Map<string, { remaining: number; respawnAt: number }>();
   private readonly raycaster = new Raycaster();
+  private readonly tmpMatrix = new Matrix4();
+  private readonly tmpQuat = new Quaternion();
+  private readonly tmpPos = new Vector3();
+  private readonly dirty = new Set<ResourceId>();
   private accum = 1;
   private clock = 0;
 
@@ -178,7 +186,15 @@ export class ResourceNodeManager {
   private template(id: ResourceId): NodeTemplate {
     let t = this.templates.get(id);
     if (!t) {
-      t = buildTemplate(id);
+      const base = buildTemplateGeometry(id);
+      const mesh = new InstancedMesh(base.geometry, base.material, CAPACITY);
+      mesh.count = 0;
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      mesh.frustumCulled = false;
+      mesh.userData.resourceId = id;
+      this.group.add(mesh);
+      t = { ...base, mesh, slots: [] };
       this.templates.set(id, t);
     }
     return t;
@@ -187,20 +203,34 @@ export class ResourceNodeManager {
   private buildCell(ix: number, iz: number): Cell {
     const nodes: LiveNode[] = [];
     for (const node of generateResourceNodes(this.model, this.planet, ix, iz)) {
-      const t = this.template(node.resourceId);
-      const mesh = new Mesh(t.geometry, t.material);
-      mesh.position.set(node.x, node.y - 0.05, node.z);
-      mesh.rotation.y = (node.x * 7.3 + node.z * 3.1) % (Math.PI * 2);
-      mesh.castShadow = true;
-      mesh.receiveShadow = true;
-      mesh.userData.nodeId = node.id;
+      this.template(node.resourceId);
       const saved = this.depleted.get(node.id);
-      const live: LiveNode = { node, mesh, remaining: saved?.remaining ?? node.amount, respawnAt: saved?.respawnAt ?? 0 };
-      mesh.visible = live.remaining > 0;
-      this.group.add(mesh);
-      nodes.push(live);
+      nodes.push({ node, remaining: saved?.remaining ?? node.amount, respawnAt: saved?.respawnAt ?? 0 });
+      this.dirty.add(node.resourceId);
     }
     return { id: `${ix}:${iz}`, nodes };
+  }
+
+  /** Instanzmatrizen einer Rohstoffart neu schreiben (nur sichtbare Knoten belegen Instanzen). */
+  private rebuildInstances(id: ResourceId): void {
+    const t = this.templates.get(id);
+    if (!t) return;
+    t.slots.length = 0;
+    let i = 0;
+    for (const cell of this.cells.values()) {
+      for (const n of cell.nodes) {
+        if (n.node.resourceId !== id || n.remaining <= 0 || i >= CAPACITY) continue;
+        const rot = (n.node.x * 7.3 + n.node.z * 3.1) % (Math.PI * 2);
+        this.tmpQuat.setFromAxisAngle(UP, rot);
+        this.tmpPos.set(n.node.x, n.node.y - 0.05, n.node.z);
+        this.tmpMatrix.compose(this.tmpPos, this.tmpQuat, ONE);
+        t.mesh.setMatrixAt(i, this.tmpMatrix);
+        t.slots[i] = n;
+        i++;
+      }
+    }
+    t.mesh.count = i;
+    t.mesh.instanceMatrix.needsUpdate = true;
   }
 
   private refresh(cx: number, cz: number): void {
@@ -218,12 +248,20 @@ export class ResourceNodeManager {
     }
     for (const [id, cell] of this.cells) {
       if (wanted.has(id)) continue;
-      for (const n of cell.nodes) this.group.remove(n.mesh);
+      for (const n of cell.nodes) this.dirty.add(n.node.resourceId);
       this.cells.delete(id);
     }
     let count = 0;
     for (const c of this.cells.values()) count += c.nodes.length;
     this.stats.nodes = count;
+  }
+
+  private flushDirty(): void {
+    for (const id of this.dirty) this.rebuildInstances(id);
+    this.dirty.clear();
+    let calls = 0;
+    for (const t of this.templates.values()) if (t.mesh.count > 0) calls++;
+    this.stats.drawCalls = calls;
   }
 
   update(cameraPos: Vector3, dt: number): void {
@@ -236,28 +274,34 @@ export class ResourceNodeManager {
         for (const n of cell.nodes) {
           if (n.remaining <= 0 && this.clock >= n.respawnAt) {
             n.remaining = n.node.amount;
-            n.mesh.visible = true;
             this.depleted.delete(n.node.id);
+            this.dirty.add(n.node.resourceId);
           }
         }
       }
+      this.flushDirty();
     }
   }
 
+  /** Für Tests/Debug: Zellen um eine Position sofort aufbauen. */
+  refreshNow(x: number, z: number): void {
+    this.refresh(x, z);
+    this.flushDirty();
+  }
+
   /**
-   * Knoten im Blick: zuerst exakter Raycast, sonst nächster Knoten in einem engen Kegel (dünne Kristalle
-   * und Büschel sind sonst schwer zu treffen).
+   * Knoten im Blick: zuerst exakter Raycast (Instanz-Index), sonst nächster Knoten in einem engen Kegel
+   * (dünne Kristalle und Büschel sind sonst schwer zu treffen).
    */
   pick(origin: Vector3, dir: Vector3, maxDist: number): { node: LiveNode; distance: number } | null {
     this.raycaster.set(origin, dir);
     this.raycaster.far = maxDist;
     const hits = this.raycaster.intersectObjects(this.group.children, false);
     for (const hit of hits) {
-      if (!hit.object.visible) continue;
-      const id = hit.object.userData.nodeId as string;
-      for (const cell of this.cells.values()) {
-        for (const n of cell.nodes) if (n.node.id === id && n.remaining > 0) return { node: n, distance: hit.distance };
-      }
+      const id = hit.object.userData.resourceId as ResourceId | undefined;
+      const t = id ? this.templates.get(id) : undefined;
+      const n = t && hit.instanceId !== undefined ? t.slots[hit.instanceId] : undefined;
+      if (n && n.remaining > 0) return { node: n, distance: hit.distance };
     }
     let best: LiveNode | null = null;
     let bestDist = maxDist;
@@ -271,7 +315,6 @@ export class ResourceNodeManager {
         const d = Math.sqrt(dx * dx + dy * dy + dz * dz);
         if (d >= bestDist || d < 0.01) continue;
         const cos = (dx * dir.x + dy * dir.y + dz * dir.z) / d;
-        // Kegel: Winkel klein, aber abhängig vom Knotenradius (nahe Knoten dürfen weiter abweichen)
         const minCos = Math.cos(Math.min(0.5, Math.atan2(t.radius * 0.8, d)));
         if (cos < minCos) continue;
         bestDist = d;
@@ -286,17 +329,18 @@ export class ResourceNodeManager {
     const take = Math.min(amount, live.remaining);
     live.remaining -= take;
     if (live.remaining <= 0) {
-      live.mesh.visible = false;
       live.respawnAt = this.clock + RESPAWN_SECONDS;
       this.depleted.set(live.node.id, { remaining: 0, respawnAt: live.respawnAt });
+      this.dirty.add(live.node.resourceId);
+      this.flushDirty();
     } else this.depleted.set(live.node.id, { remaining: live.remaining, respawnAt: 0 });
     return take;
   }
 
   dispose(): void {
-    for (const cell of this.cells.values()) for (const n of cell.nodes) this.group.remove(n.mesh);
     this.cells.clear();
     for (const t of this.templates.values()) {
+      t.mesh.dispose();
       t.geometry.dispose();
       t.material.dispose();
     }

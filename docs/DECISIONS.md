@@ -222,3 +222,25 @@ vollständige Sicherungen.
 **Entscheidung:** Fehlt im `PlayerState` ein Charakter, öffnet „Neues Spiel“ zuerst den Editor; „Charakter“ im Hauptmenü erlaubt
 spätere Änderungen inklusive Hintergrund (Boni gelten ab dem nächsten Planetenbesuch). Das hält den Einstieg kurz und bestraft
 keine Experimente.
+
+## D-047 · Interne Auflösung als Höhendeckel, Skalierung als Faktor
+**Kontext:** „720p bis 4K“ im Browser heißt nicht Fenstergröße ändern, sondern intern anders rendern.
+**Entscheidung:** Die Einstellung begrenzt die interne Render-Höhe (z. B. 1080 Pixel bei 4K-Fenster), die Render-Skalierung
+(0,5–2,0) multipliziert zusätzlich, der DPR-Deckel begrenzt Retina-Displays. Das Canvas bleibt in CSS fenstergroß (Upscaling
+übernimmt der Browser). Alle drei Werte fließen in einen Pixel-Faktor, den der Renderer bei jedem Resize anwendet.
+
+## D-048 · Einstellungen gelten live, Szenen abonnieren
+**Entscheidung:** Statt Neustart der Szene wenden Szenen Änderungen sofort an (Schattenkarte neu, Sichtweite, Vegetationsdichte
+mit Zellneuaufbau, Bloom-Pass, MSAA über die Composer-Registry des Renderers). Das macht den Vergleich im laufenden Spiel möglich
+und hält den Einstellungsdialog einfach („Änderungen gelten sofort“).
+
+## D-049 · Adaptive Qualität als Vorschlag mit Abkühlzeit
+**Entscheidung:** Ein Monitor zählt Sekunden unter 75 % der Ziel-FPS (nur auf der Planetenoberfläche); nach 8 s erscheint ein
+Aktions-Toast mit dem nächstniedrigeren Preset, danach 120 s Pause. Nie automatisches Umschalten: der Spieler entscheidet, und
+„Nicht mehr fragen“ schaltet den Vorschlag ab.
+
+## D-050 · Rohstoffknoten per InstancedMesh je Rohstoffart
+**Kontext:** Jeder Knoten war ein eigenes Mesh (bis zu ~200 Draw-Calls in dichten Zellen).
+**Entscheidung:** Ein InstancedMesh je Rohstoffart mit fester Kapazität; Instanzmatrizen werden nur bei Zellwechsel, Abbau und
+Respawn neu geschrieben, der Raycast liefert den Instanz-Index. Der Kegel-Fallback bleibt. Postprocessing-aus-Pfad und
+Composer-Registry gehören zum selben Optimierungsdurchlauf.

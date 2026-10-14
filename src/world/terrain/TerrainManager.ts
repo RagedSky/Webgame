@@ -27,7 +27,7 @@ export class TerrainManager {
   private desired = new Map<string, ChunkKey>();
   private queue: ChunkKey[] = [];
   private accum = 1;
-  private readonly viewDistance: number;
+  private viewDistance: number;
   private readonly minCell: number;
   private readonly maxCell: number;
   private readonly splitFactor: number;
@@ -164,6 +164,13 @@ export class TerrainManager {
     }
     this.stats.chunks = this.chunks.size;
     this.stats.pending = this.queue.length;
+  }
+
+  /** Sichtweite ändern (Zellen werden beim nächsten Update neu ausgewählt). */
+  setViewDistance(d: number): void {
+    if (d === this.viewDistance) return;
+    this.viewDistance = d;
+    this.lastCam.x = NaN;
   }
 
   update(cameraPos: Vector3, dt: number): void {

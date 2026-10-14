@@ -67,6 +67,12 @@ export class DebugOverlay {
     node.textContent = `Fehler (${this.errorCount}): ${message}`;
   }
 
+  setVisible(on: boolean): void {
+    if (this.visible === on) return;
+    this.visible = on;
+    this.applyVisibility();
+  }
+
   toggle(): void {
     this.visible = !this.visible;
     this.applyVisibility();

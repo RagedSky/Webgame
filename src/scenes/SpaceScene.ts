@@ -167,7 +167,7 @@ export class SpaceScene implements GameScene {
     this.disposer.addFn(() => this.controls.dispose());
     this.composer = this.ctx.renderer.createComposer(this.scene, this.camera);
     this.composer.addPass(new EffectPass(this.camera, new BloomEffect({ luminanceThreshold: 0.75, luminanceSmoothing: 0.2, intensity: 1.1, mipmapBlur: true, radius: 0.6 })));
-    this.disposer.addFn(() => this.composer.dispose());
+    this.disposer.addFn(() => this.ctx.renderer.disposeComposer(this.composer));
     this.labelRenderer = new CSS2DRenderer();
     this.labelRenderer.domElement.className = 'label-layer';
     Object.assign(this.labelRenderer.domElement.style, { position: 'absolute', top: '0', left: '0', pointerEvents: 'none' });
@@ -441,7 +441,8 @@ export class SpaceScene implements GameScene {
       n.satellite.position.set(n.worldPos.x + Math.cos(a) * r, n.worldPos.y + Math.sin(a * 0.7) * r * 0.3, n.worldPos.z + Math.sin(a) * r);
     }
     this.controls.update();
-    this.composer.render(frameDt);
+    if (this.ctx.renderer.postprocessing) this.composer.render(frameDt);
+    else this.ctx.renderer.gl.render(this.scene, this.camera);
     this.labelRenderer.render(this.scene, this.camera);
   }
 

@@ -87,7 +87,7 @@ export class VegetationManager {
   private readonly farRadius: number;
   private readonly nearCell: number;
   private readonly farCell: number;
-  private readonly density: number;
+  private density: number;
   private accum = 1;
   private queue: Array<{ id: string; ix: number; iz: number; far: boolean; d: number }> = [];
   private readonly palettes: Color[];
@@ -346,6 +346,15 @@ export class VegetationManager {
     for (const c of this.cells.values()) n += c.instances;
     this.stats.instances = n;
     this.stats.species = this.flora.size;
+  }
+
+  /** Dichte ändern: alle Zellen verwerfen, sie werden mit neuer Dichte neu aufgebaut. */
+  setDensity(density: number): void {
+    if (density === this.density) return;
+    this.density = density;
+    for (const cell of Array.from(this.cells.values())) this.removeCell(cell);
+    this.queue.length = 0;
+    this.accum = 1;
   }
 
   update(cameraPos: Vector3, dt: number, time: number, wind: number): void {

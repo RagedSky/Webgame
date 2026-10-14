@@ -204,7 +204,7 @@ export class SystemViewScene implements GameScene {
     this.composer = this.ctx.renderer.createComposer(this.scene, this.camera);
     const bloom = new BloomEffect({ luminanceThreshold: 0.75, luminanceSmoothing: 0.2, intensity: 1.1, mipmapBlur: true, radius: 0.6 });
     this.composer.addPass(new EffectPass(this.camera, bloom));
-    this.disposer.addFn(() => this.composer.dispose());
+    this.disposer.addFn(() => this.ctx.renderer.disposeComposer(this.composer));
 
     this.labelRenderer = new CSS2DRenderer();
     this.labelRenderer.domElement.className = 'label-layer';
@@ -358,7 +358,8 @@ export class SystemViewScene implements GameScene {
       }
     }
     this.controls.update();
-    this.composer.render(frameDt);
+    if (this.ctx.renderer.postprocessing) this.composer.render(frameDt);
+    else this.ctx.renderer.gl.render(this.scene, this.camera);
     this.labelRenderer.render(this.scene, this.camera);
     if ((this.ctx.loop.stats.frames & 15) === 0) this.updateSpeedLabel();
   }

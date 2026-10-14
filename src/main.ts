@@ -7,6 +7,10 @@ import { Renderer } from './render/Renderer';
 import { DebugOverlay } from './ui/DebugOverlay';
 import { MainMenuScene } from './scenes/MainMenuScene';
 import { FIXED_UPDATE_HZ } from './config/constants';
+import { SettingsManager } from './game/settings/SettingsManager';
+import { PRESET_LABELS } from './game/settings/Settings';
+import { showActionToast } from './ui/toast';
+import { STR } from './ui/strings';
 
 function bootstrap(): void {
   const canvas = document.getElementById('game-canvas') as HTMLCanvasElement | null;
@@ -20,7 +24,9 @@ function bootstrap(): void {
   const scenes = new SceneManager();
   const debug = new DebugOverlay(debugRoot, loop, renderer, import.meta.env.DEV);
 
-  const ctx: GameContext = { renderer, input, scenes, loop, debug, uiRoot };
+  const settings = new SettingsManager(renderer, loop, debug);
+  void settings.load();
+  const ctx: GameContext = { renderer, input, scenes, loop, debug, settings, uiRoot };
   scenes.init(ctx);
   renderer.onResize((w, h) => scenes.resize(w, h));
 
@@ -34,6 +40,17 @@ function bootstrap(): void {
       debug.update(frameDt); // liest die Zahlen des letzten Frames
       renderer.info.reset();
       scenes.render(alpha, frameDt);
+      // Adaptive Qualität: nur auf der Planetenoberfläche (dort zählt die Last), Vorschlag statt Zwang
+      if (settings.current.adaptiveQuality && scenes.active?.name === 'Planet' && settings.adaptive.push(loop.stats.fps, frameDt)) {
+        const lower = settings.lowerPreset();
+        if (lower) {
+          showActionToast(`${STR.settingsUi.adaptiveAsk} „${PRESET_LABELS[lower]}“?`, [
+            { label: STR.settingsUi.adaptiveYes, onClick: () => settings.setPreset(lower) },
+            { label: STR.settingsUi.adaptiveNo, onClick: () => settings.adaptive.reset() },
+            { label: STR.settingsUi.adaptiveNever, onClick: () => settings.set({ adaptiveQuality: false }) },
+          ]);
+        }
+      }
     },
   );
 

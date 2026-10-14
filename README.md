@@ -53,7 +53,11 @@ weitere Sichtungen), Geologin (bessere Scans und Analysen, mehr Abbau), Ingenieu
 (großzügigere Bewertung, Infrarot- und Noir-Filter). Presets, Zufall mit Sperren, Share-Code und JSON-Export sind eingebaut;
 „Charakter“ im Hauptmenü bearbeitet ihn später. Der Avatar ist in der Schulterperspektive (V) und im Selfie-Modus (C) sichtbar.
 Fotos, Fortschritt und Spielerzustand liegen in IndexedDB des Browsers; „Neues Spiel“ setzt beim gespeicherten Schiff fort.
-Debug: F3 Overlay, T Zeitraffer, Y Wetter, G Flugmodus.
+
+Einstellungen (Hauptmenü oder Pause): Qualitäts-Presets Niedrig, Mittel, Hoch, Ultra oder eigene Werte für interne
+Auflösung (720p bis 4K), Render-Skalierung 50 bis 200 Prozent, Pixeldichte, Schatten, Vegetationsdichte, Sichtweite,
+Postprocessing, Anti-Aliasing, FPS-Limit und Vollbild. Alles gilt sofort und wird gespeichert. Bei dauerhaft niedriger
+Bildrate schlägt das Spiel ein niedrigeres Preset vor. Debug: F3 Overlay, T Zeitraffer, Y Wetter, G Flugmodus.
 
 Architektur: `docs/ARCHITECTURE.md` · Entscheidungen: `docs/DECISIONS.md` · Arbeitskontext: `CLAUDE.md`.
 

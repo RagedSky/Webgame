@@ -105,6 +105,7 @@ void main() {
 export class Sky {
   readonly group = new Group();
   readonly sun: DirectionalLight;
+  private shadowSize: number;
   readonly hemi: HemisphereLight;
   readonly fogColor = new Color();
   /** Zenitfarbe für Reflexionen (linear, tageszeitabhängig). */
@@ -197,6 +198,7 @@ export class Sky {
     cam.far = 600;
     this.sun.shadow.bias = -0.0006;
     this.sun.shadow.normalBias = 0.6;
+    this.shadowSize = 2048;
     scene.add(this.sun);
     scene.add(this.sun.target);
     const groundTint = new Color(planet.biomes[0]?.palette.ground ?? '#3a3327').multiplyScalar(0.6);
@@ -270,6 +272,16 @@ export class Sky {
     this.zenithColor.copy(this.look.sky).multiplyScalar(daylight * this.look.density + 0.02);
 
     this.computeFogColor(daylight, cycle.sunElevation, weather, this.fogColor);
+  }
+
+  /** Schattenkarte neu anlegen (0 = Schatten aus). */
+  setShadowQuality(size: number): void {
+    if (size === this.shadowSize) return;
+    this.shadowSize = size;
+    this.sun.castShadow = size > 0;
+    if (size > 0) this.sun.shadow.mapSize.set(size, size);
+    this.sun.shadow.map?.dispose();
+    this.sun.shadow.map = null;
   }
 
   dispose(): void {
