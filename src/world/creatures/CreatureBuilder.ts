@@ -1,5 +1,6 @@
 import type { BufferGeometry} from 'three';
-import { Color, ConeGeometry, CylinderGeometry, Float32BufferAttribute, MeshStandardMaterial, SphereGeometry, Uint16BufferAttribute } from 'three';
+import { Color, ConeGeometry, CylinderGeometry, Float32BufferAttribute, MeshPhysicalMaterial, SphereGeometry, Uint16BufferAttribute, Vector2 } from 'three';
+import { textures, type TextureKind } from '@/render/ProceduralTextures';
 import { Random } from '@/math/Random';
 import { clamp, clamp01 } from '@/math/utils';
 import { SimplexNoise } from '@/math/Noise';
@@ -23,7 +24,7 @@ export interface BoneDef {
 
 export interface CreatureTemplate {
   geometry: BufferGeometry;
-  material: MeshStandardMaterial;
+  material: MeshPhysicalMaterial;
   bones: BoneDef[];
   lengthM: number;
   /** Höhe des Körperzentrums über dem Boden (Bind-Pose). */
@@ -371,10 +372,23 @@ export function buildCreatureTemplate(entry: ArchiveEntry): CreatureTemplate {
 
   const covering = g.covering;
   const glow = covering === 'bioluminescent' || g.extras.includes('Leuchtorgane');
-  const material = new MeshStandardMaterial({
+  const texKind: TextureKind = covering === 'scales' ? 'scales' : covering === 'chitin' ? 'chitin' : covering === 'fur' ? 'fur' : covering === 'feathers' ? 'feathers' : covering === 'crystal' ? 'crystal' : 'skin';
+  const tex = textures.get(texKind);
+  const normalScale = covering === 'chitin' || covering === 'scales' ? 0.9 : covering === 'crystal' ? 0.6 : covering === 'skin' || covering === 'membrane' ? 0.4 : 0.7;
+  const material = new MeshPhysicalMaterial({
     vertexColors: true,
+    map: tex.map,
+    normalMap: tex.normalMap,
+    normalScale: new Vector2(normalScale, normalScale),
+    roughnessMap: tex.roughnessMap,
     roughness: covering === 'scales' ? 0.5 : covering === 'chitin' ? 0.4 : covering === 'crystal' ? 0.2 : covering === 'skin' ? 0.65 : 0.9,
-    metalness: covering === 'chitin' ? 0.25 : covering === 'crystal' ? 0.15 : 0,
+    metalness: covering === 'chitin' ? 0.2 : covering === 'crystal' ? 0.1 : 0,
+    clearcoat: covering === 'chitin' ? 0.7 : covering === 'scales' ? 0.35 : covering === 'crystal' ? 0.9 : covering === 'skin' ? 0.15 : 0,
+    clearcoatRoughness: covering === 'crystal' ? 0.05 : 0.3,
+    iridescence: covering === 'crystal' ? 0.5 : covering === 'chitin' ? 0.3 : 0,
+    iridescenceIOR: 1.3,
+    sheen: covering === 'fur' || covering === 'feathers' ? 0.6 : 0,
+    sheenRoughness: 0.7,
     emissive: glow ? hsl(g.hue2, 0.9, 0.5) : new Color(0, 0, 0),
     emissiveIntensity: glow ? 0.6 : 0,
     transparent: covering === 'membrane',

@@ -1,5 +1,6 @@
 import type { BufferGeometry} from 'three';
-import { BoxGeometry, Color, ConeGeometry, CylinderGeometry, DodecahedronGeometry, IcosahedronGeometry, MeshStandardMaterial, OctahedronGeometry, SphereGeometry, TorusGeometry } from 'three';
+import { BoxGeometry, Color, ConeGeometry, CylinderGeometry, DodecahedronGeometry, IcosahedronGeometry, MeshPhysicalMaterial, OctahedronGeometry, SphereGeometry, TorusGeometry, Vector2 } from 'three';
+import { textures } from '@/render/ProceduralTextures';
 import { Random } from '@/math/Random';
 import { clamp } from '@/math/utils';
 import type { ArchiveEntry, FossilGenome, MineralGenome } from '@/gen/archive/types';
@@ -7,7 +8,7 @@ import { colorize, hsl, jitter, mergeParts } from '../geometry';
 
 export interface PropTemplate {
   geometry: BufferGeometry;
-  material: MeshStandardMaterial;
+  material: MeshPhysicalMaterial;
   /** Ungefährer Radius für Foto-/Interaktionsprüfungen. */
   radius: number;
   /** Höhe des Mittelpunkts über dem Boden. */
@@ -306,10 +307,19 @@ export function buildPropTemplate(entry: ArchiveEntry): PropTemplate {
     const g = entry.genome as MineralGenome;
     const { geo, radius, centerY } = mineralGeometry(g, rng, seed);
     const glow = g.glow > 0.4;
-    const material = new MeshStandardMaterial({
+    const glassy = g.luster === 'glassy' || g.luster === 'adamantine';
+    const tex = textures.get(glassy ? 'crystal' : g.luster === 'metallic' ? 'metal' : 'rock');
+    const material = new MeshPhysicalMaterial({
       vertexColors: true,
-      roughness: g.luster === 'metallic' ? 0.35 : g.luster === 'glassy' || g.luster === 'adamantine' ? 0.2 : g.luster === 'pearly' ? 0.45 : 0.9,
+      map: tex.map,
+      normalMap: tex.normalMap,
+      normalScale: new Vector2(glassy ? 0.5 : 0.9, glassy ? 0.5 : 0.9),
+      roughnessMap: tex.roughnessMap,
+      roughness: g.luster === 'metallic' ? 0.35 : glassy ? 0.2 : g.luster === 'pearly' ? 0.45 : 0.9,
       metalness: g.luster === 'metallic' ? 0.6 : g.luster === 'adamantine' ? 0.2 : 0,
+      clearcoat: glassy ? 0.8 : g.luster === 'pearly' ? 0.5 : 0,
+      clearcoatRoughness: glassy ? 0.08 : 0.3,
+      iridescence: g.luster === 'pearly' ? 0.6 : g.luster === 'adamantine' ? 0.4 : 0,
       emissive: glow ? hsl(g.hue, 0.8, 0.5) : new Color(0, 0, 0),
       emissiveIntensity: glow ? 0.5 : 0,
     });
@@ -318,10 +328,17 @@ export function buildPropTemplate(entry: ArchiveEntry): PropTemplate {
   const g = entry.genome as FossilGenome;
   const { geo, radius, centerY } = fossilGeometry(g, rng, seed);
   const emissive = g.ruinKind === 'beacon' || g.ruinKind === 'glyph_stone' || g.ruinKind === 'machine';
-  const material = new MeshStandardMaterial({
+  const metalRuin = g.ruinKind === 'machine' || g.ruinKind === 'wreck';
+  const ftex = textures.get(g.fossilKind === 'amber' ? 'crystal' : metalRuin ? 'metal' : 'rock');
+  const material = new MeshPhysicalMaterial({
     vertexColors: true,
+    map: ftex.map,
+    normalMap: ftex.normalMap,
+    normalScale: new Vector2(0.8, 0.8),
+    roughnessMap: ftex.roughnessMap,
     roughness: g.fossilKind === 'amber' ? 0.25 : 0.85,
-    metalness: g.ruinKind === 'machine' || g.ruinKind === 'wreck' ? 0.4 : 0,
+    clearcoat: g.fossilKind === 'amber' ? 0.9 : 0,
+    metalness: metalRuin ? 0.4 : 0,
     emissive: emissive ? hsl(g.hue + 180, 0.8, 0.5) : new Color(0, 0, 0),
     emissiveIntensity: emissive ? 0.35 : 0,
     transparent: g.fossilKind === 'amber',

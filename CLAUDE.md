@@ -83,4 +83,5 @@ Konsole: `__stellar.scenes.active.setTimeOfDay(0.5)` / `.forceWeather('rain', tr
 - `src/gen/archive/pacing.ts` – Spielzeit-Schätzung (Balancing-Test), `docs/BALANCING.md`
 - `src/game/progress/ArchiveProgress.ts` – Fortschritt (rein), `src/game/photo/PhotoScoring.ts` – Bewertung (rein)
 - `src/world/photo/PhotoMode.ts` – Foto-Modus, `src/ui/ArchiveUi.ts` – Enzyklopädie, `src/save/Db.ts` – IndexedDB
+- `src/render/{ProceduralTextures,Environment}.ts` – Detailtexturen-Bank, PMREM-Umgebungslicht (siehe ARCHITECTURE 4.13)
 - `src/core/GameLoop.ts`, `src/core/SceneManager.ts`, `src/core/Input.ts`

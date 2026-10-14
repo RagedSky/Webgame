@@ -10,6 +10,7 @@ import { defaultCharacter, sanitizeCharacter, type CharacterConfig, type Charact
 import { loadPresets, saveOwnPresets } from '@/game/character/presetStore';
 import { buildCharacter, type BuiltCharacter } from '@/world/character/CharacterBuilder';
 import { createStarfield } from '@/render/Starfield';
+import { EnvironmentMap, studioLook } from '@/render/Environment';
 import { CharacterUi } from '@/ui/CharacterUi';
 import { STR } from '@/ui/strings';
 import { showToast } from '@/ui/toast';
@@ -60,7 +61,11 @@ export class CharacterScene implements GameScene {
     floor.rotation.x = -Math.PI / 2;
     floor.receiveShadow = true;
     this.scene.add(floor);
-    this.scene.add(new HemisphereLight(0x8fb0ff, 0x2a2420, 0.9));
+    this.scene.add(new HemisphereLight(0x8fb0ff, 0x2a2420, 0.6));
+    const env = this.disposer.add(new EnvironmentMap(ctx.renderer.gl));
+    this.scene.environment = env.update(studioLook());
+    this.scene.environmentIntensity = 0.9;
+    this.disposer.addFn(() => (this.scene.environment = null));
     const key = new DirectionalLight(0xfff1e0, 2.4);
     key.position.set(2.5, 4, 3);
     key.castShadow = true;

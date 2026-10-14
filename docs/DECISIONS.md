@@ -280,3 +280,11 @@ Spielsitzungen nachjustiert.
 Canvas kamen nie an, Pointer Lock per Klick war unmöglich.
 **Entscheidung:** Vollflächige Overlay-Wurzeln ohne eigene Klickfläche werden explizit mit `#ui-root > .hud` usw. auf
 `pointer-events: none` gesetzt; ihre interaktiven Kinder bleiben `auto`. Neue Vollflächen-Overlays müssen in diese Liste.
+
+## D-057 · Oberflächendetail prozedural statt über Assets
+**Kontext:** Primitiven mit einfarbigen Standardmaterialien wirkten roh; geladene Meshes/Texturen würden Build, Lizenzfragen und
+eine Asset-Pipeline bringen.
+**Entscheidung:** Detail kommt aus drei Schichten, alle zur Laufzeit erzeugt: kachelbare Noise-Texturen (Normal, Rauheit,
+Albedo-Variation) je Oberflächenart, physikalische Materialeigenschaften je Genom (Sheen, Clearcoat, Iridescence) und
+Umgebungslicht aus dem eigenen Himmel (PMREM). Vertexfarben bleiben die Farbquelle, Texturen modulieren nur. Ein späterer
+Asset-Pfad kann dieselben Material-Parameter übernehmen.

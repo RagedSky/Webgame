@@ -1,5 +1,6 @@
 import type { BufferGeometry} from 'three';
-import { Color, ConeGeometry, CylinderGeometry, DodecahedronGeometry, DoubleSide, IcosahedronGeometry, MeshStandardMaterial, OctahedronGeometry, SphereGeometry, type Material } from 'three';
+import { Color, ConeGeometry, CylinderGeometry, DodecahedronGeometry, DoubleSide, IcosahedronGeometry, MeshStandardMaterial, OctahedronGeometry, SphereGeometry, Vector2, type Material } from 'three';
+import { textures } from '@/render/ProceduralTextures';
 import type { VegetationProfile } from '@/gen/terrain/VegetationProfiles';
 import { colorize, jitter, mergeParts, taperedQuad } from './geometry';
 
@@ -123,10 +124,14 @@ export class VegetationAssets {
     this.shrub = shrubGeometry();
     this.rock = rockGeometry();
     this.trees = { conifer: treeGeometry('conifer'), broadleaf: treeGeometry('broadleaf'), palm: treeGeometry('palm'), fungus: treeGeometry('fungus'), crystal: treeGeometry('crystal') };
-    this.grassMaterial = new MeshStandardMaterial({ vertexColors: true, side: DoubleSide, roughness: 0.9, metalness: 0 });
-    this.plantMaterial = new MeshStandardMaterial({ vertexColors: true, roughness: 0.85, metalness: 0 });
-    this.crystalMaterial = new MeshStandardMaterial({ vertexColors: true, roughness: 0.2, metalness: 0.1, emissive: new Color(0.25, 0.2, 0.5), emissiveIntensity: 0.6, transparent: true, opacity: 0.9 });
-    this.rockMaterial = new MeshStandardMaterial({ vertexColors: true, roughness: 1, metalness: 0 });
+    const leaf = textures.get('leaf');
+    const bark = textures.get('bark');
+    const rock = textures.get('rock');
+    const crystal = textures.get('crystal');
+    this.grassMaterial = new MeshStandardMaterial({ vertexColors: true, side: DoubleSide, roughness: 0.9, metalness: 0, map: leaf.map, normalMap: leaf.normalMap, normalScale: new Vector2(0.4, 0.4) });
+    this.plantMaterial = new MeshStandardMaterial({ vertexColors: true, roughness: 0.85, metalness: 0, map: bark.map, normalMap: bark.normalMap, normalScale: new Vector2(0.6, 0.6), roughnessMap: bark.roughnessMap });
+    this.crystalMaterial = new MeshStandardMaterial({ vertexColors: true, roughness: 0.2, metalness: 0.1, emissive: new Color(0.25, 0.2, 0.5), emissiveIntensity: 0.6, transparent: true, opacity: 0.9, normalMap: crystal.normalMap, normalScale: new Vector2(0.5, 0.5) });
+    this.rockMaterial = new MeshStandardMaterial({ vertexColors: true, roughness: 1, metalness: 0, map: rock.map, normalMap: rock.normalMap, normalScale: new Vector2(0.9, 0.9), roughnessMap: rock.roughnessMap });
     this.patchWind(this.grassMaterial, 1.0);
     this.patchWind(this.plantMaterial, 0.35);
   }

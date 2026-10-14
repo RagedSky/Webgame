@@ -73,7 +73,8 @@ Sternsystem, baust ein Raumschiff, synthetisierst Treibstoff und füllst ein Arc
     ├── audio/                 AudioManager (Web Audio, rein prozedural): Busse Master/Effekte/Ambient/Musik, Ambient-Schichten,
     │                          Kreaturenrufe, Schritte, Auslöser, UI, Grollen, Musik-Platzhalter; ambientMix.ts (Pegel aus Biom,
     │                          Tageszeit, Wetter – rein)
-    ├── render/                Renderer-Wrapper (DPR, Render-Skalierung), Composer-Fabrik, Starfield, PlanetTexture (prozedural)
+    ├── render/                Renderer-Wrapper (DPR, Render-Skalierung), Composer-Fabrik, Starfield, PlanetTexture (prozedural),
+    │                          ProceduralTextures (Detailtexturen-Bank), Environment (PMREM-Umgebungslicht)
     ├── scenes/                MainMenuScene, SystemViewScene (Debug), PlanetScene, ShipEditorScene (Werft), SpaceScene (Orbit/Flug),
     │                          CharacterScene (Charaktererstellung mit Studio-Bühne), startGame.ts (Spiel starten/fortsetzen)
     ├── ui/                    DOM-Overlays: DebugOverlay, Toast, SystemPanel, Hud, PauseMenu, PhotoUi (Sucher + Ergebnis),
@@ -394,6 +395,22 @@ deterministischen, flachen Landeplatz. `VegetationProfiles.ts` definiert Dichten
   schlug `pointer-events: none`), Pointer Lock per Klick ging dadurch nie – behoben über spezifischere Regeln.
   `PlanetScene.dispose()` gab den `TerrainManager` nicht frei (≈ 70–130 Chunk-Geometrien je Planetenbesuch blieben auf der GPU) –
   behoben; der Smoke-Test misst `renderer.info.memory` über mehrere Planet-↔-Menü-Wechsel. Veraltete „Phase X“-Texte entfernt.
+
+### 4.13 Oberflächen-Qualität: Texturen, Materialien, Umgebungslicht
+
+- **Prozedurale Detailtexturen** (`render/ProceduralTextures.ts`): kachelbare Normal-, Rauheits- und Albedo-Texturen aus
+  deterministischem Value-/Cellular-Noise, je Art einmal erzeugt und in der `TextureBank` gecacht (Gewebe, Anzugpanels, Haut,
+  Haar, Schuppen, Chitin, Fell, Federn, Fels, Boden, Rinde, Kristall, Blatt, Metall). Die Albedo ist ein helles Graustufenbild
+  und multipliziert Material- bzw. Vertexfarbe, damit die Genom-Farben erhalten bleiben.
+- **Physikalische Materialien**: Charakter (Sheen für Stoff und Haut, Clearcoat für Hartschalen und Augen, reflektierendes
+  Visier), Kreaturen (Normalmap je Bedeckung, Clearcoat für Chitin/Schuppen/Kristall, Iridescence für Kristall, Sheen für
+  Fell/Federn), Props (Fels/Metall/Kristall), Vegetation und Flora (Rinde, Blatt, Kristall). Das Terrain kachelt eine
+  Boden-Normalmap in Weltkoordinaten (`onBeforeCompile`, Chunks haben keine UVs), gleiche Dichte auf allen LOD-Stufen.
+- **Umgebungslicht** (`render/Environment.ts`): ein Himmelsverlauf mit Sonnenscheibe wird per `PMREMGenerator.fromScene`
+  vorgefiltert und als `scene.environment` gesetzt. Die Planetenszene erneuert ihn bei Tageszeitwechsel (Δ Tageslicht ≥ 0,12)
+  oder alle 45 s aus Zenit-, Nebel- und Sonnenfarbe des `Sky`; Charakter-Editor und Werft nutzen ein festes Studio.
+- **Charakter-Details**: Ohren, Lider, Pupillen, Lippen, Nasenspitze, Schulterkappen, Ellbogen- und Knieschoner, Handschuhe,
+  Stiefelsohlen, Gürtelschnalle, Brustlampe, Rucksack mit Tanks und Leuchtstreifen.
 
 ## 5. Laufzeit-Architektur
 

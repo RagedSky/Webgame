@@ -1,4 +1,5 @@
-import { Color, Group, MeshStandardMaterial, type Scene, type Vector3 } from 'three';
+import { Color, Group, MeshStandardMaterial, Vector2, type Scene, type Vector3 } from 'three';
+import { textures } from '@/render/ProceduralTextures';
 import type { TerrainModel } from '@/gen/terrain/TerrainModel';
 import { ChunkGeometryPool, TerrainChunk, buildChunkGeometry, chunkId, type BiomePalette, type ChunkBuildContext, type ChunkKey } from './TerrainChunk';
 
@@ -44,7 +45,12 @@ export class TerrainManager {
     this.maxCell = options.maxCell ?? 1024;
     this.splitFactor = options.splitFactor ?? 1.7;
     this.buildBudgetMs = options.buildBudgetMs ?? 7;
-    this.material = new MeshStandardMaterial({ vertexColors: true, roughness: 0.96, metalness: 0 });
+    const ground = textures.get('ground');
+    this.material = new MeshStandardMaterial({ vertexColors: true, roughness: 0.96, metalness: 0, normalMap: ground.normalMap, normalScale: new Vector2(0.4, 0.4) });
+    // Die Chunks haben keine UVs: die Normalmap wird in Weltkoordinaten gekachelt (einheitliche Dichte über alle LOD-Stufen)
+    this.material.onBeforeCompile = (shader) => {
+      shader.vertexShader = shader.vertexShader.replace('#include <uv_vertex>', '#include <uv_vertex>\n{ vec4 twp = modelMatrix * vec4( position, 1.0 ); vNormalMapUv = twp.xz * 0.23; }');
+    };
     const planet = model.planet;
     const palettes: BiomePalette[] = planet.biomes.map((b) => ({
       ground: new Color(b.palette.ground),

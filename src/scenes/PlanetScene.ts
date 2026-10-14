@@ -54,6 +54,7 @@ import type { SaveBundle } from '@/save/SaveBundle';
 import { ambientMixFor, footSurfaceFor } from '@/audio/ambientMix';
 import type { CompassMarker } from '@/ui/Hud';
 import { startGame } from './startGame';
+import { EnvironmentMap } from '@/render/Environment';
 import { ShipEditorScene } from './ShipEditorScene';
 import { SpaceScene } from './SpaceScene';
 import { LAUNCH_FUEL_TARGET, MODULE_LABELS, RECIPE_BY_ID, type ItemId, type ModuleType, type Recipe } from '@/game/crafting/recipes';
@@ -233,6 +234,11 @@ export class PlanetScene implements GameScene {
   /** Nach dem Laden eines Spielstands: beim Verlassen nichts mehr speichern (würde den geladenen Stand überschreiben). */
   private discardOnExit = false;
   private readonly compassMarkers: CompassMarker[] = [];
+  private env: EnvironmentMap | null = null;
+  private envAccum = 99;
+  private envDaylight = -1;
+  private readonly envGround = new Color();
+  private readonly envSunDir = new Vector3();
   private readonly roverEye = new Vector3();
   private readonly roverFwd = new Vector3();
   private readonly roverCamOffset = new Vector3();
@@ -336,6 +342,9 @@ export class PlanetScene implements GameScene {
     this.baseFog = (0.95 / this.viewDistance) * Math.max(0.12, Math.min(1, this.sky.look.density));
     this.waterFog.set(this.planet.biomes.find((b) => b.hasWater)?.palette.ground ?? '#2f6f9a').multiplyScalar(0.5);
 
+    this.env = new EnvironmentMap(gl);
+    this.envGround.set(planet.biomes[0]?.palette.ground ?? '#555').multiplyScalar(0.35);
+    this.scene.environmentIntensity = 0.5;
     this.composer = ctx.renderer.createComposer(this.scene, this.camera);
     this.bloomPass = new EffectPass(this.camera, new BloomEffect({ luminanceThreshold: 1.0, luminanceSmoothing: 0.3, intensity: 0.45, mipmapBlur: true }));
     this.bloomPass.enabled = quality.postprocessing;
@@ -577,6 +586,26 @@ export class PlanetScene implements GameScene {
 
   // ---------------------------------------------------------------------------
   // Audio: Ambient, Schritte, Kreaturenrufe
+  /** Umgebungslicht (IBL) aus den aktuellen Himmelsfarben; erneuert bei Tageszeitwechsel oder alle 45 s. */
+  private updateEnvironment(dt: number): void {
+    if (!this.env) return;
+    this.envAccum += dt;
+    const daylight = this.cycle.daylight;
+    if (this.envAccum < 45 && Math.abs(daylight - this.envDaylight) < 0.12) return;
+    this.envAccum = 0;
+    this.envDaylight = daylight;
+    this.envSunDir.copy(this.cycle.sunDir);
+    const dim = 1 - this.weather.params.sunDim * 0.8;
+    this.scene.environment = this.env.update({
+      sky: this.sky.zenithColor,
+      horizon: this.sky.fogColor,
+      ground: this.envGround,
+      sunDir: this.envSunDir,
+      sunColor: this.sky.sun.color,
+      sunIntensity: Math.max(0, this.cycle.sunElevation) * 6 * dim,
+    });
+  }
+
   private updateAmbient(dt: number): void {
     this.ambientAccum += dt;
     if (this.ambientAccum < 0.5) return;
@@ -2173,6 +2202,7 @@ export class PlanetScene implements GameScene {
       }
     }
     this.updateAmbient(dt);
+    this.updateEnvironment(dt);
     this.updateCreatureCalls(dt * slow);
     this.saveTick(dt);
 
@@ -2333,6 +2363,9 @@ export class PlanetScene implements GameScene {
     this.player?.dispose();
     this.sky?.dispose();
     this.terrain?.dispose();
+    this.scene.environment = null;
+    this.env?.dispose();
+    this.env = null;
     this.scene.clear();
     const gl = this.ctx.renderer.gl;
     gl.shadowMap.enabled = false;
