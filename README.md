@@ -38,8 +38,15 @@ Betanken, Werft und Start. In der Werft (3D-Editor) wählst du ein Teil und klic
 drei Landebeine machen den Lander startklar; bessere Teile (Stufe 2/3) brauchen Baupläne aus gescannten Ruinen und
 Archiv-Meilensteinen. Der Start braucht Treibstoff für Start und Rückkehr. Im Orbit zeigt die Liste alle Planeten mit
 Transfer- und Landekosten sowie den nötigen Triebwerks- und Schildstufen; „Fliegen“ wechselt den Orbit, „Landen“ spielt die
-Landesequenz. Fotos, Fortschritt und Spielerzustand liegen in IndexedDB des Browsers; „Neues Spiel“ setzt beim gespeicherten
-Schiff fort. Debug: F3 Overlay, T Zeitraffer, Y Wetter, G Flugmodus.
+Landesequenz.
+
+Karte und Sonden: **M** öffnet die Karte des Planeten mit Fog of War, die sich durch Erkunden füllt. Ein an der Werkbank gebauter
+Orbital-Satellit (im Orbit aussetzen) liefert die Höhenkarte, mit Tiefenscanner am Schiff auch Biom-, Rohstoff- und
+Lebenszeichen-Layer, die Katalog-Lücken je Biom zeigen („fehlen 7“). Klick setzt Marker. Der Rover wird über das Inventar
+ausgesetzt und mit **E** ferngesteuert (WASD, Fotos mit Q, Proben mit F, Reichweite 900 m), **X** packt ihn ein. Die Tiefseesonde
+kartiert am Ufer ein Gewässer und liefert Hinweise und eine Tiefenprobe, die Atmosphärensonde erfasst aus dem Orbit die
+Phänomene eines Gasriesen. Fotos, Fortschritt und Spielerzustand liegen in IndexedDB des Browsers; „Neues Spiel“ setzt beim
+gespeicherten Schiff fort. Debug: F3 Overlay, T Zeitraffer, Y Wetter, G Flugmodus.
 
 Architektur: `docs/ARCHITECTURE.md` · Entscheidungen: `docs/DECISIONS.md` · Arbeitskontext: `CLAUDE.md`.
 

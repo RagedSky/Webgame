@@ -36,6 +36,11 @@ const FLAT_KINDS = new Set<BiomeKind>(['salt_flat', 'ice_plain', 'basalt_plateau
 const SEA_LEVEL_FRACTION = 0.1;
 const TRANSITION = 0.07;
 
+/** Kantenlänge der Planetenkarte in Metern (auch ohne Modell berechenbar, z. B. für die Karte im Orbit). */
+export function terrainSizeFor(planet: Planet): number {
+  return clamp(6000 + (planet.radiusKm / 1000) * 400, 6000, 10000);
+}
+
 export class TerrainModel {
   readonly planet: Planet;
   readonly size: number;
@@ -50,7 +55,7 @@ export class TerrainModel {
 
   constructor(planet: Planet, options: TerrainModelOptions = {}) {
     this.planet = planet;
-    this.size = options.size ?? clamp(6000 + (planet.radiusKm / 1000) * 400, 6000, 10000);
+    this.size = options.size ?? terrainSizeFor(planet);
     this.maxHeight = options.maxHeight ?? clamp(380 + planet.radiusKm / 25, 400, 760);
     this.biomes = planet.biomes;
     this.hasWater = planet.type !== 'gas_giant' && planet.biomes.some((b) => b.hasWater);

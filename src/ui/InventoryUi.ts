@@ -24,6 +24,10 @@ export const ITEM_LABELS: Record<ItemId, string> = {
   lure: 'Köder',
   lab_upgrade: 'Labor-Upgrade',
   fuel: 'Treibstoff',
+  satellite: 'Orbital-Satellit',
+  rover: 'Rover',
+  deep_probe: 'Tiefseesonde',
+  atmo_probe: 'Atmosphärensonde',
 };
 
 export const KIND_LABELS: Record<ResourceKind, string> = { metal: 'Metall', crystal: 'Kristall', mineral: 'Mineral', gas: 'Gas', liquid: 'Flüssigkeit', organic: 'Organisch' };
@@ -98,7 +102,8 @@ export class InventoryUi {
     items.append(el('div', { class: 'inv-item fuel' }, el('span', { class: 'name', text: ITEM_LABELS.fuel }), el('span', { class: 'num', text: String(fuel) })));
     for (const { id, amount } of inv.listItems()) {
       if (id === 'fuel') continue;
-      const usable = id === 'oxygen_cell' || id === 'energy_cell' || id === 'lure';
+      const usable = id === 'oxygen_cell' || id === 'energy_cell' || id === 'lure' || id === 'rover' || id === 'deep_probe';
+      const orbitOnly = id === 'satellite' || id === 'atmo_probe';
       const buildable = !!RECIPE_BY_ID[id]?.module;
       items.append(
         el(
@@ -106,7 +111,7 @@ export class InventoryUi {
           { class: 'inv-item' },
           el('span', { class: 'name', text: ITEM_LABELS[id] }),
           el('span', { class: 'num', text: String(amount) }),
-          usable ? el('button', { class: 'small', text: id === 'lure' ? STR.inventory.placeLure : STR.inventory.use, onClick: () => this.cb.onUseItem(id) }) : buildable ? el('button', { class: 'small primary', text: STR.inventory.build, onClick: () => this.cb.onUseItem(id) }) : null,
+          usable ? el('button', { class: 'small', text: id === 'lure' ? STR.inventory.placeLure : id === 'rover' ? STR.probe.roverDeploy : id === 'deep_probe' ? STR.probe.deepDeploy : STR.inventory.use, onClick: () => this.cb.onUseItem(id) }) : buildable ? el('button', { class: 'small primary', text: STR.inventory.build, onClick: () => this.cb.onUseItem(id) }) : orbitOnly ? el('span', { class: 'muted small', text: STR.probe.inOrbitOnly }) : null,
         ),
       );
     }

@@ -4,7 +4,7 @@
  */
 import type { ResourceId } from '@/gen/universe/types';
 
-export type ItemId = 'workbench' | 'shelter' | 'charger' | 'lab' | 'oxygen_cell' | 'energy_cell' | 'lure' | 'lab_upgrade' | 'fuel';
+export type ItemId = 'workbench' | 'shelter' | 'charger' | 'lab' | 'oxygen_cell' | 'energy_cell' | 'lure' | 'lab_upgrade' | 'fuel' | 'satellite' | 'rover' | 'deep_probe' | 'atmo_probe';
 
 export type StationId = 'hand' | 'workbench';
 
@@ -33,6 +33,10 @@ export const RECIPES: Recipe[] = [
   { id: 'energy_cell', name: 'Energiezelle', description: 'Füllt 50 % Energie; wird bei 10 % automatisch genutzt.', cost: { quartz: 2, fiber: 1 }, station: 'workbench' },
   { id: 'lure', name: 'Köder', description: 'Lockt Tiere im Umkreis von 40 m für eine Minute an.', cost: { fiber: 2, water: 1 }, station: 'workbench' },
   { id: 'lab_upgrade', name: 'Labor-Upgrade', description: 'Erhöht Ausbeute und Analyse-Genauigkeit des Labors (max. Stufe 3).', cost: { ferrite: 10, quartz: 10, fiber: 6 }, station: 'workbench', requiresLab: true, max: 2 },
+  { id: 'satellite', name: 'Orbital-Satellit', description: 'Im Orbit aussetzen: Höhenkarte des Planeten; mit Tiefenscanner am Schiff auch Biom-, Erz- und Lebenszeichen-Layer.', cost: { ferrite: 16, quartz: 12, fiber: 4 }, station: 'workbench' },
+  { id: 'rover', name: 'Rover (Landesonde)', description: 'Ferngesteuert, erkundet Gefahrenzonen, nimmt Proben und Fotos (Signalreichweite 900 m).', cost: { ferrite: 20, quartz: 10, fiber: 6, water: 2 }, station: 'workbench' },
+  { id: 'deep_probe', name: 'Tiefseesonde', description: 'Am Ufer aussetzen: kartiert das Gewässer, liefert Hinweise auf Wasserarten und eine Tiefenprobe.', cost: { ferrite: 10, quartz: 8, water: 4 }, station: 'workbench' },
+  { id: 'atmo_probe', name: 'Atmosphärensonde', description: 'Im Orbit eines Gasriesen starten: erfasst Wetterphänomene, Hinweise auf Schwebewesen und eine Luftprobe.', cost: { ferrite: 12, quartz: 10, fiber: 4 }, station: 'workbench' },
 ];
 
 export const RECIPE_BY_ID: Record<string, Recipe> = Object.fromEntries(RECIPES.map((r) => [r.id, r]));

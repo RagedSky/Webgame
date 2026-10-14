@@ -15,6 +15,11 @@ import { createStarfield } from '@/render/Starfield';
 import { createPlanetTexture } from '@/render/PlanetTexture';
 import { buildShip, setFlames, ShipMaterials, type BuiltShip } from '@/world/ship/ShipBuilder';
 import { HAZARD_LABELS } from '@/gen/universe/catalog';
+import { ensureProgress, saveProgressStore } from '@/game/progressStore';
+import type { ArchiveProgress } from '@/game/progress/ArchiveProgress';
+import { terrainSizeFor } from '@/gen/terrain/TerrainModel';
+import { atmosphereTargets, probeHintText } from '@/game/map/hotspots';
+import { createSample } from '@/game/samples';
 import { el, clear } from '@/ui/dom';
 import { STR } from '@/ui/strings';
 import { showToast } from '@/ui/toast';
@@ -29,6 +34,7 @@ interface Node {
   orbitLine: Line;
   label: HTMLElement;
   worldPos: Vector3;
+  satellite: Mesh | null;
 }
 
 interface Transfer {
@@ -49,6 +55,8 @@ export class SpaceScene implements GameScene {
   private ctx!: GameContext;
   private system!: StarSystem;
   private state!: PlayerState;
+  private progress!: ArchiveProgress;
+  private sampleCounter = 0;
   private readonly scene = new Scene();
   private readonly camera = new PerspectiveCamera(50, 1, 0.1, 2000);
   private readonly disposer = new Disposer();
@@ -79,6 +87,7 @@ export class SpaceScene implements GameScene {
     ctx.debug.setScene(this.name);
     ctx.debug.setSeed(this.system.seed);
     this.state = await ensurePlayerState(this.system.seed);
+    this.progress = await ensureProgress(this.system.seed, this.system.entries);
     const loc = this.state.ship.location;
     const currentId = loc?.kind === 'orbit' ? loc.planetId : (loc?.planetId ?? this.system.startPlanetId);
     this.current = this.system.planets.find((p) => p.id === currentId) ?? this.system.planets[0]!;
@@ -137,8 +146,9 @@ export class SpaceScene implements GameScene {
       const labelObj = new CSS2DObject(label);
       labelObj.position.set(0, 1.4, 0);
       mesh.add(labelObj);
-      this.nodes.push({ planet, mesh, orbitLine, label, worldPos: mesh.position.clone() });
+      this.nodes.push({ planet, mesh, orbitLine, label, worldPos: mesh.position.clone(), satellite: null });
     });
+    for (const n of this.nodes) this.syncSatellite(n);
 
     this.ship = buildShip(this.state.ship.design, this.mats);
     this.ship.group.scale.setScalar(0.35);
@@ -186,6 +196,18 @@ export class SpaceScene implements GameScene {
       this.pointerDown = null;
       if (moved < 5 && e.button === 0) this.pick(e.clientX, e.clientY);
     });
+  }
+
+  /** Kleiner Satellit, der den Planeten umkreist (sofern vorhanden). */
+  private syncSatellite(n: Node): void {
+    const tier = this.state.satellites[n.planet.id] ?? 0;
+    if (tier > 0 && !n.satellite) {
+      const geo = this.disposer.add(new SphereGeometry(0.12, 8, 6));
+      const mat = this.disposer.add(new MeshBasicMaterial({ color: tier >= 2 ? 0x8fe3ff : 0xffd38a }));
+      const m = new Mesh(geo, mat);
+      this.scene.add(m);
+      n.satellite = m;
+    }
   }
 
   private nodeOf(planet: Planet): Node {
@@ -244,11 +266,19 @@ export class SpaceScene implements GameScene {
       const stranded = here && plan.land.ok && this.state.ship.fuel < plan.landing;
       const reasons = [...(!plan.reach.ok ? plan.reach.reasons : []), ...(!plan.land.ok ? plan.land.reasons : [])];
       const hazards = p.hazards.map((h) => HAZARD_LABELS[h]).join(', ');
+      const satTier = this.state.satellites[p.id] ?? 0;
+      const mapPct = Math.round(this.state.mapGrid(p.id, terrainSizeFor(p)).fraction() * 100);
+      const mapInfo = `${STR.map.title} ${mapPct} % · ${STR.map.satellite} ${satTier ? `${STR.ship.level} ${satTier}` : STR.map.none}${this.state.atmoProbes.includes(p.id) ? ` · ${STR.probe.atmoHave}` : ''}`;
       const row = el(
         'div',
         { class: `space-row ${here ? 'here' : ''} ${this.selected === p ? 'sel' : ''} ${plan.reach.ok ? '' : 'locked'}` },
-        el('div', { class: 'col' }, el('span', { class: 'name', text: `${p.isStart ? '★ ' : ''}${p.name}${here ? ` (${STR.space.here})` : ''}` }), el('span', { class: 'muted small', text: `${p.typeLabel} · ${p.orbitRadiusAu.toFixed(2)} AU · ${p.gravity.toFixed(2)} g${hazards ? ` · ${hazards}` : ''}` }), el('span', { class: 'muted small', text: here ? `${STR.space.landing}: ${plan.landing} ${STR.space.fuelCost}` : `${STR.space.transfer} ${plan.transfer} + ${STR.space.landing} ${plan.landing} = ${plan.total} ${STR.space.fuelCost} · Δ ${Math.abs(p.orbitRadiusAu - this.current.orbitRadiusAu).toFixed(2)} AU` }), reasons.length ? el('span', { class: 'small bad', text: reasons.join(' · ') }) : el('span')),
-        here ? el('button', { class: 'small primary', text: stranded ? `${STR.space.land} (0)` : STR.space.land, disabled: !canLand, title: plan.land.ok ? '' : STR.space.noLanding, onClick: () => this.land() }) : el('button', { class: 'small primary', text: STR.space.fly, disabled: !canFly, title: !plan.reach.ok ? STR.space.unreachable : this.state.ship.fuel < plan.transfer ? STR.space.cannotAfford : '', onClick: () => this.fly(p) }),
+        el('div', { class: 'col' }, el('span', { class: 'name', text: `${p.isStart ? '★ ' : ''}${p.name}${here ? ` (${STR.space.here})` : ''}` }), el('span', { class: 'muted small', text: `${p.typeLabel} · ${p.orbitRadiusAu.toFixed(2)} AU · ${p.gravity.toFixed(2)} g${hazards ? ` · ${hazards}` : ''}` }), el('span', { class: 'muted small', text: here ? `${STR.space.landing}: ${plan.landing} ${STR.space.fuelCost}` : `${STR.space.transfer} ${plan.transfer} + ${STR.space.landing} ${plan.landing} = ${plan.total} ${STR.space.fuelCost} · Δ ${Math.abs(p.orbitRadiusAu - this.current.orbitRadiusAu).toFixed(2)} AU` }), el('span', { class: 'muted small', text: mapInfo }), reasons.length ? el('span', { class: 'small bad', text: reasons.join(' · ') }) : el('span')),
+        el(
+          'div',
+          { class: 'col btns' },
+          here ? el('button', { class: 'small primary', text: stranded ? `${STR.space.land} (0)` : STR.space.land, disabled: !canLand, title: plan.land.ok ? '' : STR.space.noLanding, onClick: () => this.land() }) : el('button', { class: 'small primary', text: STR.space.fly, disabled: !canFly, title: !plan.reach.ok ? STR.space.unreachable : this.state.ship.fuel < plan.transfer ? STR.space.cannotAfford : '', onClick: () => this.fly(p) }),
+          here ? this.probeButtons(p) : null,
+        ),
       );
       row.addEventListener('click', (e) => {
         if ((e.target as HTMLElement).tagName === 'BUTTON') return;
@@ -257,6 +287,69 @@ export class SpaceScene implements GameScene {
       });
       this.list.append(row);
     }
+  }
+
+  /** Satellit aussetzen / Atmosphärensonde starten (nur beim aktuellen Planeten). */
+  private probeButtons(p: Planet): HTMLElement {
+    const inv = this.state.inventory;
+    const stats = shipStats(this.state.ship.design);
+    const newTier = Math.max(1, stats.scannerTier);
+    const have = this.state.satellites[p.id] ?? 0;
+    const host = el('div', { class: 'col' });
+    if (inv.getItem('satellite') > 0) host.append(el('button', { class: 'small', text: `${STR.probe.satDeploy} (${STR.ship.level} ${newTier})`, disabled: have >= newTier || !!this.transfer, title: have >= newTier ? STR.probe.satHave : '', onClick: () => this.deploySatellite(p, newTier) }));
+    if (inv.getItem('atmo_probe') > 0) {
+      const done = this.state.atmoProbes.includes(p.id);
+      host.append(el('button', { class: 'small', text: STR.probe.atmoDeploy, disabled: p.type !== 'gas_giant' || done || !!this.transfer, title: p.type !== 'gas_giant' ? STR.probe.atmoOnlyGas : done ? STR.probe.atmoHave : '', onClick: () => this.launchAtmoProbe(p) }));
+    }
+    return host;
+  }
+
+  private deploySatellite(p: Planet, tier: number): void {
+    const inv = this.state.inventory;
+    if (!inv.removeItem('satellite')) return;
+    this.state.satellites[p.id] = Math.max(this.state.satellites[p.id] ?? 0, tier);
+    this.state.mapGrid(p.id, terrainSizeFor(p)).revealAll(2);
+    this.state.touch();
+    void savePlayerState(this.state);
+    const n = this.nodeOf(p);
+    if (n.satellite) {
+      this.scene.remove(n.satellite);
+      n.satellite = null;
+    }
+    this.syncSatellite(n);
+    showToast(`${STR.probe.satDone}${tier >= 2 ? ` · ${STR.probe.satTier2}` : ''}`, 5000);
+    audio.success(2);
+    this.renderList();
+  }
+
+  private launchAtmoProbe(p: Planet): void {
+    const inv = this.state.inventory;
+    if (p.type !== 'gas_giant' || this.state.atmoProbes.includes(p.id)) return;
+    if (!inv.removeItem('atmo_probe')) return;
+    const now = performance.now() / 1000;
+    const targets = atmosphereTargets(this.system.entries, p, (id) => this.progress.isDiscovered(id));
+    let discovered = 0;
+    let hints = 0;
+    for (const e of targets) {
+      if (e.category === 'weather') {
+        this.progress.discoverByAnalysis(e.id, 0.5, now);
+        discovered++;
+      } else if (!this.progress.isHinted(e.id)) {
+        this.progress.addHint(e.id, probeHintText('Atmosphärensonde', e, p), now);
+        hints++;
+      }
+    }
+    const biome = p.biomes[0];
+    if (biome) this.progress.addSample(createSample('air', p, biome, now, ++this.sampleCounter));
+    this.state.atmoProbes.push(p.id);
+    this.state.mapGrid(p.id, terrainSizeFor(p)).reveal(0, 0, 1500, 1);
+    this.state.touch();
+    void savePlayerState(this.state);
+    void saveProgressStore(this.progress);
+    this.progress.addLog('info', `${STR.probe.atmoDone}: ${p.name} – ${discovered} ${STR.probe.discovered}, ${hints} ${STR.probe.hints}`, now, undefined, p.id);
+    showToast(`${STR.probe.atmoDone}: ${discovered} ${STR.probe.discovered} · ${hints} ${STR.probe.hints} · Luftprobe im Archiv`, 6000);
+    audio.success(3);
+    this.renderList();
   }
 
   private fly(to: Planet): void {
@@ -340,6 +433,12 @@ export class SpaceScene implements GameScene {
     if (this.ship) {
       setFlames(this.ship, this.transfer ? 1 : 0.15, this.time);
       this.shipGroup.rotation.y = this.time * 0.15;
+    }
+    for (const n of this.nodes) {
+      if (!n.satellite) continue;
+      const r = planetDisplayRadius(n.planet.radiusKm) * 1.5;
+      const a = this.time * 0.9 + n.planet.index;
+      n.satellite.position.set(n.worldPos.x + Math.cos(a) * r, n.worldPos.y + Math.sin(a * 0.7) * r * 0.3, n.worldPos.z + Math.sin(a) * r);
     }
     this.controls.update();
     this.composer.render(frameDt);

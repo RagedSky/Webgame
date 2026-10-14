@@ -7,8 +7,26 @@ import { Survival, type SurvivalState } from './survival/Survival';
 import type { ModuleType } from './crafting/recipes';
 import { starterDesign, type ShipDesign } from './ship/ShipDesign';
 import { milestonesEarned, nextBlueprint } from './ship/blueprints';
+import { MapGrid } from './map/MapGrid';
 
-export const PLAYER_STATE_VERSION = 2;
+export const PLAYER_STATE_VERSION = 3;
+
+export interface MapMarker {
+  x: number;
+  z: number;
+  label: string;
+}
+
+export interface PlanetMapSnapshot {
+  explored: string;
+  markers: MapMarker[];
+}
+
+export interface RoverState {
+  x: number;
+  z: number;
+  yaw: number;
+}
 
 export type ShipLocation = { kind: 'surface'; planetId: string; x: number; z: number; rot: number } | { kind: 'orbit'; planetId: string };
 
@@ -56,6 +74,16 @@ export interface PlayerStateSnapshot {
   milestonesClaimed: number;
   /** Landeplätze je Planet (Rückkehr landet an derselben Stelle). */
   sites: Record<string, { x: number; z: number; rot: number }>;
+  /** Karten je Planet: Fog of War (Base64) und Marker. */
+  maps: Record<string, PlanetMapSnapshot>;
+  /** Satelliten-Stufe je Planet (0/fehlend = keiner). */
+  satellites: Record<string, number>;
+  /** Abgesetzter Rover je Planet. */
+  rovers: Record<string, RoverState>;
+  /** Tiefseesonden je Planet (Positionen). */
+  deepProbes: Record<string, Array<{ x: number; z: number }>>;
+  /** Gasriesen mit gestarteter Atmosphärensonde. */
+  atmoProbes: string[];
   updatedAt: number;
 }
 
@@ -71,6 +99,13 @@ export class PlayerState {
   readonly scannedRuins: string[] = [];
   milestonesClaimed = 0;
   readonly sites: Record<string, { x: number; z: number; rot: number }> = {};
+  readonly satellites: Record<string, number> = {};
+  readonly rovers: Record<string, RoverState> = {};
+  readonly deepProbes: Record<string, Array<{ x: number; z: number }>> = {};
+  readonly atmoProbes: string[] = [];
+  readonly markers: Record<string, MapMarker[]> = {};
+  private readonly grids = new Map<string, MapGrid>();
+  private readonly gridData: Record<string, string> = {};
   private counter = 0;
   private listeners = new Set<() => void>();
 
@@ -111,6 +146,20 @@ export class PlayerState {
     if (type === 'shelter' && !this.respawn[planetId]) this.respawn[planetId] = { x, z };
     this.emit();
     return m;
+  }
+
+  /** Kartenraster eines Planeten (lazy aus dem Spielstand, Kantenlänge in Metern). */
+  mapGrid(planetId: string, size: number): MapGrid {
+    let g = this.grids.get(planetId);
+    if (!g) {
+      g = MapGrid.fromBase64(size, this.gridData[planetId]);
+      this.grids.set(planetId, g);
+    }
+    return g;
+  }
+
+  markersOn(planetId: string): MapMarker[] {
+    return (this.markers[planetId] ??= []);
   }
 
   /** Nächsten Bauplan freischalten (null, wenn alle gefunden). */
@@ -172,8 +221,26 @@ export class PlayerState {
       scannedRuins: this.scannedRuins.slice(),
       milestonesClaimed: this.milestonesClaimed,
       sites: { ...this.sites },
+      maps: this.mapsSnapshot(),
+      satellites: { ...this.satellites },
+      rovers: Object.fromEntries(Object.entries(this.rovers).map(([k, v]) => [k, { ...v }])),
+      deepProbes: Object.fromEntries(Object.entries(this.deepProbes).map(([k, v]) => [k, v.map((p) => ({ ...p }))])),
+      atmoProbes: this.atmoProbes.slice(),
       updatedAt: Date.now(),
     };
+  }
+
+  private mapsSnapshot(): Record<string, PlanetMapSnapshot> {
+    const out: Record<string, PlanetMapSnapshot> = {};
+    const ids = new Set([...Object.keys(this.gridData), ...this.grids.keys(), ...Object.keys(this.markers)]);
+    for (const id of ids) {
+      const grid = this.grids.get(id);
+      const explored = grid ? (grid.cells.some((v) => v > 0) ? grid.toBase64() : '') : (this.gridData[id] ?? '');
+      const markers = (this.markers[id] ?? []).map((m) => ({ ...m }));
+      if (!explored && markers.length === 0) continue;
+      out[id] = { explored, markers };
+    }
+    return out;
   }
 
   static fromJSON(snapshot: PlayerStateSnapshot): PlayerState {
@@ -188,6 +255,14 @@ export class PlayerState {
     p.scannedRuins.push(...s.scannedRuins);
     p.milestonesClaimed = s.milestonesClaimed;
     Object.assign(p.sites, s.sites);
+    for (const [id, m] of Object.entries(s.maps)) {
+      if (m.explored) p.gridData[id] = m.explored;
+      if (m.markers?.length) p.markers[id] = m.markers.map((x) => ({ ...x }));
+    }
+    Object.assign(p.satellites, s.satellites);
+    for (const [id, r] of Object.entries(s.rovers)) p.rovers[id] = { ...r };
+    for (const [id, list] of Object.entries(s.deepProbes)) p.deepProbes[id] = list.map((x) => ({ ...x }));
+    p.atmoProbes.push(...s.atmoProbes);
     p.counter = s.modules.length;
     return p;
   }
@@ -218,5 +293,11 @@ export function migratePlayerState(s: PlayerStateSnapshot): PlayerStateSnapshot 
   out.scannedRuins ??= [];
   out.milestonesClaimed ??= 0;
   out.sites ??= {};
+  if (out.version < 3) out.version = 3;
+  out.maps ??= {};
+  out.satellites ??= {};
+  out.rovers ??= {};
+  out.deepProbes ??= {};
+  out.atmoProbes ??= [];
   return out;
 }

@@ -1593,3 +1593,42 @@ input[type='range'] {
 .ship-panel {
   max-width: 720px;
 }
+
+/* ---------- Phase 7: Karte, Rover, Sonden ---------- */
+.map-panel {
+  max-width: 1060px;
+  width: min(96vw, 1060px);
+}
+
+.map-body {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.map-canvas {
+  width: min(640px, 60vh, 58vw);
+  height: auto;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  cursor: crosshair;
+  flex: 0 0 auto;
+  image-rendering: auto;
+}
+
+.map-side {
+  flex: 1 1 auto;
+  min-width: 240px;
+  max-height: min(640px, 60vh);
+  overflow-y: auto;
+}
+
+.map-gaps .stat-row.ok {
+  opacity: 0.55;
+}
+
+.space-row .btns {
+  align-items: flex-end;
+  gap: 4px;
+}

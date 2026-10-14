@@ -57,13 +57,16 @@ Sternsystem, baust ein Raumschiff, synthetisierst Treibstoff und füllst ein Arc
     │                          Inventory (Rohstoffe/Gegenstände), PlayerState (Inventar, Überleben, Module, Labor-Stufe, Respawn,
     │                          Schiff, Baupläne, Landeplätze), survival/Survival (Sauerstoff/Energie, rein), crafting/recipes +
     │                          crafting/fuel (Rezepte, Synthese), ship/parts + ship/ShipDesign + ship/travel + ship/blueprints
-    │                          (Schiffsteile, Entwurf/Werte, Reisekosten, Baupläne – alles rein), playerStore (Laden/Speichern)
+    │                          (Schiffsteile, Entwurf/Werte, Reisekosten, Baupläne – alles rein), playerStore (Laden/Speichern),
+    │                          map/MapGrid (Fog of War je Planet, Base64) + map/hotspots (Katalog-Lücken, Sondenziele, Hinweistexte),
+    │                          progressStore (gemeinsamer Archiv-Fortschritt für Planet und Orbit)
     ├── save/                  Db.ts: IndexedDB (Fotos als JPEG+Thumb-Blob, Fortschritt je Seed, Schlüssel/Wert)
     ├── audio/                 AudioManager: prozedurale UI-Klänge (Auslöser, Erfolg, Hinweis)
     ├── render/                Renderer-Wrapper (DPR, Render-Skalierung), Composer-Fabrik, Starfield, PlanetTexture (prozedural)
     ├── scenes/                MainMenuScene, SystemViewScene (Debug), PlanetScene, ShipEditorScene (Werft), SpaceScene (Orbit/Flug)
     ├── ui/                    DOM-Overlays: DebugOverlay, Toast, SystemPanel, Hud, PauseMenu, PhotoUi (Sucher + Ergebnis),
-    │                          ArchiveUi (Enzyklopädie, Logbuch, Proben), MicroscopeView (2D-Zellen mit Fokus-Minispiel)
+    │                          ArchiveUi (Enzyklopädie, Logbuch, Proben), MicroscopeView (2D-Zellen mit Fokus-Minispiel),
+    │                          InventoryUi, LabUi, ShipUi, ShipEditorUi, MapUi (Canvas-Karte mit Layern, Fog of War, Markern)
     ├── world/                 Laufzeit-Welt (Three.js)
     │   ├── terrain/           TerrainChunk (Skirts, Vertexfarben, Geometrie-Pool), TerrainManager (Quadtree-LOD, Zeitbudget)
     │   ├── Sky.ts             Kuppel-Shader (Rayleigh/Mie vereinfacht, Wolken, Dämmerung), Sterne, Monde, Gasriese, Sonnen-/Hemisphärenlicht
@@ -84,6 +87,8 @@ Sternsystem, baust ein Raumschiff, synthetisierst Treibstoff und füllst ein Arc
     │   ├── base/BaseModules.ts BaseManager: Modul-Meshes aus dem PlayerState, Geist-Vorschau, Platzierungsprüfung, Nähe-Abfragen
     │   ├── ship/ShipBuilder.ts Entwurf → Gruppe (Rumpf, Kanzel, Düsen + Flammen, Beine, Anbauten), Sockelmarker für die Werft
     │   ├── ship/ShipActor.ts  Lander auf der Oberfläche: Position, Schub/Licht, Start- und Landehöhe, Raycast-Auswahl
+    │   ├── probes/Rover.ts    Ferngesteuerter Rover: Fahrphysik auf dem Terrain (Nick/Roll), Wasser-/Grenzsperre, Augpunkt
+    │   ├── probes/Buoys.ts    Bojen der Tiefseesonden (wippen auf dem Wasser)
     │   └── HintSystem.ts      Spuren/Kot/Nester als Objekte, Geräusche/Gerüche als Meldung, Gerüchte über seltene Verwandte
     │   └── Player.ts          Ego-/Schulter-Controller, Terrain-Kollision, Schwimmen, Gravitation
     ├── assets/                AssetRegistry: Platzhalter-Geometrien/Materialien, später austauschbar
@@ -273,6 +278,35 @@ deterministischen, flachen Landeplatz. `VegetationProfiles.ts` definiert Dichten
   Szenenwechsel (Planet ↔ Werft ↔ Orbit) keinen Lese-/Schreib-Wettlauf mit IndexedDB haben. „Neues Spiel“ setzt beim gespeicherten
   Schiff fort (Orbit → Raumflug, sonst Planet des Schiffs).
 
+### 4.9 Sonden, Satelliten und Karte (Phase 7)
+
+- **Kartenraster** (`MapGrid`, rein): 96 × 96 Zellen über der quadratischen Planetenkarte (Kantenlänge aus `terrainSizeFor`).
+  Stufe 0 unbekannt, 1 erkundet (Spieler 220 m, Rover 180 m, Tiefseesonde 280 m, Atmosphärensonde 1500 m), 2 vom Satelliten
+  gescannt. Nie absteigend; Serialisierung als Base64 (9 KB je Planet) im `PlayerState` (v3: `maps`, `satellites`, `rovers`,
+  `deepProbes`, `atmoProbes`).
+- **Karte** (`MapUi`, M): Canvas 640 px. Höhenkarte (Grau, Wasser blau) aus dem Terrain-Modell (160 × 160 Abtastungen, einmal je
+  Planet), Biomlayer in Biomfarben, Fog of War als weiche Zellmaske (unbekannt schwarz; mit Satellit nur abgedunkelt, weil die
+  Höhenkarte bekannt ist). Layer: Biome, Rohstoffe (alle Knoten des Planeten, deterministisch aus `generateResourceNodes`),
+  Lebenszeichen (Katalog-Lücken je Biom im 6×6-Block mit dem größten sichtbaren Biomanteil, „fehlen N“), Marker. Ohne Satellit mit
+  Tiefenscanner zeigen Biome/Rohstoffe/Lebenszeichen nur erkundete Zellen. Icons: Spieler (Pfeil), Schiff, Module, Unterkunft,
+  Rover, Sonden, Marker (Klick setzt/entfernt, Liste rechts zum Umbenennen). Seitenleiste: Erkundungsgrad, Satellit, Lücken je
+  Biom (unbekannte Biome als „?“).
+- **Satellit** (Werkbank-Gegenstand, im Orbit aussetzen): Stufe = max(1, Scanner-Stufe des Schiffs). Stufe 1 deckt die Höhenkarte
+  des ganzen Planeten auf (Zellstufe 2), Stufe 2 schaltet Biom-, Rohstoff- und Lebenszeichen-Layer frei. Ein höherwertiger
+  Satellit ersetzt den alten. In der Orbit-Ansicht umkreist ein kleiner Marker den Planeten; die Liste zeigt Kartenstand je Planet.
+- **Rover** (`Rover`, Werkbank-Gegenstand): mit I aussetzen, E am Rover steuern (WASD, Maus-Kamera als Verfolger, Signalreichweite
+  900 m zum Spieler), E/Esc zurück, X einpacken. Fährt Gefälle bis 45°, stoppt an Wasser und Weltgrenze; deckt die Karte um sich auf.
+  Fotos im Rover-Modus nutzen den Augpunkt am Mast und zählen mit −20 % (Rover-Kamera); F nimmt Boden-/Pflanzen-/Wasserproben
+  am Rover. Der Spieler bleibt eingefroren, Überleben läuft weiter (Rover sinnvoll von Unterkunft/Schiff aus steuern). Position
+  wird alle 2 s und beim Verlassen gespeichert.
+- **Tiefseesonde** (Werkbank, am Ufer aussetzen, bis 40 m zum Wasser): Boje, deckt 280 m auf, Hinweise (Biom, Tageszeit, Wetter,
+  ohne Namen) für bis zu 4 unentdeckte Wasserarten, Wasserprobe für das Mikroskop.
+- **Atmosphärensonde** (Werkbank, im Orbit eines Gasriesen starten): erfasst alle Wetterphänomene des Gasriesen mit 1★
+  (Analysequalität 0,5), Hinweise für Schwebewesen/Varianten/Mikroben, Luftprobe für das Mikroskop. Damit sind Gasriesen-Einträge
+  erstmals erreichbar (Landung bleibt unmöglich). Erreichbarkeit nach Stufen (Triebwerk 2, Schild 1) gilt weiterhin.
+- **Gemeinsamer Fortschritt:** `gameState.progress` hält den `ArchiveProgress` je Seed (`progressStore`), damit die Orbit-Szene
+  Entdeckungen und Proben der Atmosphärensonde verbuchen kann.
+
 ## 5. Laufzeit-Architektur
 
 - **GameLoop**: `requestAnimationFrame`, Akkumulator mit festem Update-Schritt (1/60 s, max. 5 Schritte/Frame), Render pro Frame,
@@ -302,7 +336,7 @@ deterministischen, flachen Landeplatz. `VegetationProfiles.ts` definiert Dichten
 | 4 | Kamera und Katalog (Kernschleife): Foto-Modus, Bewertung, Archiv-UI, Fotospeicherung, Hinweise, Mikroskop | ✅ |
 | 5 | Überleben, Rohstoffe, Basis, Labor, Treibstoff-Synthese | ✅ |
 | 6 | Schiffbau und Raumflug: Werft, Teile/Stufen, Baupläne, Start/Orbit/Landung, Treibstoffverbrauch | ✅ |
-| 7 | Sonden, Satelliten, Karte | ⬜ |
+| 7 | Sonden, Satelliten, Karte: Fog of War, Layer, Hotspots/Lücken, Marker, Rover, Tiefsee- und Atmosphärensonde | ✅ |
 | 8 | Charaktererstellung | ⬜ |
 | 9 | Grafik und Einstellungen, adaptive Qualität | ⬜ |
 | 10 | Politur: Tutorial, Audio, Speichern/Laden, Balancing, README | ⬜ |

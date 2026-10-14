@@ -176,3 +176,26 @@ und melden sich in `dispose()` ab. IndexedDB bleibt die Persistenz (debounced, b
 **Entscheidung:** Start: 3 s Countdown, 6 s Aufstieg, Ausblenden; Landung: 6,5 s Abstieg aus 160 m mit Einblenden. Die Kamera umkreist
 das Schiff außen (kein Cockpit-Interieur in Phase 6). Spieler ist eingefroren, Überleben pausiert, Esc deaktiviert. Danach steht der
 Spieler neben dem Schiff. Der Orbit ist stilisiert (feste Planetenpositionen, Transfer als Bogen), keine Orbitalmechanik.
+
+## D-039 · Fog of War als 96×96-Zellraster mit drei Stufen
+**Kontext:** Die Karte soll sich nur durch Erkundung und Scans füllen, der Spielstand aber klein bleiben.
+**Entscheidung:** Je Planet ein `Uint8Array` mit 9216 Zellen (62–104 m Kante), Stufen 0/1/2 (unbekannt/erkundet/gescannt), nie
+absteigend, Base64 im Spielstand. Spieler, Rover und Sonden decken Kreise auf; der Satellit setzt alles auf Stufe 2. Die Höhenkarte
+selbst wird aus dem Terrain-Modell gerendert (keine zweite Datenquelle) und nur durch das Raster maskiert.
+
+## D-040 · Karten-Layer an Satellit und Scanner-Stufe gebunden
+**Entscheidung:** Ohne Satellit zeigt die Karte nur erkundete Zellen; Satellit Stufe 1 (ohne Scanner-Teil) liefert die Höhenkarte,
+Stufe 2 (Tiefenscanner am Schiff beim Aussetzen) Biome, Rohstoffe und Lebenszeichen für den ganzen Planeten. So lohnt sich das
+Scanner-Teil aus Phase 6, und die Karte bleibt ein Fortschrittsziel statt einer Komplettlösung.
+
+## D-041 · Lebenszeichen = Katalog-Lücken je Biom
+**Kontext:** Hotspots sollen zum Fotografieren leiten, ohne Positionen einzelner Tiere zu verraten (die spawnen dynamisch).
+**Entscheidung:** Je Biom wird die Zahl unentdeckter Einträge gezählt und im Kartenblock (6×6) mit dem größten sichtbaren
+Biomanteil als Kreis mit „fehlen N“ angezeigt (Schwerpunkte fielen in der Kartenmitte zusammen); die Seitenleiste listet alle Biome (unbekannte als „?“). Das ist ehrlich zur Spawn-Logik (Biom als Hauptbedingung)
+und motiviert zielgerichtete Erkundung.
+
+## D-042 · Rover als Fernsteuerung des bestehenden Foto-/Proben-Systems
+**Entscheidung:** Der Rover ist ein eigener Fahrkörper, aber Kamera (Foto-Modus vom Mast, −20 % Bewertung) und Interaktion (F)
+nutzen dieselben Routinen wie der Spieler mit anderem Augpunkt. Signalreichweite 900 m, kein Sauerstoffverbrauch des Rovers; der
+Spieler bleibt eingefroren und sollte an Unterkunft oder Schiff stehen. Rover-Fotos können so Gefahrenzonen abdecken, ohne die
+Kernschleife zu doppeln.

@@ -26,7 +26,7 @@ import { Player } from '@/world/Player';
 import { PropManager, type WorldProp } from '@/world/props/PropManager';
 import { HintSystem } from '@/world/HintSystem';
 import { PhotoMode, type PhotoEnv, type ScoredSubject, type SubjectCandidate } from '@/world/photo/PhotoMode';
-import { ArchiveProgress, type Sample } from '@/game/progress/ArchiveProgress';
+import type { ArchiveProgress, Sample } from '@/game/progress/ArchiveProgress';
 import { analyzeMineralSample, createSample, microCellsForSample } from '@/game/samples';
 import { getDb, type GameDb } from '@/save/Db';
 import type { PlayerState, BaseModule } from '@/game/PlayerState';
@@ -36,6 +36,13 @@ import { launchCheck, launchCost } from '@/game/ship/travel';
 import { partDef } from '@/game/ship/parts';
 import { LANDING_SECONDS, LANDING_START_HEIGHT, LAUNCH_SECONDS, SHIP_RECHARGE_RADIUS, ShipActor } from '@/world/ship/ShipActor';
 import { ShipUi } from '@/ui/ShipUi';
+import { MapUi } from '@/ui/MapUi';
+import type { MapGrid } from '@/game/map/MapGrid';
+import { deepSeaTargets, probeHintText } from '@/game/map/hotspots';
+import { ensureProgress } from '@/game/progressStore';
+import { NODE_CELL, generateResourceNodes, type ResourceNode } from '@/gen/terrain/ResourceNodes';
+import { ROVER_RANGE, ROVER_REVEAL, Rover } from '@/world/probes/Rover';
+import { Buoys } from '@/world/probes/Buoys';
 import { ShipEditorScene } from './ShipEditorScene';
 import { SpaceScene } from './SpaceScene';
 import { LAUNCH_FUEL_TARGET, MODULE_LABELS, RECIPE_BY_ID, type ItemId, type ModuleType, type Recipe } from '@/game/crafting/recipes';
@@ -75,7 +82,7 @@ interface Interaction {
 
 /** Ziel der E-Taste: Modul öffnen oder Rohstoff sammeln (halten). */
 interface Harvest {
-  kind: 'none' | 'module' | 'node' | 'water' | 'plant' | 'ship';
+  kind: 'none' | 'module' | 'node' | 'water' | 'plant' | 'ship' | 'rover';
   label: string;
   module?: BaseModule;
   node?: LiveNode;
@@ -182,6 +189,24 @@ export class PlanetScene implements GameScene {
   private pendingLanding = false;
   private readonly cinLookAt = new Vector3();
 
+  // Phase 7: Karte, Rover, Sonden
+  private grid!: MapGrid;
+  private mapUi!: MapUi;
+  private rover: Rover | null = null;
+  private roverMode = false;
+  private roverCamYaw = 0;
+  private roverCamPitch = -0.2;
+  private roverSignalLost = false;
+  private buoys: Buoys | null = null;
+  private revealAccum = 1;
+  private mapRedrawAccum = 0;
+  private roverSaveAccum = 0;
+  private allNodes: ResourceNode[] | null = null;
+  private unsubProgress: (() => void) | null = null;
+  private readonly roverEye = new Vector3();
+  private readonly roverFwd = new Vector3();
+  private readonly roverCamOffset = new Vector3();
+
   constructor(private readonly planetId: string) {}
 
   async enter(ctx: GameContext): Promise<void> {
@@ -233,6 +258,13 @@ export class PlanetScene implements GameScene {
     });
     this.nodes = new ResourceNodeManager(this.scene, this.model, planet);
     this.base = new BaseManager(this.scene, this.model, planet, this.state);
+    this.grid = this.state.mapGrid(planet.id, this.model.size);
+    const roverState = this.state.rovers[planet.id];
+    if (roverState) this.rover = new Rover(this.scene, this.model, roverState.x, roverState.z, roverState.yaw);
+    if (this.model.hasWater) {
+      this.buoys = new Buoys(this.scene, this.model.seaLevel);
+      for (const pr of this.state.deepProbes[planet.id] ?? []) this.buoys.add(pr.x, pr.z);
+    }
 
     // Schiff: steht es auf diesem Planeten? (Startplanet beim ersten Betreten, sonst gespeicherter Landeplatz)
     const loc = this.state.ship.location;
@@ -284,10 +316,9 @@ export class PlanetScene implements GameScene {
     this.props.update(this.camera.position, 2);
     this.nodes.update(this.camera.position, 1);
 
-    // Fortschritt laden
-    const snapshot = await this.db.loadProgress(this.system.seed);
-    this.progress = snapshot ? ArchiveProgress.fromJSON(snapshot, this.system.entries) : new ArchiveProgress(this.system.seed, this.system.entries);
-    this.progress.onChange(() => (this.dirty = true));
+    // Fortschritt laden (gemeinsame Instanz mit der Orbit-Szene)
+    this.progress = await ensureProgress(this.system.seed, this.system.entries);
+    this.unsubProgress = this.progress.onChange(() => (this.dirty = true));
     this.hints = new HintSystem(this.scene, this.model, planet, this.system.entries, this.system.families, this.progress, this.system.seed);
     loading.dispose();
 
@@ -311,6 +342,29 @@ export class PlanetScene implements GameScene {
     this.inventoryUi = new InventoryUi(ctx.uiRoot, this.state, { onCraft: (r) => this.craft(r), onUseItem: (id) => this.useItem(id), onClose: () => this.closeInventory() }, () => this.goalText());
     this.inventoryUi.planetIdForLab = planet.id;
     this.labUi = new LabUi(ctx.uiRoot, this.state, this.system.fuelFormula, { onClose: () => this.closeLab(), onFuelProduced: (n) => this.onFuelProduced(n) });
+    this.mapUi = new MapUi(
+      ctx.uiRoot,
+      {
+        model: this.model,
+        planet,
+        grid: this.grid,
+        entries: this.system.entries,
+        isDiscovered: (id) => this.progress.isDiscovered(id),
+        satelliteTier: () => this.state.satellites[planet.id] ?? 0,
+        nodes: () => this.nodesForMap(),
+        dynamic: () => ({
+          player: { x: this.player.position.x, z: this.player.position.z, yaw: this.player.yaw },
+          ship: this.ship ? { x: this.ship.position.x, z: this.ship.position.z } : null,
+          modules: this.state.modulesOn(planet.id).map((m) => ({ x: m.x, z: m.z, type: m.type })),
+          rover: this.rover ? { x: this.rover.position.x, z: this.rover.position.z } : null,
+          deepProbes: this.state.deepProbes[planet.id] ?? [],
+          respawn: this.state.respawn[planet.id] ?? null,
+        }),
+        markers: this.state.markersOn(planet.id),
+        onMarkersChanged: () => this.state.touch(),
+      },
+      { onClose: () => this.closeMap() },
+    );
     this.shipUi = new ShipUi(ctx.uiRoot, this.state, planet, {
       onRefuel: () => this.refuel(),
       onUnload: () => this.unloadFuel(),
@@ -343,6 +397,7 @@ export class PlanetScene implements GameScene {
       this.inventoryUi.dispose();
       this.labUi.dispose();
       this.shipUi.dispose();
+      this.mapUi.dispose();
       this.closeMicroscope();
     });
     this.checkGoal();
@@ -427,7 +482,7 @@ export class PlanetScene implements GameScene {
   /** Debug/Test: aktuelles E-Ziel sofort sammeln (ohne Halten). */
   harvestNow(): string {
     this.harvest = this.computeHarvest();
-    if (this.harvest.kind === 'none' || this.harvest.kind === 'module' || this.harvest.kind === 'ship') return this.harvest.kind;
+    if (this.harvest.kind === 'none' || this.harvest.kind === 'module' || this.harvest.kind === 'ship' || this.harvest.kind === 'rover') return this.harvest.kind;
     this.performHarvest(this.harvest);
     return this.harvest.kind;
   }
@@ -452,7 +507,15 @@ export class PlanetScene implements GameScene {
   }
 
   private get uiOpen(): boolean {
-    return this.archiveUi.isOpen || this.inventoryUi.isOpen || this.labUi.isOpen || this.shipUi.isOpen;
+    return this.archiveUi.isOpen || this.inventoryUi.isOpen || this.labUi.isOpen || this.shipUi.isOpen || this.mapUi.isOpen;
+  }
+
+  get roverActor(): Rover | null {
+    return this.rover;
+  }
+
+  get mapGrid(): MapGrid {
+    return this.grid;
   }
 
   // ---------------------------------------------------------------------------
@@ -546,7 +609,7 @@ export class PlanetScene implements GameScene {
   private exitPhoto(): void {
     if (!this.photo.active) return;
     this.photo.exit();
-    this.player.frozen = false;
+    this.player.frozen = this.roverMode || this.cinematic !== null;
     this.player.selfie = false;
     this.photoUi.hide();
     this.hud.setPhotoMode(false);
@@ -611,10 +674,11 @@ export class PlanetScene implements GameScene {
   private async finishCapture(photoId: string, jpeg: Blob, width: number, height: number, subjects: ScoredSubject[], settings: PhotoMode['settings']): Promise<void> {
     const thumb = await this.makeThumb(jpeg, width, height);
     const at = this.elapsed;
+    const roverShot = this.roverMode;
     const results = subjects.map((s, i) => ({
       subject: s,
-      result: this.progress.recordPhoto(s.entry.id, s.score.total, photoId, s.observation.behavior, at, i === 0),
-      name: this.progress.displayName(s.entry),
+      result: this.progress.recordPhoto(s.entry.id, roverShot ? Math.round(s.score.total * 0.8) : s.score.total, photoId, s.observation.behavior, at, i === 0),
+      name: `${this.progress.displayName(s.entry)}${roverShot ? ` (${STR.probe.roverPhoto})` : ''}`,
     }));
     if (subjects.length === 0) this.progress.photosTaken++;
     let maxStars = 0;
@@ -738,9 +802,12 @@ export class PlanetScene implements GameScene {
 
   // ---------------------------------------------------------------------------
   // Proben/Scan (F)
-  private computeInteraction(): Interaction {
-    this.camera.getWorldDirection(this.camDir);
-    const hit = this.props.pick(this.camera.position, this.camDir, 4.5);
+  private computeInteraction(origin?: Vector3, dir?: Vector3, feet?: Vector3): Interaction {
+    if (!origin) this.camera.getWorldDirection(this.camDir);
+    const o = origin ?? this.camera.position;
+    const d = dir ?? this.camDir;
+    const f = feet ?? this.player.position;
+    const hit = this.props.pick(o, d, 4.5);
     if (hit) {
       const e = hit.prop.entry;
       const name = this.progress.isDiscovered(e.id) ? this.progress.displayName(e) : `${STR.archive.unknown} (${e.category === 'fossil' ? (e.subcategory === 'ruin' ? 'Ruine' : 'Fossil') : e.category === 'ore' ? 'Erz' : 'Gestein'})`;
@@ -749,36 +816,35 @@ export class PlanetScene implements GameScene {
       return { kind: 'prop', label: `F: ${STR.interact.sample} – ${name}${done ? ` (${STR.interact.sampled})` : ''}`, prop: hit.prop };
     }
     const sea = this.model.seaLevel;
-    if (this.model.hasWater && this.camera.position.y > sea && this.camDir.y < -0.05) {
-      const dist = (sea - this.camera.position.y) / this.camDir.y;
-      if (dist > 0 && dist < 5) {
-        const x = this.camera.position.x + this.camDir.x * dist;
-        const z = this.camera.position.z + this.camDir.z * dist;
-        if (this.model.heightAt(x, z) < sea) return { kind: 'water', label: `F: ${STR.interact.water}`, biome: this.model.biomeAt(x, z) };
-      }
+    const wd = this.waterInView(5, o, d);
+    if (wd > 0) {
+      const x = o.x + d.x * wd;
+      const z = o.z + d.z * wd;
+      return { kind: 'water', label: `F: ${STR.interact.water}`, biome: this.model.biomeAt(x, z) };
     }
-    const best = this.plantInView();
+    const best = this.plantInView(o, d, f);
     if (best) {
       const name = this.progress.isDiscovered(best.entry.id) ? this.progress.displayName(best.entry) : STR.archive.unknown;
       return { kind: 'plant', label: `F: ${STR.interact.plant} – ${name}`, species: best, biome: this.model.biomeAt(best.x, best.z) };
     }
-    if (this.player.grounded && !this.player.swimming) {
-      const biome = this.model.biomeAt(this.player.position.x, this.player.position.z);
+    const onGround = feet ? true : this.player.grounded && !this.player.swimming;
+    if (onGround && !(this.model.hasWater && f.y < sea - 0.5)) {
+      const biome = this.model.biomeAt(f.x, f.z);
       return { kind: 'soil', label: `F: ${STR.interact.soil} (${biome.name})`, biome };
     }
     return { kind: 'none', label: '' };
   }
 
-  /** Nächste Pflanze im Blickkegel (erwartet `camDir` aktuell). */
-  private plantInView(): SpeciesPlacement | null {
-    this.vegetation.querySpecies(this.player.position.x, this.player.position.z, 3.2, this.speciesBuf);
+  /** Nächste Pflanze im Blickkegel um `feet`, bewertet von `origin` aus entlang `dir`. */
+  private plantInView(origin: Vector3 = this.camera.position, dir: Vector3 = this.camDir, feet: Vector3 = this.player.position): SpeciesPlacement | null {
+    this.vegetation.querySpecies(feet.x, feet.z, 3.2, this.speciesBuf);
     let best: SpeciesPlacement | null = null;
     let bestCos = 0.8;
     for (const sp of this.speciesBuf) {
-      this.tmpV.set(sp.x, sp.y + sp.height * 0.5, sp.z).sub(this.camera.position);
+      this.tmpV.set(sp.x, sp.y + sp.height * 0.5, sp.z).sub(origin);
       const d = this.tmpV.length();
       if (d < 0.1) continue;
-      const cos = this.tmpV.divideScalar(d).dot(this.camDir);
+      const cos = this.tmpV.divideScalar(d).dot(dir);
       if (cos > bestCos) {
         bestCos = cos;
         best = sp;
@@ -788,14 +854,24 @@ export class PlanetScene implements GameScene {
   }
 
   /** Blick auf eine Wasseroberfläche in Reichweite? Liefert die Distanz oder -1. */
-  private waterInView(maxDist: number): number {
+  private waterInView(maxDist: number, origin: Vector3 = this.camera.position, dir: Vector3 = this.camDir): number {
     const sea = this.model.seaLevel;
-    if (!this.model.hasWater || this.camera.position.y <= sea || this.camDir.y >= -0.05) return -1;
-    const dist = (sea - this.camera.position.y) / this.camDir.y;
+    if (!this.model.hasWater || origin.y <= sea || dir.y >= -0.05) return -1;
+    const dist = (sea - origin.y) / dir.y;
     if (dist <= 0 || dist >= maxDist) return -1;
-    const x = this.camera.position.x + this.camDir.x * dist;
-    const z = this.camera.position.z + this.camDir.z * dist;
+    const x = origin.x + dir.x * dist;
+    const z = origin.z + dir.z * dist;
     return this.model.heightAt(x, z) < sea ? dist : -1;
+  }
+
+  /** Interaktionsziel aus Sicht des Rovers (Augpunkt am Mast, leicht nach unten). */
+  private roverInteraction(): Interaction {
+    if (!this.rover) return { kind: 'none', label: '' };
+    this.rover.eye(this.roverEye);
+    this.rover.forwardDir(this.roverFwd);
+    this.roverFwd.y = -0.45;
+    this.roverFwd.normalize();
+    return this.computeInteraction(this.roverEye, this.roverFwd, this.rover.position);
   }
 
   // ---------------------------------------------------------------------------
@@ -806,6 +882,7 @@ export class PlanetScene implements GameScene {
 
   private computeHarvest(): Harvest {
     this.camera.getWorldDirection(this.camDir);
+    if (this.rover && !this.roverMode && this.rover.pick(this.camera.position, this.camDir, HARVEST_RANGE + 1) > 0) return { kind: 'rover', label: `E: ${STR.probe.roverControl} · X: ${STR.probe.roverPack}` };
     if (this.ship && this.ship.pick(this.camera.position, this.camDir, HARVEST_RANGE + 2.5) > 0) return { kind: 'ship', label: `E: ${STR.ship.open} – ${STR.ship.title}` };
     const mod = this.base.pick(this.camera.position, this.camDir, HARVEST_RANGE);
     if (mod) return { kind: 'module', label: `E: ${STR.interact.open} – ${MODULE_LABELS[mod.type]}`, module: mod };
@@ -849,6 +926,10 @@ export class PlanetScene implements GameScene {
       }
       if (this.harvest.kind === 'ship') {
         this.openShip();
+        return;
+      }
+      if (this.harvest.kind === 'rover') {
+        this.enterRover();
         return;
       }
       if (this.harvest.kind !== 'none') {
@@ -974,6 +1055,16 @@ export class PlanetScene implements GameScene {
       if (!st.inventory.removeItem('lure')) return;
       this.closeInventory();
       this.placeLure();
+      return;
+    }
+    if (id === 'rover') {
+      this.closeInventory();
+      this.deployRover();
+      return;
+    }
+    if (id === 'deep_probe') {
+      this.closeInventory();
+      this.deployDeepProbe();
       return;
     }
     const module = RECIPE_BY_ID[id]?.module;
@@ -1281,6 +1372,207 @@ export class PlanetScene implements GameScene {
   }
 
   // ---------------------------------------------------------------------------
+  // Karte (M)
+  private openMap(): void {
+    if (this.mapUi.isOpen) return;
+    this.exitPhoto();
+    this.exitBuild();
+    this.mapUi.show();
+    this.hud.setPrompt('');
+    this.ctx.input.exitPointerLock();
+    this.ctx.input.reset();
+  }
+
+  private closeMap(): void {
+    if (!this.mapUi.isOpen) return;
+    this.mapUi.hide();
+    this.ctx.input.requestPointerLock();
+  }
+
+  /** Alle Rohstoffknoten des Planeten (für den Karten-Layer, einmal berechnet). */
+  private nodesForMap(): ResourceNode[] {
+    if (!this.allNodes) {
+      const n = Math.ceil(this.model.size / 2 / NODE_CELL);
+      const out: ResourceNode[] = [];
+      for (let iz = -n; iz < n; iz++) for (let ix = -n; ix < n; ix++) out.push(...generateResourceNodes(this.model, this.planet, ix, iz));
+      this.allNodes = out;
+    }
+    return this.allNodes;
+  }
+
+  private revealTick(dt: number): void {
+    this.revealAccum += dt;
+    if (this.revealAccum < 0.5) return;
+    this.revealAccum = 0;
+    let changed = this.grid.reveal(this.player.position.x, this.player.position.z, 220, 1);
+    if (this.rover) changed += this.grid.reveal(this.rover.position.x, this.rover.position.z, ROVER_REVEAL, 1);
+    if (changed > 0) this.playerDirty = true;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Rover (Landesonde)
+  private deployRover(): void {
+    const st = this.state;
+    if (st.inventory.getItem('rover') <= 0) return;
+    if (this.rover) {
+      showToast(`${STR.probe.roverMode}: bereits ausgesetzt`);
+      return;
+    }
+    this.camera.getWorldDirection(this.camDir);
+    const x = this.player.position.x + this.camDir.x * 4;
+    const z = this.player.position.z + this.camDir.z * 4;
+    if (this.model.hasWater && this.model.heightAt(x, z) < this.model.seaLevel + 0.2) {
+      showToast(STR.build.invalid);
+      return;
+    }
+    st.inventory.removeItem('rover');
+    this.rover = new Rover(this.scene, this.model, x, z, this.player.yaw);
+    st.rovers[this.planet.id] = { x, z, yaw: this.player.yaw };
+    st.touch();
+    showToast(`${STR.probe.roverDeploy}: E – ${STR.probe.roverControl}`, 3500);
+    audio.blip();
+  }
+
+  private enterRover(): void {
+    if (!this.rover || this.roverMode || this.cinematic) return;
+    this.exitBuild();
+    this.exitPhoto();
+    this.harvestTarget = null;
+    this.hud.setHarvest(null);
+    this.roverMode = true;
+    this.roverSignalLost = false;
+    this.roverCamYaw = this.rover.yaw;
+    this.roverCamPitch = -0.2;
+    this.player.frozen = true;
+    this.hud.setCrosshair(false);
+    showToast(`${STR.probe.roverMode}: ${STR.probe.roverExit}`, 3500);
+    audio.blip();
+  }
+
+  private exitRover(): void {
+    if (!this.roverMode) return;
+    this.exitPhoto();
+    this.roverMode = false;
+    this.player.frozen = this.cinematic !== null;
+    this.hud.setCrosshair(this.ctx.input.pointerLocked);
+    this.persistRover();
+  }
+
+  private persistRover(): void {
+    if (!this.rover) return;
+    this.state.rovers[this.planet.id] = { x: this.rover.position.x, z: this.rover.position.z, yaw: this.rover.yaw };
+    this.playerDirty = true;
+  }
+
+  private packRover(): void {
+    if (!this.rover || this.roverMode) return;
+    const d = Math.hypot(this.rover.position.x - this.player.position.x, this.rover.position.z - this.player.position.z);
+    if (d > 7) return;
+    this.rover.dispose();
+    this.rover = null;
+    delete this.state.rovers[this.planet.id];
+    this.state.inventory.addItem('rover', 1);
+    this.state.touch();
+    showToast(STR.probe.roverPack);
+    audio.blip();
+  }
+
+  private updateRover(dt: number): void {
+    const input = this.ctx.input;
+    const rover = this.rover;
+    if (!rover) {
+      this.roverMode = false;
+      return;
+    }
+    if (input.wasPressed('interact') && !this.photo.active) {
+      this.exitRover();
+      return;
+    }
+    if (input.pointerLocked && !this.photo.active) {
+      this.roverCamYaw -= input.mouseDelta.x * 0.0022;
+      this.roverCamPitch = Math.max(-1.2, Math.min(0.6, this.roverCamPitch - input.mouseDelta.y * 0.0022));
+    }
+    const dist = Math.hypot(rover.position.x - this.player.position.x, rover.position.z - this.player.position.z);
+    const inRange = dist <= ROVER_RANGE;
+    if (!inRange && !this.roverSignalLost) {
+      this.roverSignalLost = true;
+      showToast(STR.probe.roverLost, 3000);
+    }
+    if (inRange) this.roverSignalLost = false;
+    const throttle = inRange && !this.photo.active ? input.axis('move_back', 'move_forward') : 0;
+    const steer = inRange && !this.photo.active ? input.axis('move_left', 'move_right') : 0;
+    rover.drive(dt, throttle, steer);
+    rover.update(dt);
+    if (input.wasPressed('sample') && !this.photo.active) {
+      const it = this.roverInteraction();
+      if (it.kind !== 'none') {
+        this.interaction = it;
+        this.doInteract();
+      }
+    }
+    this.roverSaveAccum += dt;
+    if (this.roverSaveAccum > 2) {
+      this.roverSaveAccum = 0;
+      this.persistRover();
+    }
+  }
+
+  /** Kamera im Rover-Modus: Verfolger hinter dem Rover, im Foto-Modus Augpunkt am Mast. */
+  private applyRoverCamera(): void {
+    const rover = this.rover;
+    if (!rover || !this.roverMode) return;
+    if (this.photo.active) {
+      rover.eye(this.camera.position);
+      this.camera.rotation.set(this.roverCamPitch, this.roverCamYaw, 0, 'YXZ');
+      return;
+    }
+    const dist = 7.5;
+    this.roverCamOffset.set(Math.sin(this.roverCamYaw) * dist * Math.cos(this.roverCamPitch), 3.2 - Math.sin(this.roverCamPitch) * dist, Math.cos(this.roverCamYaw) * dist * Math.cos(this.roverCamPitch));
+    this.camera.position.copy(rover.position).add(this.roverCamOffset);
+    const minY = this.model.heightAt(this.camera.position.x, this.camera.position.z) + 1.3;
+    if (this.camera.position.y < minY) this.camera.position.y = minY;
+    this.cinLookAt.set(rover.position.x, rover.position.y + 1.2, rover.position.z);
+    this.camera.lookAt(this.cinLookAt);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Tiefseesonde
+  private deployDeepProbe(): void {
+    const st = this.state;
+    if (st.inventory.getItem('deep_probe') <= 0) return;
+    if (!this.model.hasWater) {
+      showToast(STR.probe.deepNoWater);
+      return;
+    }
+    const sea = this.model.seaLevel;
+    const p = this.player.position;
+    let best: { x: number; z: number; d: number } | null = null;
+    for (let r = 2; r <= 40; r += 2) {
+      for (let a = 0; a < Math.PI * 2; a += 0.3) {
+        const x = p.x + Math.cos(a) * r;
+        const z = p.z + Math.sin(a) * r;
+        if (this.model.heightAt(x, z) < sea - 2.5 && (!best || r < best.d)) best = { x, z, d: r };
+      }
+      if (best) break;
+    }
+    if (!best) {
+      showToast(STR.probe.deepNoWater);
+      return;
+    }
+    st.inventory.removeItem('deep_probe');
+    (st.deepProbes[this.planet.id] ??= []).push({ x: best.x, z: best.z });
+    this.buoys?.add(best.x, best.z);
+    this.grid.reveal(best.x, best.z, 280, 1);
+    const targets = deepSeaTargets(this.system.entries, this.planet, (id) => this.progress.isDiscovered(id)).filter((e) => !this.progress.isHinted(e.id)).slice(0, 4);
+    for (const e of targets) this.progress.addHint(e.id, probeHintText('Tiefseesonde', e, this.planet), this.elapsed);
+    const biome = this.model.biomeAt(best.x, best.z);
+    this.progress.addSample(createSample('water', this.planet, biome, this.elapsed, ++this.sampleCounter));
+    st.touch();
+    showToast(`${STR.probe.deepDone} · ${targets.length} ${STR.probe.hints} · ${STR.probe.deepSample}`, 5000);
+    audio.success(2);
+  }
+
+  // ---------------------------------------------------------------------------
   // Köder
   private placeLure(): void {
     const mesh = new Mesh(this.lureGeometry, this.lureMaterial);
@@ -1477,6 +1769,7 @@ export class PlanetScene implements GameScene {
     if (this.paused) return;
     this.exitPhoto();
     this.exitBuild();
+    this.exitRover();
     this.harvestTarget = null;
     this.hud.setHarvest(null);
     this.paused = true;
@@ -1528,24 +1821,37 @@ export class PlanetScene implements GameScene {
     if (input.wasPressed('pause') && !this.cinematic && performance.now() - this.lockChangedAt > 400) {
       if (this.inventoryUi.isOpen) this.closeInventory();
       else if (this.shipUi.isOpen) this.closeShip();
+      else if (this.mapUi.isOpen) this.closeMap();
       else if (this.labUi.isOpen) this.closeLab();
       else if (this.archiveUi.isOpen) this.closeCatalog();
       else if (this.buildMode) this.exitBuild();
       else if (this.photo.active) this.exitPhoto();
+      else if (this.roverMode) this.exitRover();
       else if (this.paused) this.resume();
       else this.pause();
     }
     if (this.paused) return;
-    if (input.wasPressed('catalog') && !this.inventoryUi.isOpen && !this.labUi.isOpen) {
+    if (input.wasPressed('map') && !this.inventoryUi.isOpen && !this.labUi.isOpen && !this.archiveUi.isOpen && !this.shipUi.isOpen && !this.cinematic) {
+      if (this.mapUi.isOpen) this.closeMap();
+      else this.openMap();
+    }
+    if (input.wasPressed('catalog') && !this.inventoryUi.isOpen && !this.labUi.isOpen && !this.mapUi.isOpen) {
       if (this.archiveUi.isOpen) this.closeCatalog();
       else this.openCatalog();
     }
-    if (input.wasPressed('inventory') && !this.archiveUi.isOpen && !this.labUi.isOpen && !this.buildMode) {
+    if (input.wasPressed('inventory') && !this.archiveUi.isOpen && !this.labUi.isOpen && !this.mapUi.isOpen && !this.buildMode) {
       if (this.inventoryUi.isOpen) this.closeInventory();
       else this.openInventory('hand');
     }
     if (this.uiOpen) {
       this.saveTick(dt);
+      if (this.mapUi.isOpen) {
+        this.mapRedrawAccum += dt;
+        if (this.mapRedrawAccum > 1) {
+          this.mapRedrawAccum = 0;
+          this.mapUi.redraw(false);
+        }
+      }
       return;
     }
     if (this.cinematic) {
@@ -1558,9 +1864,12 @@ export class PlanetScene implements GameScene {
         this.enterPhoto();
       }
     }
+    if (this.roverMode && !this.cinematic) this.updateRover(dt);
     if (this.photo.active) this.updatePhotoInput();
     else if (this.buildMode) this.updateBuildInput();
-    else if (!this.collapsing && !this.cinematic) {
+    else if (this.roverMode) {
+      /* Eingaben gehören dem Rover */
+    } else if (!this.collapsing && !this.cinematic) {
       if (input.wasPressed('toggle_view')) this.player.thirdPerson = !this.player.thirdPerson;
       if (input.wasPressed('fly')) {
         this.player.fly = !this.player.fly;
@@ -1570,6 +1879,7 @@ export class PlanetScene implements GameScene {
       if (input.wasPressed('build')) this.enterBuild();
       else {
         if (input.wasPressed('sample')) this.doInteract();
+        if (input.wasPressed('remove') && this.harvest.kind === 'rover') this.packRover();
         this.updateHarvest(dt);
       }
     }
@@ -1588,6 +1898,7 @@ export class PlanetScene implements GameScene {
     this.updateLures(dt * slow);
     this.creatures.update(dt * slow, { pos: pl.position, yaw: pl.yaw, noise }, this.creatureEnv());
     this.nodes.update(this.camera.position, dt);
+    this.revealTick(dt);
     if (!this.collapsing && !this.cinematic) this.survivalTick(dt * slow);
     this.updateCollapse(dt);
     if (!this.photo.active) {
@@ -1647,7 +1958,11 @@ export class PlanetScene implements GameScene {
       const beh = c.ai.behavior && c.ai.state !== 'flee' ? (BEHAVIOR_LABELS[c.ai.behavior] ?? c.ai.behavior) : STATE_LABELS[c.ai.state];
       this.hud.setSighting(`Sichtung: ${known ? this.progress.displayName(c.entry) : `${STR.archive.unknown}`}${known || this.progress.isHinted(c.entry.id) ? ` · ${RARITY_LABELS[c.entry.rarity]}` : ''} · ${beh} · ${seen.distance.toFixed(0)} m`);
     } else this.hud.setSighting('');
-    if (!this.photo.active && !this.collapsing && !this.cinematic) {
+    if (this.roverMode && this.rover) {
+      const dist = Math.hypot(this.rover.position.x - p.x, this.rover.position.z - p.z);
+      const it = this.roverInteraction();
+      this.hud.setPrompt(`${STR.probe.roverMode} · ${STR.probe.roverSignal} ${dist.toFixed(0)}/${ROVER_RANGE} m · ${STR.probe.roverExit}${it.kind !== 'none' ? ` · ${it.label}` : ''}`);
+    } else if (!this.photo.active && !this.collapsing && !this.cinematic) {
       if (!this.buildMode) {
         this.interaction = this.computeInteraction();
         if (!this.harvestTarget) this.harvest = this.computeHarvest();
@@ -1667,6 +1982,7 @@ export class PlanetScene implements GameScene {
     const c = this.progress.completion();
     d.set('Archiv', `${c.discovered}/${c.total} (${(c.fraction * 100).toFixed(1)} %) · Fotos ${this.progress.photosTaken}`);
     d.set('Basis', `${this.state.modulesOn(this.planet.id).length} Module · Knoten ${this.nodes.stats.nodes} · O₂ ${sv.oxygen.toFixed(0)} · ⚡ ${sv.energy.toFixed(0)} · Treibstoff ${this.state.inventory.getItem('fuel')}`);
+    d.set('Karte', `${(this.grid.fraction() * 100).toFixed(1)} % erkundet · Satellit ${this.state.satellites[this.planet.id] ?? 0} · Rover ${this.rover ? (this.roverMode ? 'gesteuert' : 'abgestellt') : '–'} · Sonden ${(this.state.deepProbes[this.planet.id] ?? []).length}`);
     d.set('Schiff', this.ship ? `${this.state.ship.design.parts.length + 1} Teile · Tank ${this.state.ship.fuel}/${shipStats(this.state.ship.design).maxFuel} · Flüge ${this.state.ship.flights} · Baupläne ${this.state.blueprints.length}` : `nicht hier (${this.state.ship.location?.kind ?? '–'})`);
   }
 
@@ -1674,7 +1990,9 @@ export class PlanetScene implements GameScene {
     if (!this.ready) return;
     this.player.applyCamera(this.paused ? 1 : _alpha);
     if (this.cinematic) this.applyCinematicCamera();
+    else if (this.roverMode) this.applyRoverCamera();
     this.ship?.update(this.elapsed);
+    this.buoys?.update(this.elapsed);
     const params = this.weather.params;
     const slow = this.photo.active ? PHOTO_SLOWMO : 1;
     this.sky.update(this.cycle, params, this.weather.lightningFlash, this.camera, this.paused ? 0 : frameDt * slow, this.player.position);
@@ -1724,6 +2042,11 @@ export class PlanetScene implements GameScene {
     this.lureMaterial.dispose();
     this.unsubState?.();
     this.unsubState = null;
+    this.unsubProgress?.();
+    this.unsubProgress = null;
+    if (this.rover) this.persistRover();
+    this.rover?.dispose();
+    this.buoys?.dispose();
     this.ship?.dispose();
     this.base?.dispose();
     this.nodes?.dispose();
@@ -1741,6 +2064,6 @@ export class PlanetScene implements GameScene {
     const gl = this.ctx.renderer.gl;
     gl.shadowMap.enabled = false;
     gl.setClearColor(0x05070d, 1);
-    for (const k of ['Chunks', 'Vegetation', 'Spieler', 'Kreaturen', 'Props', 'Archiv', 'Basis', 'Schiff']) this.ctx.debug.set(k, '');
+    for (const k of ['Chunks', 'Vegetation', 'Spieler', 'Kreaturen', 'Props', 'Archiv', 'Basis', 'Schiff', 'Karte']) this.ctx.debug.set(k, '');
   }
 }

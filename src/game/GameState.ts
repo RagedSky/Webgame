@@ -2,6 +2,7 @@ import { DEFAULT_SEED } from '@/config/constants';
 import { generateUniverse } from '@/gen';
 import type { StarSystem } from '@/gen/universe/types';
 import type { PlayerState } from './PlayerState';
+import type { ArchiveProgress } from './progress/ArchiveProgress';
 
 /**
  * Szenenübergreifender Spielzustand (Seed, generiertes System; später Spielstand und Einstellungen).
@@ -26,6 +27,8 @@ export class GameState {
   arrival: 'landing' | null = null;
   /** Geladener Spielerzustand (eine Instanz für alle Szenen; Persistenz über playerStore). */
   player: PlayerState | null = null;
+  /** Geladener Archiv-Fortschritt (eine Instanz; Persistenz über progressStore). */
+  progress: ArchiveProgress | null = null;
   private cachedSystem: StarSystem | null = null;
   private cachedSeed = '';
 
@@ -40,6 +43,7 @@ export class GameState {
       this.surface = null;
       this.arrival = null;
       this.player = null;
+      this.progress = null;
     }
     this._seed = next;
   }
