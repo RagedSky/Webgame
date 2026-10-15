@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<!--
+  Aetherfall: Dungeons – Website (statisches HTML, ohne Build-Schritt).
+  Sichtbare Texte kommen aus assets/js/lang-site.js / lang-legal.js (Deutsch und Englisch); der deutsche Text im HTML
+  ist nur der Rückfall ohne JavaScript. Platzhalter (Name, Anschrift, E-Mail …) stehen zentral in assets/js/config.js.
+  Die Domain https://aetherfall.example in <head> durch die eigene ersetzen (siehe README.md › Landing Page).
+-->
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://*.clerk.accounts.dev https://clerk.aetherfall.example https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://img.clerk.com; font-src 'self'; connect-src 'self' https://*.clerk.accounts.dev https://clerk.aetherfall.example https://*.supabase.co; frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; media-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kontakt – Aetherfall: Dungeons</title>
+<meta name="description" content="So erreichst du das Team von Aetherfall: Dungeons.">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#0d0907">
+<meta name="color-scheme" content="dark">
+<link rel="canonical" href="https://aetherfall.example/kontakt.html">
+<link rel="alternate" hreflang="de" href="https://aetherfall.example/kontakt.html">
+<link rel="alternate" hreflang="en" href="https://aetherfall.example/kontakt.html?lang=en">
+<link rel="alternate" hreflang="x-default" href="https://aetherfall.example/kontakt.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Aetherfall: Dungeons">
+<meta property="og:title" content="Kontakt – Aetherfall: Dungeons">
+<meta property="og:description" content="So erreichst du das Team von Aetherfall: Dungeons.">
+<meta property="og:url" content="https://aetherfall.example/kontakt.html">
+<meta property="og:image" content="https://aetherfall.example/assets/img/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Aetherfall: Dungeons – Logo mit Ätherkristall über schwebenden Himmelsinseln">
+<meta property="og:locale" content="de_DE">
+<meta property="og:locale:alternate" content="en_GB">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Kontakt – Aetherfall: Dungeons">
+<meta name="twitter:description" content="So erreichst du das Team von Aetherfall: Dungeons.">
+<meta name="twitter:image" content="https://aetherfall.example/assets/img/og-image.png">
+<meta name="twitter:image:alt" content="Aetherfall: Dungeons – Logo mit Ätherkristall über schwebenden Himmelsinseln">
+<link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
+<link rel="manifest" href="site.webmanifest">
+<link rel="preload" href="assets/fonts/press-start-2p-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/css/site.css">
+<noscript><style>@media (max-width: 940px) { .navToggle { display: none !important; } .headRow { flex-wrap: wrap; } .siteNav { display: flex !important; position: static !important; flex-wrap: wrap; padding: 0 0 12px !important; border: 0 !important; } }</style></noscript>
+<script src="assets/js/config.js" defer></script>
+<script src="assets/js/i18n.js" defer></script>
+<script src="assets/js/lang-site.js" defer></script>
+<script src="assets/js/site.js" defer></script>
+<script src="assets/js/auth.js" defer></script>
+</head>
+<body data-page="contact">
+<a class="skip" href="#main" data-i18n="a11y.skip">Zum Inhalt springen</a>
+<header class="siteHead">
+  <div class="wrap headRow">
+    <a class="brand" href="index.html"><span class="logoMark" aria-hidden="true"></span><span class="brandTxt"><span class="bMain">Aetherfall</span><span class="srOnly">: </span><span class="bSub">Dungeons</span><span class="srOnly" data-i18n="nav.homeSuffix"> – zur Startseite</span></span></a>
+    <button type="button" class="navToggle" aria-expanded="false" aria-controls="siteNav" data-i18n-attr="aria-label:nav.menu" aria-label="Menü öffnen"><span></span></button>
+    <nav id="siteNav" class="siteNav" data-i18n-attr="aria-label:nav.main" aria-label="Hauptnavigation">
+      <ul><li><a href="index.html#features" data-i18n="nav.features">Features</a></li><li><a href="index.html#galerie" data-i18n="nav.gallery">Galerie</a></li><li><a href="index.html#story" data-i18n="nav.story">Story</a></li><li><a href="index.html#faq" data-i18n="nav.faq">FAQ</a></li><li><a href="index.html#news" data-i18n="nav.news">News</a></li></ul>
+      <div class="langSwitch" role="group" data-i18n-attr="aria-label:lang.label" aria-label="Sprache wählen"><button type="button" data-setlang="de" lang="de" aria-pressed="true" aria-label="DE – Deutsch">DE</button><button type="button" data-setlang="en" lang="en" aria-pressed="false" aria-label="EN – English">EN</button></div>
+      <div class="authSlot" id="authSlot"><a class="btn small" href="anmelden.html">Anmelden</a></div>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="wrap legalPage">
+  <p class="crumbs"><a href="index.html" data-i18n="legal.back">Zurück zur Startseite</a></p>
+  <h1 data-i18n="contact.title">Kontakt</h1>
+  <p class="lead" data-i18n="contact.lead">Fragen, Feedback oder ein Fehler im Spiel? Schreib uns – wir antworten in der Regel innerhalb weniger Tage.</p>
+  <section class="card panel" aria-labelledby="mailH"><h2 id="mailH" data-i18n="contact.mailTitle">E-Mail</h2><p data-i18n-html="contact.mailText">Am schnellsten erreichst du uns per E-Mail an [E-MAIL].</p></section>
+  <h2 style="margin-top:40px" data-i18n="contact.topics">Worum geht es?</h2>
+  <div class="contactGrid">
+    <section class="card panel" aria-labelledby="ct_support"><h3 id="ct_support" data-i18n="contact.support.h">Hilfe und Fehler</h3><p data-i18n="contact.support.p">Beschreib kurz, was passiert ist, welchen Browser und welches Gerät du nutzt und – falls möglich – wann es auftrat.</p><a class="btn small" data-mail="contact.support.subject" data-i18n="contact.write">E-Mail schreiben</a></section>
+    <section class="card panel" aria-labelledby="ct_account"><h3 id="ct_account" data-i18n="contact.account.h">Konto und Daten</h3><p data-i18n="contact.account.p">Auskunft, Berichtigung, Export oder Löschung deines Kontos. Bitte schreib von der E-Mail-Adresse, mit der du registriert bist. Export und Löschung gehen auch direkt im Spiel unter Einstellungen › Konto.</p><a class="btn small" data-mail="contact.account.subject" data-i18n="contact.write">E-Mail schreiben</a></section>
+    <section class="card panel" aria-labelledby="ct_report"><h3 id="ct_report" data-i18n="contact.report.h">Spieler oder Inhalte melden</h3><p data-i18n="contact.report.p">Im Spiel meldest du Mitspieler direkt über die Spielerliste. Für alles andere: Schick uns Zeitpunkt, Lobby-Code und eine kurze Beschreibung.</p><a class="btn small" data-mail="contact.report.subject" data-i18n="contact.write">E-Mail schreiben</a></section>
+    <section class="card panel" aria-labelledby="ct_press"><h3 id="ct_press" data-i18n="contact.press.h">Presse und Sonstiges</h3><p data-i18n="contact.press.p">Interviews, Kooperationen oder einfach ein nettes Wort – wir freuen uns.</p><a class="btn small" data-mail="contact.press.subject" data-i18n="contact.write">E-Mail schreiben</a></section>
+  </div>
+  <section aria-labelledby="postH"><h2 id="postH" data-i18n="contact.postTitle">Postanschrift</h2><p data-i18n-html="contact.post">[NAME]<br>[ANSCHRIFT]</p></section>
+  <p class="small" data-i18n-html="contact.noForm">Bewusst ohne Kontaktformular: Deine Nachricht geht direkt aus deinem E-Mail-Programm an uns. Wir verarbeiten deine Angaben nur, um dein Anliegen zu bearbeiten – mehr dazu in der <a href="datenschutz.html#s8">Datenschutzerklärung</a>.</p>
+  <noscript><p class="noscript">Diese Seite braucht JavaScript, um Texte und die Anmeldung anzuzeigen. · This page needs JavaScript to show its texts and the sign-in.</p></noscript>
+</main>
+
+<footer class="siteFoot">
+  <div class="wrap footGrid">
+    <div class="footBrand"><span class="logoMark" aria-hidden="true"></span><p data-i18n="foot.tagline">Ein Voxel-Action-RPG über den Himmelsinseln – kostenlos im Browser.</p></div>
+    <nav data-i18n-attr="aria-label:foot.legalNav" aria-label="Rechtliches"><ul class="footLinks"><li><a href="impressum.html" data-i18n="foot.imprint">Impressum</a></li><li><a href="datenschutz.html" data-i18n="foot.privacy">Datenschutz</a></li><li><a href="agb.html" data-i18n="foot.terms">AGB</a></li><li><a href="widerruf.html" data-i18n="foot.withdrawal">Widerruf</a></li><li><a href="kontakt.html" data-i18n="foot.contact" aria-current="page">Kontakt</a></li></ul></nav>
+    <div class="langSwitch" role="group" data-i18n-attr="aria-label:lang.label" aria-label="Sprache wählen"><button type="button" data-setlang="de" lang="de" aria-pressed="true" aria-label="DE – Deutsch">DE</button><button type="button" data-setlang="en" lang="en" aria-pressed="false" aria-label="EN – English">EN</button></div>
+    <div class="footMeta">
+      <p>© <span data-year>2026</span> <span data-cfg="NAME">[NAME]</span> · Aetherfall: Dungeons · <span data-i18n="foot.rights">Alle Rechte vorbehalten.</span></p>
+      <p data-i18n-html="foot.storage">Diese Website verwendet nur technisch notwendige Speicherungen (Sprache, Anmeldung) – keine Tracker, keine Analyse, keine Werbung. <a href="datenschutz.html#s9">Mehr zu Cookies und Speicher</a></p>
+      <p data-media-settings hidden><button type="button" class="linkBtn" data-i18n="foot.mediaSettings">Einstellungen für externe Medien</button></p>
+    </div>
+  </div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,6 @@
+# Aetherfall: Dungeons – alle Seiten dürfen gelesen werden.
+# Anmelde- und Registrierseite tragen selbst „noindex“.
+User-agent: *
+Allow: /
+
+Sitemap: https://aetherfall.example/sitemap.xml

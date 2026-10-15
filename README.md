@@ -1,18 +1,254 @@
 # Aetherfall: Dungeons
 
-Ein Action-RPG im Voxel-Look mit offener Welt aus schwebenden Himmelsinseln – komplett in **einer einzigen Datei** (`index.html`).
-HTML, CSS und JavaScript sind inline; Three.js (r128) wird per CDN geladen (cdnjs, Ersatz: jsDelivr). Figuren, Gebäude, Icons,
-Porträts, Logo, Soundeffekte und Musik werden prozedural per Code erzeugt. Das Spiel ist vollständig **zweisprachig (Deutsch / English)**.
+Ein Action-RPG im Voxel-Look mit offener Welt aus schwebenden Himmelsinseln. Das Repository enthält zwei Teile:
+
+- **Website** (Landing Page) im Wurzelverzeichnis: Startseite, Anmeldung/Registrierung (Clerk), Impressum, Datenschutz, AGB,
+  Widerruf, Kontakt, 404 – statisches HTML/CSS/JS ohne Build-Schritt, Deutsch und Englisch. Details: [Landing Page](#landing-page-website).
+- **Spiel** in [`play/index.html`](play/index.html) – weiterhin **eine einzige Datei**: HTML, CSS und JavaScript inline; Three.js (r128) und
+  supabase-js liegen lokal in `play/vendor/` (Ersatz: CDN), die Pixel-Schriften in `assets/fonts/`. Figuren, Gebäude, Icons, Porträts,
+  Logo, Soundeffekte und Musik werden prozedural per Code erzeugt. Das Spiel ist vollständig **zweisprachig (Deutsch / English)**.
 
 ## Starten
 
-`index.html` im Browser öffnen. Internet wird für Three.js und die Pixel-Schriften gebraucht.
-Für Online-Konten (Clerk) muss die Datei über **http(s)** ausgeliefert werden (z. B. GitHub Pages, Netlify oder `npx serve`),
-nicht als `file://`. Ohne Konfiguration läuft das Spiel im **Gastmodus** mit lokalem Speicher.
+Die Website über **http(s)** ausliefern, z. B. im Repository-Ordner `npx serve .` oder `python3 -m http.server 8080`, dann
+`http://localhost:8080/` (Website) bzw. `http://localhost:8080/play/` (Spiel) öffnen. Für Online-Konten (Clerk) ist http(s) Pflicht,
+`file://` geht nicht. Ohne Konfiguration läuft das Spiel im **Gastmodus** mit lokalem Speicher.
+
+## Landing Page (Website)
+
+Einstiegspunkt auf der Hauptdomain: Startseite mit Anmeldung und allen Rechtsseiten, von dort ins Spiel unter `/play/` (gleiche Domain,
+damit Website und Spiel dieselbe Clerk-Sitzung nutzen). Statisches HTML/CSS/JavaScript ohne Framework und ohne Build-Schritt –
+jeder einfache Webspace reicht.
+
+### Ordnerstruktur
+
+```
+/                              Wurzel der Domain
+├── index.html                 Startseite (Hero, Features, Galerie, Trailer, Story, FAQ, Neuigkeiten)
+├── anmelden.html              Anmeldung (Clerk SignIn inkl. „Passwort vergessen“)
+├── registrieren.html          Registrierung (Pflicht-Zustimmung + Clerk SignUp)
+├── impressum.html             Impressum            ┐
+├── datenschutz.html           Datenschutzerklärung │ Entwürfe, Texte in assets/js/lang-legal.js
+├── agb.html                   Nutzungsbedingungen  │ (Deutsch + Englisch)
+├── widerruf.html              Widerrufsbelehrung   ┘
+├── kontakt.html               Kontakt (E-Mail, Themen mit Betreff, Postanschrift – bewusst ohne Formular)
+├── 404.html                   Fehlerseite (Pfade ab der Wurzel, da unter beliebigen Adressen ausgeliefert)
+├── favicon.ico  robots.txt  sitemap.xml  site.webmanifest
+├── _headers  _redirects       Sicherheits-Header/CSP und Weiterleitung für Netlify bzw. Cloudflare Pages
+├── .htaccess                  dasselbe für Apache
+├── assets/
+│   ├── css/site.css           Gestaltung (Tokens in :root, responsiv, Fokus, reduzierte Bewegung, Druck)
+│   ├── fonts/                 Press Start 2P + VT323 (woff2, OFL), fonts.css – lokal, auch vom Spiel genutzt
+│   ├── img/                   favicon.svg, og-image.png (1200×630), apple-touch-icon.png, icon-192/512.png
+│   └── js/
+│       ├── config.js          ZENTRALE KONFIGURATION (SITE_CONFIG)
+│       ├── i18n.js            Sprachsystem (t('schluessel'), Sprachwahl, Speicherung)
+│       ├── lang-site.js       Texte Website/Oberfläche (de/en)
+│       ├── lang-legal.js      Rechtstexte (de/en)
+│       ├── news.js            Neuigkeiten/Changelog (neuen Eintrag oben einfügen)
+│       ├── site.js            Seitenaufbau, Navigation, Platzhalter, Grafiken, FAQ, News, Trailer, strukturierte Daten
+│       ├── auth.js            Clerk laden, Anmelde-/Registrierseite, Zustimmung (Tabelle consents)
+│       └── clerk-de.js        deutsche Texte der Clerk-Komponenten (@clerk/localizations, MIT)
+├── play/
+│   ├── index.html             das Spiel (eine Datei)
+│   └── vendor/                three.min.js (r128, MIT), supabase.js (supabase-js 2, MIT)
+└── supabase/
+    ├── schema.sql             Spielstände/Profile (bestehend)
+    ├── migrate_save_slots.sql Migration 3 → 5 Slots (bestehend)
+    ├── multiplayer.sql        Mehrspieler (bestehend)
+    ├── consents.sql           NEU: Zustimmungsnachweise
+    ├── account.sql            NEU: Kontolöschung (nur service_role) + Aufbewahrung von Meldungen
+    └── functions/delete-account/index.ts   NEU: Edge Function „Konto und Daten löschen“
+```
+
+### Zentrale Konfiguration (`assets/js/config.js`)
+
+Alle anpassbaren Werte stehen nur hier und werden automatisch in Startseite, Anmeldung und alle Rechtsseiten eingesetzt:
+`SITE_URL`, `GAME_PATH`, `CLERK_PUBLISHABLE_KEY`, `SUPABASE_URL`, `SUPABASE_KEY`, `CONTACT_EMAIL`, `MIN_AGE` (Standard 16),
+`CONSENT_TEXT_VERSION`, die Angaben unter `LEGAL` (Name, Anschrift, USt-ID …), `LEGAL_DOCS` (Version und Datum je Rechtstext) und
+optional `TRAILER_URL`/`TRAILER_POSTER`, `TRAILER_EMBED`, `SCREENSHOTS`. Werte in `[ECKIGEN KLAMMERN]` sind Platzhalter: Sie werden
+auf der Seite gelb markiert und in der Konsole als Warnung gemeldet. Ein leerer Wert blendet die Angabe aus (z. B. keine USt-ID).
+
+**Nur öffentliche Schlüssel** (Clerk Publishable Key, Supabase-URL und Publishable/Anon Key). Secret Keys (`sk_…`), Service-Role- oder
+`sb_secret_…`-Schlüssel erkennt die Website, ignoriert sie und meldet einen Fehler in der Konsole.
+
+### Sprachen
+
+Wie im Spiel: Schlüssel und `t('schluessel')` in `assets/js/lang-site.js` und `lang-legal.js`, jeweils Deutsch und Englisch.
+Beim ersten Besuch entscheidet die Browsersprache (`navigator.languages`), danach die gespeicherte Wahl (Umschalter in Kopf- und
+Fußzeile). Gespeichert wird in `localStorage` (`aetherfall_lang`; gibt es schon Spieleinstellungen, auch in
+`aetherfall_settings.lang` – derselbe Schlüssel wie im Spiel). Links ins Spiel tragen `?lang=de|en`, das Spiel übernimmt die Sprache.
+Englische Fassung jeder Seite: `?lang=en` (so auch in `hreflang` und `sitemap.xml`). Suchmaschinen sehen immer die Sprache der Adresse.
+Neue Sprache: Eintrag in `I18N.LANGS` (`i18n.js`) und `I18N.add('xx', {…})` in beiden Textdateien.
+
+Der deutsche Text im HTML ist nur der Rückfall ohne JavaScript; maßgeblich sind die Textdateien. Die Rechtstexte werden vollständig
+aus `lang-legal.js` aufgebaut (Abschnitte `präfix.s<n>.h/.b`, Inhaltsverzeichnis automatisch).
+
+### Medien
+
+Screenshots und Trailer sind gezeichnete Platzhalter (SVG, prozedural), die ohne Medien sauber aussehen. Eigene Screenshots:
+`SCREENSHOTS: [{ src: 'assets/media/shot1.webp', alt: { de: '…', en: '…' } }]`. Eigener Trailer: `TRAILER_URL: 'assets/media/trailer.mp4'`
+(wird erst beim Abspielen geladen). Für ein externes Video (z. B. YouTube) `TRAILER_EMBED` setzen: Es erscheint eine Zwei-Klick-Lösung
+mit gleichwertigen Knöpfen „Video laden“ / „Nicht laden“; erst nach Zustimmung wird der Anbieter kontaktiert, widerrufbar über
+„Einstellungen für externe Medien“ in der Fußzeile. Dann zusätzlich die Domain in der CSP (`frame-src`) ergänzen.
+
+### Anmeldung mit Clerk
+
+- **Komponenten:** `anmelden.html` bindet Clerk **SignIn** ein (inkl. Passwort-Reset, Zweitfaktor, soziale Logins, falls aktiviert),
+  `registrieren.html` Clerk **SignUp**, die Kopfzeile den **UserButton** (Konto verwalten, Abmelden). Gestaltung über `appearance`
+  (Farben/Schrift der Seite), deutsche Texte über `clerk-de.js`. Hash-Routing (`#/…`), daher keine Server-Regeln nötig.
+- **Angemeldet:** Kopfzeile und Hero zeigen Anzeigename, Avatar und „Weiterspielen“ statt „Anmelden“. Der Gast-Einstieg bleibt
+  immer möglich („Jetzt spielen“ = Gastmodus, auch wenn Clerk nicht erreichbar ist).
+- **Datensparsam:** Auf normalen Seiten lädt Clerk nur, wenn bereits eine Sitzung besteht (Cookie `__client_uat`) oder eine Zustimmung
+  aussteht. Telemetrie ist abgeschaltet. Ladezustände und übersetzte Fehlermeldungen; Fehler beim Anmeldedienst führen nie zum Absturz.
+- **Registrierung:** Erst eine nicht vorausgewählte Pflicht-Checkbox „Ich akzeptiere die Nutzungsbedingungen und habe die
+  Datenschutzerklärung gelesen“ (mit Links) und die Altersbestätigung (`MIN_AGE`, Standard 16) – dann erscheint das Clerk-Formular.
+  Die Zustimmung wird mit Zeitstempel (Serverzeit), Textversion, Wortlaut, Versionen von AGB und Datenschutzerklärung, Sprache und Quelle
+  in der Supabase-Tabelle **`consents`** gespeichert (REST mit dem Clerk-Token, RLS über `auth.jwt()->>'sub'`). Zusätzlich liegt sie
+  als `unsafeMetadata.consent` am Clerk-Nutzer (Rückfall, falls der Tab gewechselt wurde).
+- **Soziale Logins** auf der Anmeldeseite legen keine Konten an (`transferable: false`): neue Konten entstehen nur über die
+  Registrierung mit Zustimmung.
+- **Erneute Zustimmung:** Erhöhst du in `LEGAL_DOCS` die Version von `agb` oder `datenschutz`, fragen Website und Spiel angemeldete
+  Nutzer beim nächsten Besuch erneut (Dialog mit beiden Checkboxen; „Später“ oder „Abmelden“ möglich). Dasselbe gilt für Konten ohne
+  Nachweis (z. B. vor der Website angelegt).
+- **Im Spiel:** Das Spiel erkennt die gemeinsame Sitzung und überspringt seinen eigenen Login-Bildschirm. Wer sich im Spiel
+  registriert, muss dieselben Checkboxen bestätigen; der Nachweis landet ebenfalls in `consents` (Quelle `game`).
+
+#### Clerk-Dashboard
+
+1. **User & Authentication › Email, phone, username:** E-Mail-Adresse als Kennung, Verifizierung per **E-Mail-Code**;
+   **Password** aktivieren (Passwort-Reset per E-Mail-Code ist dann automatisch dabei).
+2. **SSO connections** (optional): z. B. Google; für die Produktion eigene OAuth-Zugangsdaten hinterlegen.
+3. **Paths** (Komponenten-Pfade der Instanz): Sign-in-URL `https://<deine-domain>/anmelden.html`, Sign-up-URL
+   `https://<deine-domain>/registrieren.html`, nach dem Abmelden `https://<deine-domain>/`. (Die Website setzt diese Werte zusätzlich
+   selbst, das Dashboard wird für E-Mail-Links und das Account Portal gebraucht.)
+4. **Domains:** Für die Produktionsinstanz die eigene Domain eintragen und die angezeigten DNS-Einträge setzen (Frontend-API
+   `clerk.<deine-domain>`, E-Mail). Website und Spiel laufen auf derselben Domain; andere Origins (z. B. `www.`) als erlaubte Origins
+   bzw. Weiterleitungsziele ergänzen. Die Entwicklungsinstanz (`pk_test_…`) funktioniert ohne DNS auch auf `localhost`.
+5. **Integrations › Supabase** („Connect with Supabase“): setzt `role: authenticated` im Session-Token.
+6. **Attack protection › Bot protection** kann aktiv bleiben (Cloudflare Turnstile, in der CSP freigegeben).
+7. **Kontolöschung durch Nutzer im Clerk-Dialog ausschalten** (Einstellung „Allow users to delete their accounts“ / „Delete account“
+   unter *User & Authentication*; Bezeichnung je nach Dashboard-Version) – sonst würde nur das Clerk-Konto ohne die Supabase-Daten
+   gelöscht. Gelöscht wird über das Spiel (Edge Function, siehe unten).
+8. Die Clerk-Option „Require express consent to legal documents“ **nicht** zusätzlich einschalten (sonst doppelte Checkbox; die
+   Zustimmung läuft über die eigene Pflicht-Checkbox und `consents`).
+9. Für den Livebetrieb den `pk_live_…`-Schlüssel in **beiden** Konfigurationen eintragen (`assets/js/config.js` und `play/index.html`).
+
+### Supabase
+
+Im SQL-Editor in dieser Reihenfolge ausführen (alle Skripte idempotent):
+
+1. [`supabase/schema.sql`](supabase/schema.sql) – Profile und Spielstände (falls noch nicht geschehen)
+2. [`supabase/multiplayer.sql`](supabase/multiplayer.sql) – optional, für den Mehrspieler
+3. [`supabase/consents.sql`](supabase/consents.sql) – Tabelle `consents` mit RLS: Nutzer lesen und fügen nur **eigene** Zeilen ein
+   (`auth.jwt()->>'sub' = user_id`), kein Ändern/Löschen; Serverzeit wird per Trigger erzwungen.
+4. [`supabase/account.sql`](supabase/account.sql) – `af_delete_user_data(p_user)` (löscht alle Daten eines Kontos in einer
+   Transaktion; nur `service_role`) und `af_cleanup_reports()` (Meldungen höchstens 180 Tage; mit pg_cron täglich).
+
+Weiterhin: *Authentication › Sign In / Providers › Third-Party Auth* → Clerk eintragen. Für den Mehrspieler *Realtime › Settings*
+„Allow public access“ ausschalten.
+
+#### Edge Function „delete-account“ (Konto und Daten löschen)
+
+[`supabase/functions/delete-account/index.ts`](supabase/functions/delete-account/index.ts) prüft das Clerk-Session-Token (Signatur über
+die JWKS der Clerk-Instanz, Aussteller, Ablauf, Herkunft), verlangt `{ "confirm": "DELETE" }`, löscht mit dem **Service-Role-Key
+serverseitig** alle Daten in Supabase (`af_delete_user_data`) und danach den Nutzer über die Clerk Backend API. Es stehen keine
+Secrets im Code – alles kommt aus Umgebungsvariablen:
+
+```bash
+supabase functions deploy delete-account --no-verify-jwt     # Clerk-Token wird in der Funktion selbst geprüft
+supabase secrets set CLERK_SECRET_KEY=sk_live_…              # Clerk Dashboard › API Keys (nur hier, nie im Frontend)
+supabase secrets set CLERK_ISSUER=https://clerk.deine-domain.de   # Frontend-API-URL (Entwicklung: https://<name>.clerk.accounts.dev)
+supabase secrets set ALLOWED_ORIGINS=https://deine-domain.de,https://www.deine-domain.de
+# SUPABASE_URL und SUPABASE_SERVICE_ROLE_KEY stellt Supabase in Edge Functions automatisch bereit.
+```
+
+Ist die Funktion nicht erreichbar, zeigt das Spiel einen Kontaktweg (Kontaktseite, E-Mail mit Konto-ID).
+
+### Rechtliches im Spiel (minimale, markierte Änderungen)
+
+Alle Änderungen am Spiel sind mit `LANDING-ANBINDUNG` markiert; die Logik steckt in einem eigenen Abschnitt (`SiteLink`). Im Einzelnen:
+
+| Stelle | Änderung |
+|---|---|
+| `<head>` | Google Fonts → `../assets/fonts/fonts.css` (lokal); `CONFIG` um `siteUrl`, `legalTerms`, `legalPrivacy`, `consentTextVersion`, `minAge`, `deleteFunction` ergänzt |
+| Sprachstart | `?lang=de|en` hat Vorrang (auch für den Ladebildschirm) und wird dauerhaft übernommen |
+| Bibliotheken | `vendor/three.min.js` und `vendor/supabase.js` zuerst, CDNs nur als Ersatz |
+| `Game.initOnline` | bei bestehender Clerk-Sitzung kein eigener Login-Bildschirm (Codeblock unten) |
+| `Auth.init` | `Clerk.load({ telemetry: false })` – keine Clerk-Telemetrie |
+| Registrierung im Spiel | Pflicht-Checkboxen Nutzungsbedingungen/Datenschutz + Mindestalter |
+| Hauptmenü | Links Impressum · Datenschutz · AGB · Widerruf · Kontakt (neuer Tab, Sprache wird mitgegeben) |
+| Einstellungen › Konto | „Meine Daten exportieren“ (JSON), „Konto und Daten löschen“ (angemeldet) bzw. „Lokale Daten löschen“ (Gast), Rechtslinks |
+| Texte | neue Schlüssel `site.*`, `auth.err.af_consent/af_age` (de/en) über das bestehende i18n |
+
+```js
+// === LANDING-ANBINDUNG: Bei bestehender Clerk-Sitzung (z. B. von der Website) keinen Login-Bildschirm zeigen ===
+const shared = SiteLink.sessionHint();            // Cookie __client_uat ≠ 0 → angemeldet
+if (needLogin && !shared) LoginUI.open(() => this.showTitleMenu());
+…
+else if (needLogin && shared) LoginUI.open(() => this.showTitleMenu()); // Sitzung inzwischen abgelaufen
+```
+
+„Jetzt spielen“ auf der Website öffnet `play/?lang=…&start=guest` (Gastmodus ohne Login-Bildschirm), „Weiterspielen“ `play/?lang=…`.
+Die Parameter werden nach dem Start aus der Adresse entfernt; personenbezogene Daten stehen nie in einer URL.
+
+**Export** (`aetherfall-daten-JJJJ-MM-TT.json`): Konto (ID, E-Mail, Name), Einstellungen, lokale Spielstände und Sicherungen dieses
+Kontos, angemeldet zusätzlich Cloud-Profil, Cloud-Spielstände, Zustimmungsnachweise, Freunde und Blockierungen.
+**Löschen:** Erklärung, was gelöscht wird, „Erst exportieren“, Bestätigung durch Eintippen von `LÖSCHEN`/`DELETE`, dann Edge Function,
+lokale Kopien des Kontos entfernen, abmelden (ohne erneuten Cloud-Abgleich).
+
+### Hosting
+
+- **Netlify / Cloudflare Pages:** Repository-Wurzel als Veröffentlichungsordner (kein Build-Befehl). `_headers`, `_redirects` und
+  `404.html` werden automatisch genutzt.
+- **Apache:** `.htaccess` (Fehlerseite, HTTPS, `/play` → `/play/`, Header, Caching).
+- **nginx:** `error_page 404 /404.html;`, `location = /play { return 301 /play/; }`, die Header aus `_headers` per `add_header … always;`.
+- **GitHub Pages:** funktioniert (404.html wird genutzt), erlaubt aber keine eigenen Header – dann gilt für die Website nur die
+  CSP aus den `<meta>`-Tags, das Spiel hat keine CSP. Für `/play` auf derselben Domain eine eigene Domain verwenden.
+- **Domain:** In allen `*.html`, `sitemap.xml`, `robots.txt`, `_headers`, `.htaccess` und `assets/js/config.js` die Platzhalter-Domain
+  ersetzen (auch in der CSP: `clerk.aetherfall.example` = Clerk-Frontend-API der Produktion), z. B.
+  `grep -rlI --exclude-dir=.git 'aetherfall\.example' . | xargs sed -i 's/aetherfall\.example/deine-domain.de/g'`
+- **HTTPS** ist Pflicht (Clerk). `Strict-Transport-Security` erst aktivieren, wenn HTTPS dauerhaft funktioniert.
+- **Sicherheits-Header:** CSP, `X-Content-Type-Options`, `X-Frame-Options`/`frame-ancestors`, `Referrer-Policy`, `Permissions-Policy`,
+  `Cross-Origin-Opener-Policy`, HSTS. Erlaubte Fremdquellen: Clerk (`*.clerk.accounts.dev`, `clerk.<deine-domain>`, `img.clerk.com`),
+  Cloudflare Turnstile (`challenges.cloudflare.com`, Bot-Schutz von Clerk), Supabase (`*.supabase.co`, für das Spiel auch `wss://`).
+  Die Header-CSP erlaubt, was das Spiel braucht (inline-Skripte der Einzeldatei); die Website-Seiten verschärfen sie per
+  `<meta http-equiv="Content-Security-Policy">` (keine inline-Skripte). Eigene Supabase-Domain oder externe Videos → CSP ergänzen.
+
+### Datenschutz-Technik
+
+Keine Tracker, keine Analyse, keine Werbung, keine Einwilligungs-Banner nötig: Schriften, Three.js und supabase-js liegen lokal; ohne
+Anmeldung lädt die Website nichts von Dritten und setzt keine Cookies. Gespeichert werden nur technisch notwendige Einträge
+(`aetherfall_lang`, Spiel-Einstellungen/-Spielstände, während der Registrierung `aetherfall_pending_consent` im sessionStorage,
+Clerk-Sitzungscookies) – alle aufgelistet in der Datenschutzerklärung, Abschnitt 9. Speicherzugriffe laufen in try/catch mit Warnung
+in der Konsole.
+
+### Platzhalter, die du ausfüllen musst
+
+| Wo | Platzhalter |
+|---|---|
+| `assets/js/config.js` | `SITE_URL`, `CONTACT_EMAIL` `[E-MAIL]`, `LEGAL.NAME` `[NAME]`, `LEGAL.ADDRESS` `[ANSCHRIFT]`, `LEGAL.VAT_ID` `[UST-ID, falls vorhanden]` (oder `''`), `LEGAL.AUTHORITY`, `LEGAL.HOSTING`, `LEGAL.HOSTING_THIRD_COUNTRY`, `LEGAL.LOG_DAYS`, `LEGAL.SUPABASE_REGION`; optional `PHONE`, `REGISTER`, `RESPONSIBLE`, `PRIVACY_EMAIL`, `DPO`; `LEGAL_DOCS` (Version/Datum) |
+| HTML-Köpfe, `sitemap.xml`, `robots.txt`, `_headers`, `.htaccess` | Domain `aetherfall.example` |
+| `play/index.html` (`CONFIG`) | dieselben Clerk-/Supabase-Schlüssel wie die Website; `legalTerms`, `legalPrivacy`, `minAge` passend zu `config.js` |
+| Datenschutz Abschnitt 16, AGB § 7 (als inaktiv markiert) | `[ZAHLUNGSANBIETER …]`, `[PREISE …]`, Fristen – erst bei Einführung eines Shops |
+| Supabase Secrets | `CLERK_SECRET_KEY`, `CLERK_ISSUER`, `ALLOWED_ORIGINS` (nur serverseitig) |
+
+Die Rechtstexte sind **Entwürfe und ersetzen keine Rechtsberatung** (Hinweis als HTML-Kommentar in jeder Rechtsseite); bitte vor
+der Veröffentlichung prüfen lassen.
+
+### Tests
+
+Ende-zu-Ende in Deutsch und Englisch (Playwright, echter HTTP-Server mit `_headers`, Clerk-Testattrappe, PostgREST-Nachbildung gegen
+eine lokale Postgres-Datenbank mit den Skripten aus `supabase/`): Startseite, Links, Fußzeile, Rechtsseiten mit eingetragenen Daten,
+SEO, Registrierung mit Pflicht-Checkbox und Speicherung in `consents`, Anmelden/Abmelden/Passwort-Reset, erneute Zustimmung, Spielstart
+als Gast und angemeldet (Sitzung und Sprache übernommen), Rechtslinks/Export/Löschen im Spiel, mobile Breiten 320/390 px, Tastatur,
+reduzierte Bewegung, axe-core (WCAG 2.1 AA inkl. Kontrast), keine Konsolenfehler, keine Anfragen an Dritte ohne Anmeldung.
+SQL (RLS, Rechte, Löschfunktion) und die Edge Function (Signatur, Aussteller, Herkunft, Bestätigung, Löschung, Clerk-Fehler) sind
+separat getestet.
 
 ## Konfiguration (Online-Konten und Cloud-Spielstände)
 
-Ganz oben in `index.html` steht der klar markierte Block `CONFIG`:
+Ganz oben in `play/index.html` steht der klar markierte Block `CONFIG` (die Website hat ihren eigenen, siehe [Landing Page](#landing-page-website)):
 
 ```js
 const CONFIG = {
@@ -23,6 +259,13 @@ const CONFIG = {
   supabaseKey: '',              // Publishable- oder Anon-Key
   autosaveSeconds: 60,          // Cloud-Autosave-Intervall
   saveSlots: 5,                 // manuelle Speicherslots (Supabase-Check-Constraint passend setzen)
+  // === LANDING-ANBINDUNG === (müssen zu assets/js/config.js passen)
+  siteUrl: '../',               // Website relativ zum Spiel ('' = keine Rechtslinks)
+  legalTerms: '1.0',            // = LEGAL_DOCS.agb.version
+  legalPrivacy: '1.0',          // = LEGAL_DOCS.datenschutz.version
+  consentTextVersion: '1',      // = CONSENT_TEXT_VERSION
+  minAge: 16,                   // = MIN_AGE
+  deleteFunction: 'delete-account', // Supabase Edge Function für die Kontolöschung
 };
 ```
 
@@ -35,14 +278,14 @@ zeigt eine Warnung unter Einstellungen › Konto. Einen versehentlich veröffent
 1. **Clerk:** Anwendung anlegen, „E-Mail + Passwort“ (mit E-Mail-Code) und optional Google aktivieren. Die Domain, auf der das
    Spiel läuft, als erlaubte Origin bzw. Redirect-URL eintragen. Den *Publishable Key* in `CONFIG.clerkPublishableKey` eintragen.
    Das Clerk-Script wird über das offizielle CDN der Instanz geladen (`https://<frontend-api>/npm/@clerk/clerk-js@5/dist/clerk.browser.js`,
-   Ersatz: jsDelivr).
+   Ersatz: jsDelivr). Weitere Dashboard-Einstellungen für Website und Spiel: [Landing Page › Clerk](#clerk-dashboard).
 2. **Clerk mit Supabase verbinden:** im Clerk-Dashboard „Connect with Supabase“ ausführen. Das setzt den Claim `role: authenticated`
    in den Session-Tokens.
 3. **Supabase:** unter *Authentication › Third-Party Auth* Clerk als Anbieter hinzufügen. Danach im SQL-Editor
    [`supabase/schema.sql`](supabase/schema.sql) ausführen (neues Projekt). Ein bestehendes Projekt mit 3 Slots stellt
    [`supabase/migrate_save_slots.sql`](supabase/migrate_save_slots.sql) auf 5 Slots um: idempotent, ohne Datenverlust, in einer
    Transaktion (Slot-Bereich 1–5, Unique `(user_id, slot)`, Spalte `deleted_at` als Löschmarker, vollständige RLS-Policies).
-   Beide Skripte stehen auch als nicht ausgeführte Codeblöcke am Ende von `index.html`.
+   Beide Skripte stehen auch als nicht ausgeführte Codeblöcke am Ende von `play/index.html`.
    Es legt `profiles` und `savegames` an, mit Row Level Security: Nutzer lesen, schreiben und löschen nur ihre eigenen Zeilen
    (`user_id = auth.jwt()->>'sub'`).
    Die Spalte `profiles.is_admin` (Admin-Befehle der Konsole) kann nur der Datenbank-Besitzer setzen, nie der Spieler selbst.
@@ -498,7 +741,7 @@ vorher läuft der Einzelspieler exakt wie bisher (kein zusätzlicher Netzverkehr
 1. Voraussetzung: [`supabase/schema.sql`](supabase/schema.sql) ist eingespielt, Clerk ist unter *Authentication › Third-Party Auth*
    als Anbieter eingetragen (wie bei den Cloud-Spielständen).
 2. [`supabase/multiplayer.sql`](supabase/multiplayer.sql) im SQL-Editor ausführen (idempotent, ändert keine Spielstände; steht auch als
-   nicht ausgeführter Codeblock am Ende von `index.html`). Es legt an: `lobbies`, `lobby_members`, `friends`, `player_blocks`,
+   nicht ausgeführter Codeblock am Ende von `play/index.html`). Es legt an: `lobbies`, `lobby_members`, `friends`, `player_blocks`,
    `lobby_invites`, `player_reports`, die Spalten `profiles.mp_name/mp_tag/last_seen`, alle Datenbankfunktionen `mp_*`
    (SECURITY DEFINER, prüfen `auth.jwt()->>'sub'`), Row-Level-Security-Policies und die **Realtime-Authorization**-Policies auf
    `realtime.messages` (nur Mitglieder einer Lobby dürfen auf dem privaten Kanal `lobby:<uuid>` senden und empfangen – Broadcast und Presence).
