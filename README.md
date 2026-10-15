@@ -244,7 +244,8 @@ SEO, Registrierung mit Pflicht-Checkbox und Speicherung in `consents`, Anmelden/
 als Gast und angemeldet (Sitzung und Sprache übernommen), Rechtslinks/Export/Löschen im Spiel, mobile Breiten 320/390 px, Tastatur,
 reduzierte Bewegung, axe-core (WCAG 2.1 AA inkl. Kontrast), keine Konsolenfehler, keine Anfragen an Dritte ohne Anmeldung.
 SQL (RLS, Rechte, Löschfunktion) und die Edge Function (Signatur, Aussteller, Herkunft, Bestätigung, Löschung, Clerk-Fehler) sind
-separat getestet.
+separat getestet. Lighthouse (mobil, lokaler Server mit gzip): Startseite 98 / 100 / 100 / 100 (Leistung, Barrierefreiheit,
+Best Practices, SEO), Rechtsseiten 93–96 / 100 / 100 / 100; Anmelde- und Registrierseite sind bewusst `noindex`.
 
 ## Konfiguration (Online-Konten und Cloud-Spielstände)
 
