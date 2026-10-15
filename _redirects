@@ -1,3 +1,0 @@
-# Netlify / Cloudflare Pages: „/play“ ohne Schrägstrich auf das Spiel umleiten.
-# Unbekannte Adressen beantworten beide Hoster automatisch mit 404.html (Status 404).
-/play    /play/    301

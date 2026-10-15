@@ -10,7 +10,7 @@ I18N.add('de', {
   'imp.title': 'Impressum',
   'imp.intro': '',
   'imp.s1.h': 'Angaben gemäß § 5 DDG',
-  'imp.s1.b': `<p>{NAME}<br>{ADDRESS}</p><p data-if="REGISTER">{REGISTER}</p>`,
+  'imp.s1.b': `<p>{NAME}<br>{ADDRESS}</p><p data-if="REPRESENTED">Vertreten durch die Geschäftsführung: {REPRESENTED}</p><p data-if="REGISTER">{REGISTER}</p>`,
   'imp.s2.h': 'Kontakt',
   'imp.s2.b': `<p>E-Mail: {EMAIL_LINK}<span data-if="PHONE"><br>Telefon: {PHONE}</span></p>`,
   'imp.s3.h': 'Umsatzsteuer-ID',
@@ -50,7 +50,7 @@ I18N.add('de', {
   'priv.s3.h': 'Aufruf der Website und Server-Logfiles (Hosting)',
   'priv.s3.b': `<p>Die Website und das Spiel werden über <b>{HOSTING}</b> ausgeliefert. Beim Aufruf verarbeitet der Hoster automatisch technische Daten, die dein Browser übermittelt: IP-Adresse, Datum und Uhrzeit, aufgerufene Adresse, Referrer, Browser und Betriebssystem, übertragene Datenmenge und Statuscode.</p>
 <p><b>Zweck:</b> Auslieferung der Seiten, Stabilität und Abwehr von Angriffen. <b>Rechtsgrundlage:</b> Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an einem sicheren, funktionsfähigen Angebot). <b>Speicherdauer:</b> {LOG_DAYS}, danach werden die Logfiles gelöscht oder anonymisiert, sofern sie nicht zur Aufklärung eines Sicherheitsvorfalls länger benötigt werden.</p>
-<p>Mit dem Hoster besteht ein Vertrag zur Auftragsverarbeitung (Art. 28 DSGVO). Drittland: {HOSTING_THIRD_COUNTRY}.</p>`,
+<p>Der Hoster verarbeitet diese Daten in unserem Auftrag. Grundlage: {HOSTING_DPA}. Drittland: {HOSTING_THIRD_COUNTRY}.</p>`,
   'priv.s4.h': 'Spielen im Gastmodus',
   'priv.s4.b': `<p>Im Gastmodus speichert das Spiel Spielstände, Einstellungen und Tastenbelegung ausschließlich lokal im Speicher deines Browsers (localStorage). Diese Daten werden nicht an uns übertragen. Du kannst sie jederzeit im Spiel (Spielstände bzw. Einstellungen › Konto › „Lokale Daten löschen“) oder über die Website-Daten deines Browsers löschen.</p>
 <p><b>Rechtsgrundlage:</b> Art. 6 Abs. 1 lit. b DSGVO (Bereitstellung des Spiels) sowie § 25 Abs. 2 Nr. 2 TDDDG (unbedingt erforderliche Speicherung).</p>`,
@@ -97,7 +97,7 @@ I18N.add('de', {
 <caption>Dienstleister, die Daten in unserem Auftrag verarbeiten</caption>
 <thead><tr><th scope="col">Dienst</th><th scope="col">Zweck</th><th scope="col">Sitz / Drittland</th><th scope="col">Grundlage</th></tr></thead>
 <tbody>
-<tr><td>{HOSTING}</td><td>Auslieferung der Website und des Spiels</td><td>{HOSTING_THIRD_COUNTRY}</td><td>Vertrag zur Auftragsverarbeitung</td></tr>
+<tr><td>{HOSTING}</td><td>Auslieferung der Website und des Spiels</td><td>{HOSTING_THIRD_COUNTRY}</td><td>{HOSTING_DPA}</td></tr>
 <tr><td>Clerk, Inc.</td><td>Konten und Anmeldung</td><td>USA</td><td>Auftragsverarbeitung, Data Privacy Framework bzw. Standardvertragsklauseln</td></tr>
 <tr><td>Cloudflare, Inc. (über Clerk)</td><td>Schutz vor automatisierten Registrierungen</td><td>USA</td><td>Unterauftragsverarbeiter von Clerk</td></tr>
 <tr><td>Supabase, Inc.</td><td>Datenbank, Echtzeit-Kanäle, Kontolöschung</td><td>{SUPABASE_REGION}; US-Unternehmen</td><td>Auftragsverarbeitung, Standardvertragsklauseln</td></tr>
@@ -235,7 +235,7 @@ I18N.add('en', {
   'imp.title': 'Legal notice (Impressum)',
   'imp.intro': '',
   'imp.s1.h': 'Information pursuant to § 5 DDG (German Digital Services Act)',
-  'imp.s1.b': `<p>{NAME}<br>{ADDRESS}</p><p data-if="REGISTER">{REGISTER}</p>`,
+  'imp.s1.b': `<p>{NAME}<br>{ADDRESS}</p><p data-if="REPRESENTED">Represented by the managing director(s): {REPRESENTED}</p><p data-if="REGISTER">{REGISTER}</p>`,
   'imp.s2.h': 'Contact',
   'imp.s2.b': `<p>Email: {EMAIL_LINK}<span data-if="PHONE"><br>Phone: {PHONE}</span></p>`,
   'imp.s3.h': 'VAT ID',
@@ -275,7 +275,7 @@ I18N.add('en', {
   'priv.s3.h': 'Visiting the website and server log files (hosting)',
   'priv.s3.b': `<p>The website and the game are delivered via <b>{HOSTING}</b>. When you visit, the host automatically processes technical data sent by your browser: IP address, date and time, requested address, referrer, browser and operating system, amount of data transferred and status code.</p>
 <p><b>Purpose:</b> delivering the pages, stability and defence against attacks. <b>Legal basis:</b> Art. 6(1)(f) GDPR (legitimate interest in a secure, working service). <b>Retention:</b> {LOG_DAYS}; afterwards the log files are deleted or anonymised unless they are needed longer to investigate a security incident.</p>
-<p>We have a data processing agreement with the host (Art. 28 GDPR). Third country: {HOSTING_THIRD_COUNTRY}.</p>`,
+<p>The host processes this data on our behalf. Basis: {HOSTING_DPA}. Third country: {HOSTING_THIRD_COUNTRY}.</p>`,
   'priv.s4.h': 'Playing in guest mode',
   'priv.s4.b': `<p>In guest mode, the game stores saves, settings and key bindings exclusively in your browser’s local storage (localStorage). This data is not transmitted to us. You can delete it at any time in the game (save slots or Settings › Account › “Delete local data”) or via your browser’s site data.</p>
 <p><b>Legal basis:</b> Art. 6(1)(b) GDPR (providing the game) and § 25(2) no. 2 TDDDG (strictly necessary storage).</p>`,
@@ -322,7 +322,7 @@ I18N.add('en', {
 <caption>Service providers processing data on our behalf</caption>
 <thead><tr><th scope="col">Service</th><th scope="col">Purpose</th><th scope="col">Location / third country</th><th scope="col">Basis</th></tr></thead>
 <tbody>
-<tr><td>{HOSTING}</td><td>delivery of the website and the game</td><td>{HOSTING_THIRD_COUNTRY}</td><td>data processing agreement</td></tr>
+<tr><td>{HOSTING}</td><td>delivery of the website and the game</td><td>{HOSTING_THIRD_COUNTRY}</td><td>{HOSTING_DPA}</td></tr>
 <tr><td>Clerk, Inc.</td><td>accounts and sign-in</td><td>USA</td><td>processing agreement, Data Privacy Framework or standard contractual clauses</td></tr>
 <tr><td>Cloudflare, Inc. (via Clerk)</td><td>protection against automated sign-ups</td><td>USA</td><td>sub-processor of Clerk</td></tr>
 <tr><td>Supabase, Inc.</td><td>database, real-time channels, account deletion</td><td>{SUPABASE_REGION}; US company</td><td>processing agreement, standard contractual clauses</td></tr>

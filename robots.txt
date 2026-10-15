@@ -1,6 +1,7 @@
-# Aetherfall: Dungeons – alle Seiten dürfen gelesen werden.
-# Anmelde- und Registrierseite tragen selbst „noindex“.
-User-agent: *
-Allow: /
-
-Sitemap: https://aetherfall.example/sitemap.xml
+# Aetherfall: Dungeons – alle Seiten dürfen gelesen werden; Anmelde- und Registrierseite tragen selbst „noindex“.
+#
+# WICHTIG: Suchmaschinen lesen robots.txt NUR im Hauptverzeichnis der Domain (https://aetherfallroe.com/robots.txt,
+# gehört zur Hauptseite). Diese Datei unter /dungeons/ wird daher ignoriert. Damit die Sitemap gefunden wird, in die
+# robots.txt der Hauptseite (public_html/robots.txt) diese Zeile aufnehmen – bestehende Regeln dort bleiben, wie sie sind:
+#
+Sitemap: https://aetherfallroe.com/dungeons/sitemap.xml

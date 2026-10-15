@@ -3,28 +3,29 @@
   Aetherfall: Dungeons – Website (statisches HTML, ohne Build-Schritt).
   Sichtbare Texte kommen aus assets/js/lang-site.js / lang-legal.js (Deutsch und Englisch); der deutsche Text im HTML
   ist nur der Rückfall ohne JavaScript. Platzhalter (Name, Anschrift, E-Mail …) stehen zentral in assets/js/config.js.
-  Die Domain https://aetherfall.example in <head> durch die eigene ersetzen (siehe README.md › Landing Page).
+  Adresse der Website: https://aetherfallroe.com/dungeons/ – bei einem Umzug in <head>, sitemap.xml, robots.txt und assets/js/config.js anpassen
+  (siehe README.md › Landing Page › Hosting).
 -->
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://*.clerk.accounts.dev https://clerk.aetherfall.example https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://img.clerk.com; font-src 'self'; connect-src 'self' https://*.clerk.accounts.dev https://clerk.aetherfall.example https://*.supabase.co; frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; media-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://*.clerk.accounts.dev https://clerk.aetherfallroe.com https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://img.clerk.com; font-src 'self'; connect-src 'self' https://*.clerk.accounts.dev https://clerk.aetherfallroe.com https://*.supabase.co; frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; media-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Aetherfall: Dungeons – Voxel-Action-RPG im Browser</title>
 <meta name="description" content="Kostenloses Voxel-Action-RPG im Browser: Himmelsinseln, neun Bosse, Rätsel, Charakter-Creator, Koop für 2–4 Spieler und Cloud-Speicherstände. Auch ohne Konto spielbar.">
 <meta name="robots" content="index, follow">
 <meta name="theme-color" content="#0d0907">
 <meta name="color-scheme" content="dark">
-<link rel="canonical" href="https://aetherfall.example/">
-<link rel="alternate" hreflang="de" href="https://aetherfall.example/">
-<link rel="alternate" hreflang="en" href="https://aetherfall.example/?lang=en">
-<link rel="alternate" hreflang="x-default" href="https://aetherfall.example/">
+<link rel="canonical" href="https://aetherfallroe.com/dungeons/">
+<link rel="alternate" hreflang="de" href="https://aetherfallroe.com/dungeons/">
+<link rel="alternate" hreflang="en" href="https://aetherfallroe.com/dungeons/?lang=en">
+<link rel="alternate" hreflang="x-default" href="https://aetherfallroe.com/dungeons/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Aetherfall: Dungeons">
 <meta property="og:title" content="Aetherfall: Dungeons – Voxel-Action-RPG im Browser">
 <meta property="og:description" content="Kostenloses Voxel-Action-RPG im Browser: Himmelsinseln, neun Bosse, Rätsel, Charakter-Creator, Koop für 2–4 Spieler und Cloud-Speicherstände. Auch ohne Konto spielbar.">
-<meta property="og:url" content="https://aetherfall.example/">
-<meta property="og:image" content="https://aetherfall.example/assets/img/og-image.png">
+<meta property="og:url" content="https://aetherfallroe.com/dungeons/">
+<meta property="og:image" content="https://aetherfallroe.com/dungeons/assets/img/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Aetherfall: Dungeons – Logo mit Ätherkristall über schwebenden Himmelsinseln">
@@ -33,7 +34,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Aetherfall: Dungeons – Voxel-Action-RPG im Browser">
 <meta name="twitter:description" content="Kostenloses Voxel-Action-RPG im Browser: Himmelsinseln, neun Bosse, Rätsel, Charakter-Creator, Koop für 2–4 Spieler und Cloud-Speicherstände. Auch ohne Konto spielbar.">
-<meta name="twitter:image" content="https://aetherfall.example/assets/img/og-image.png">
+<meta name="twitter:image" content="https://aetherfallroe.com/dungeons/assets/img/og-image.png">
 <meta name="twitter:image:alt" content="Aetherfall: Dungeons – Logo mit Ätherkristall über schwebenden Himmelsinseln">
 <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon.ico" sizes="32x32">
@@ -48,7 +49,7 @@
 <script src="assets/js/news.js" defer></script>
 <script src="assets/js/site.js" defer></script>
 <script src="assets/js/auth.js" defer></script>
-<script type="application/ld+json" id="ld">{"@context":"https://schema.org","@graph":[{"@type":"VideoGame","@id":"https://aetherfall.example/#game","name":"Aetherfall: Dungeons","url":"https://aetherfall.example/","description":"Kostenloses Voxel-Action-RPG im Browser: Himmelsinseln, neun Bosse, Rätsel, Charakter-Creator, Koop für 2–4 Spieler und Cloud-Speicherstände. Auch ohne Konto spielbar.","image":"https://aetherfall.example/assets/img/og-image.png","genre":["Action RPG","Dungeon Crawler"],"gamePlatform":"Web browser","applicationCategory":"Game","operatingSystem":"Any","inLanguage":["de","en"],"playMode":["SinglePlayer","CoOp"],"numberOfPlayers":{"@type":"QuantitativeValue","minValue":1,"maxValue":4},"offers":{"@type":"Offer","price":"0","priceCurrency":"EUR","url":"https://aetherfall.example/play/"},"publisher":{"@id":"https://aetherfall.example/#org"},"author":{"@id":"https://aetherfall.example/#org"}},{"@type":"Organization","@id":"https://aetherfall.example/#org","name":"Aetherfall: Dungeons","url":"https://aetherfall.example/","logo":"https://aetherfall.example/assets/img/icon-512.png"}]}</script>
+<script type="application/ld+json" id="ld">{"@context":"https://schema.org","@graph":[{"@type":"VideoGame","@id":"https://aetherfallroe.com/dungeons/#game","name":"Aetherfall: Dungeons","url":"https://aetherfallroe.com/dungeons/","description":"Kostenloses Voxel-Action-RPG im Browser: Himmelsinseln, neun Bosse, Rätsel, Charakter-Creator, Koop für 2–4 Spieler und Cloud-Speicherstände. Auch ohne Konto spielbar.","image":"https://aetherfallroe.com/dungeons/assets/img/og-image.png","genre":["Action RPG","Dungeon Crawler"],"gamePlatform":"Web browser","applicationCategory":"Game","operatingSystem":"Any","inLanguage":["de","en"],"playMode":["SinglePlayer","CoOp"],"numberOfPlayers":{"@type":"QuantitativeValue","minValue":1,"maxValue":4},"offers":{"@type":"Offer","price":"0","priceCurrency":"EUR","url":"https://aetherfallroe.com/dungeons/play/"},"publisher":{"@id":"https://aetherfallroe.com/dungeons/#org"},"author":{"@id":"https://aetherfallroe.com/dungeons/#org"}},{"@type":"Organization","@id":"https://aetherfallroe.com/dungeons/#org","name":"Aetherfall: Dungeons","url":"https://aetherfallroe.com/dungeons/","logo":"https://aetherfallroe.com/dungeons/assets/img/icon-512.png"}]}</script>
 </head>
 <body data-page="index">
 <a class="skip" href="#main" data-i18n="a11y.skip">Zum Inhalt springen</a>
@@ -102,16 +103,15 @@
     <div class="wrap">
       <div class="secHead"><h2 id="galH" data-i18n="gallery.title">Galerie</h2><p data-i18n="gallery.lead">Eindrücke aus der Welt von Aetherfall.</p></div>
       <div class="trailer" id="trailer" data-trailer>
-        <div class="art" data-scene="trailer" role="img" data-i18n-attr="aria-label:trailer.artLabel" aria-label="Platzhalter für den Trailer: Held vor dem Herz des Nexus"></div>
-        <div class="trailerOverlay"><span class="badge" data-i18n="trailer.soon">Bald verfügbar</span><span class="playIcon" aria-hidden="true"></span><p data-i18n="trailer.placeholder">Der Trailer erscheint hier in Kürze.</p></div>
+        <video class="trailerVideo" controls preload="none" playsinline poster="assets/media/trailer-poster.webp" data-i18n-attr="aria-label:trailer.videoLabel" aria-label="Trailer zu Aetherfall: Dungeons"><source src="assets/media/trailer.mp4" type="video/mp4"><track kind="subtitles" srclang="en" label="English" src="assets/media/trailer-en.vtt"><p data-i18n="trailer.noVideo">Dein Browser kann dieses Video nicht abspielen.</p></video>
       </div>
       <div class="gallery" data-gallery style="margin-top:34px">
-        <figure class="shot"><div class="shotFrame"><div class="art" data-scene="islands" role="img" data-i18n-attr="aria-label:gallery.islands.alt" aria-label="Illustration: Stadt mit Türmen auf einer schwebenden Insel in der Abenddämmerung"></div><span class="badge" data-i18n="gallery.badge">Platzhalter</span></div><figcaption data-i18n="gallery.islands">Ehbergten, die Stadt auf der Himmelsinsel</figcaption></figure>
-        <figure class="shot"><div class="shotFrame"><div class="art" data-scene="boss" role="img" data-i18n-attr="aria-label:gallery.boss.alt" aria-label="Illustration: riesiger Kristallkoloss mit rot markierter Angriffszone vor einer kleinen Heldenfigur"></div><span class="badge" data-i18n="gallery.badge">Platzhalter</span></div><figcaption data-i18n="gallery.boss">Bosskampf gegen Xylar, den Kristallkoloss</figcaption></figure>
-        <figure class="shot"><div class="shotFrame"><div class="art" data-scene="map" role="img" data-i18n-attr="aria-label:gallery.map.alt" aria-label="Illustration: Pixel-Weltkarte mit Inseln, Brücken, leuchtenden Wegsteinen und Nebel"></div><span class="badge" data-i18n="gallery.badge">Platzhalter</span></div><figcaption data-i18n="gallery.map">Weltkarte mit Wegsteinen und Questmarkern</figcaption></figure>
-        <figure class="shot"><div class="shotFrame"><div class="art" data-scene="creator" role="img" data-i18n-attr="aria-label:gallery.creator.alt" aria-label="Illustration: Voxel-Held auf einem Podest, daneben Farbfelder zur Auswahl"></div><span class="badge" data-i18n="gallery.badge">Platzhalter</span></div><figcaption data-i18n="gallery.creator">Charakter-Creator mit Live-Vorschau</figcaption></figure>
-        <figure class="shot"><div class="shotFrame"><div class="art" data-scene="coop" role="img" data-i18n-attr="aria-label:gallery.coop.alt" aria-label="Illustration: vier Heldenfiguren in verschiedenen Farben umringen Gegner"></div><span class="badge" data-i18n="gallery.badge">Platzhalter</span></div><figcaption data-i18n="gallery.coop">Koop: zu viert gegen die Brut</figcaption></figure>
-        <figure class="shot"><div class="shotFrame"><div class="art" data-scene="dungeon" role="img" data-i18n-attr="aria-label:gallery.dungeon.alt" aria-label="Illustration: Steingang mit Fackeln, Truhe und Gerippe"></div><span class="badge" data-i18n="gallery.badge">Platzhalter</span></div><figcaption data-i18n="gallery.dungeon">Fackellicht in den Untoten Kavernen</figcaption></figure>
+        <figure class="shot"><a class="shotLink" href="assets/media/shot-town.webp" data-shot="0"><img src="assets/media/shot-town-640.webp" srcset="assets/media/shot-town-640.webp 640w, assets/media/shot-town.webp 1280w" sizes="(max-width: 665px) calc(100vw - 32px), (max-width: 975px) calc(50vw - 27px), 348px" alt="Spielszene: Marktstand, Brunnen und Häuser mit roten und grünen Dächern in der Stadt Ehbergten, schräg von oben" width="1280" height="720" loading="lazy" decoding="async"><span class="srOnly"> (größer anzeigen)</span></a><figcaption>Ehbergten, die Stadt auf der Himmelsinsel</figcaption></figure>
+        <figure class="shot"><a class="shotLink" href="assets/media/shot-combat.webp" data-shot="1"><img src="assets/media/shot-combat-640.webp" srcset="assets/media/shot-combat-640.webp 640w, assets/media/shot-combat.webp 1280w" sizes="(max-width: 665px) calc(100vw - 32px), (max-width: 975px) calc(50vw - 27px), 348px" alt="Kampf im Duskwood Thicket: Ein Flächenangriff mit leuchtendem goldenem Ring trifft mehrere Gegner, unten die Aktionsleiste mit Zaubern" width="1280" height="720" loading="lazy" decoding="async"><span class="srOnly"> (größer anzeigen)</span></a><figcaption>Kämpfe mit Kombos, Zaubern und Flächenangriffen</figcaption></figure>
+        <figure class="shot"><a class="shotLink" href="assets/media/shot-xylar.webp" data-shot="2"><img src="assets/media/shot-xylar-640.webp" srcset="assets/media/shot-xylar-640.webp 640w, assets/media/shot-xylar.webp 1280w" sizes="(max-width: 665px) calc(100vw - 32px), (max-width: 975px) calc(50vw - 27px), 348px" alt="Bosskampf auf dem Kristallgipfel: Xylar, der Kristallkoloss, aus blauen und violetten Kristallen, darüber seine Lebensleiste" width="1280" height="720" loading="lazy" decoding="async"><span class="srOnly"> (größer anzeigen)</span></a><figcaption>Bosskampf gegen Xylar, den Kristallkoloss</figcaption></figure>
+        <figure class="shot"><a class="shotLink" href="assets/media/shot-seraphiel.webp" data-shot="3"><img src="assets/media/shot-seraphiel-640.webp" srcset="assets/media/shot-seraphiel-640.webp 640w, assets/media/shot-seraphiel.webp 1280w" sizes="(max-width: 665px) calc(100vw - 32px), (max-width: 975px) calc(50vw - 27px), 348px" alt="Endkampf im Herz des Nexus: Seraphiel, die verderbte Architektin, lässt Blitze auf den Helden niedergehen" width="1280" height="720" loading="lazy" decoding="async"><span class="srOnly"> (größer anzeigen)</span></a><figcaption>Seraphiel, die verderbte Architektin</figcaption></figure>
+        <figure class="shot"><a class="shotLink" href="assets/media/shot-map-de.webp" data-shot="4"><img src="assets/media/shot-map-de-640.webp" srcset="assets/media/shot-map-de-640.webp 640w, assets/media/shot-map-de.webp 1280w" sizes="(max-width: 665px) calc(100vw - 32px), (max-width: 975px) calc(50vw - 27px), 348px" alt="Weltkarte der Himmelsinseln: neun Regionen, durch Brücken verbunden, mit leuchtenden Wegsteinen und Stufenangaben" width="1280" height="720" loading="lazy" decoding="async"><span class="srOnly"> (größer anzeigen)</span></a><figcaption>Weltkarte mit Wegsteinen und Questmarkern</figcaption></figure>
+        <figure class="shot"><a class="shotLink" href="assets/media/shot-creator-de.webp" data-shot="5"><img src="assets/media/shot-creator-de-640.webp" srcset="assets/media/shot-creator-de-640.webp 640w, assets/media/shot-creator-de.webp 1280w" sizes="(max-width: 665px) calc(100vw - 32px), (max-width: 975px) calc(50vw - 27px), 348px" alt="Charaktererstellung: Heldin mit Schwert auf einem beleuchteten Podest, rechts Auswahl von Klasse, Haut-, Haar- und Augenfarbe" width="1280" height="720" loading="lazy" decoding="async"><span class="srOnly"> (größer anzeigen)</span></a><figcaption>Charakter-Creator mit Live-Vorschau</figcaption></figure>
       </div>
     </div>
   </section>
@@ -180,7 +180,7 @@
     <nav data-i18n-attr="aria-label:foot.legalNav" aria-label="Rechtliches"><ul class="footLinks"><li><a href="impressum.html" data-i18n="foot.imprint">Impressum</a></li><li><a href="datenschutz.html" data-i18n="foot.privacy">Datenschutz</a></li><li><a href="agb.html" data-i18n="foot.terms">AGB</a></li><li><a href="widerruf.html" data-i18n="foot.withdrawal">Widerruf</a></li><li><a href="kontakt.html" data-i18n="foot.contact">Kontakt</a></li></ul></nav>
     <div class="langSwitch" role="group" data-i18n-attr="aria-label:lang.label" aria-label="Sprache wählen"><button type="button" data-setlang="de" lang="de" aria-pressed="true" aria-label="DE – Deutsch">DE</button><button type="button" data-setlang="en" lang="en" aria-pressed="false" aria-label="EN – English">EN</button></div>
     <div class="footMeta">
-      <p>© <span data-year>2026</span> <span data-cfg="NAME">[NAME]</span> · Aetherfall: Dungeons · <span data-i18n="foot.rights">Alle Rechte vorbehalten.</span></p>
+      <p>© <span data-year>2026</span> <span data-cfg="NAME">RagedSky UG (haftungsbeschränkt) i. G.</span> · Aetherfall: Dungeons · <span data-i18n="foot.rights">Alle Rechte vorbehalten.</span></p>
       <p data-i18n-html="foot.storage">Diese Website verwendet nur technisch notwendige Speicherungen (Sprache, Anmeldung) – keine Tracker, keine Analyse, keine Werbung. <a href="datenschutz.html#s9">Mehr zu Cookies und Speicher</a></p>
       <p data-media-settings hidden><button type="button" class="linkBtn" data-i18n="foot.mediaSettings">Einstellungen für externe Medien</button></p>
     </div>

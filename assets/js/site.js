@@ -58,44 +58,6 @@
     wrap(inner, bg) { return `<svg viewBox="0 0 320 180" shape-rendering="crispEdges" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">${bg || ''}${inner}</svg>`; },
     sky(id, a, b) { return `<defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs><rect width="320" height="180" fill="url(#${id})"/>`; },
     SCENES: {
-      islands(P) {
-        const R = P.rng('islands');
-        return P.wrap(P.stars(R, 50, 320, 90) + '<rect x="236" y="34" width="22" height="22" fill="#ffb648" opacity=".9"/><rect x="232" y="38" width="30" height="14" fill="#ffb648" opacity=".35"/>' +
-          P.island(20, 120, 70) + P.island(120, 96, 120, { step: 5 }) + P.tower(150, 96, 30) + P.tower(178, 96, 44, '#d8c39a') + P.tower(206, 96, 24) + P.island(258, 132, 48) +
-          '<rect x="0" y="160" width="320" height="20" fill="#f3e4c4" opacity=".08"/><rect x="40" y="150" width="90" height="6" fill="#fff" opacity=".07"/>', P.sky('gIs', '#1b1030', '#c0603a'));
-      },
-      boss(P) {
-        let s = '<rect x="0" y="120" width="320" height="60" fill="#1a1420"/>';
-        for (let i = 0; i < 8; i++) s += `<rect x="${i * 40}" y="120" width="1" height="60" fill="#2e2440"/>`;
-        s += '<rect x="80" y="128" width="150" height="34" fill="#e0463a" opacity=".28"/><rect x="80" y="128" width="150" height="2" fill="#ff5a46"/><rect x="80" y="160" width="150" height="2" fill="#ff5a46"/>';
-        s += '<polygon points="160,18 196,60 186,124 134,124 124,60" fill="#3a6fe0"/><polygon points="160,18 176,60 160,124 134,124 124,60" fill="#7cc4ff"/><polygon points="160,18 168,52 152,52" fill="#ffffff"/>';
-        s += '<rect x="98" y="60" width="28" height="12" fill="#5fa8ff"/><rect x="194" y="60" width="28" height="12" fill="#2a4fb8"/><rect x="152" y="70" width="16" height="8" fill="#ffcf5a"/>';
-        s += P.hero(60, 140, '#8a5d12') + '<rect x="40" y="20" width="240" height="6" fill="#120c08"/><rect x="40" y="20" width="170" height="6" fill="#c062ff"/>';
-        return P.wrap(s, P.sky('gBo', '#0b0a1a', '#2a1a40'));
-      },
-      map(P) {
-        let s = '<rect x="8" y="8" width="304" height="164" fill="#2e2015"/><rect x="12" y="12" width="296" height="156" fill="#3d2a19"/>';
-        const isl = [[40, 40, 60, 34, '#5a8f3a'], [130, 30, 70, 40, '#7a6a3a'], [230, 50, 56, 38, '#4a6a8a'], [70, 110, 64, 40, '#6a3a5a'], [180, 112, 80, 36, '#8a4a2a']];
-        for (const [x, y, w, h, c] of isl) s += `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${c}"/><rect x="${x + 4}" y="${y + 4}" width="${w - 8}" height="${h - 8}" fill="${c}" opacity=".6" stroke="#120c08" stroke-width="1"/>`;
-        for (const [x1, y1, x2, y2] of [[100, 56, 130, 50], [200, 50, 230, 64], [100, 70, 100, 110], [134, 128, 180, 130]]) { const n = 6; for (let i = 0; i <= n; i++) s += `<rect x="${Math.round(x1 + (x2 - x1) * i / n)}" y="${Math.round(y1 + (y2 - y1) * i / n)}" width="3" height="3" fill="#ffcf5a" opacity=".7"/>`; }
-        for (const [x, y] of [[66, 54], [160, 46], [254, 66], [100, 128], [216, 128]]) s += `<polygon points="${x},${y - 6} ${x + 5},${y} ${x},${y + 6} ${x - 5},${y}" fill="#7cc4ff"/><rect x="${x - 1}" y="${y - 1}" width="2" height="2" fill="#fff"/>`;
-        s += '<rect x="226" y="104" width="86" height="64" fill="#0d0907" opacity=".72"/><rect x="214" y="116" width="20" height="40" fill="#0d0907" opacity=".5"/><polygon points="160,86 166,96 154,96" fill="#ffcf5a"/>';
-        return P.wrap(s, '<rect width="320" height="180" fill="#1a110a"/>');
-      },
-      creator(P) {
-        let s = '<rect x="80" y="140" width="100" height="10" fill="#4a3220"/><rect x="70" y="150" width="120" height="10" fill="#2e2015"/>' + P.hero(108, 58, '#3a6fe0', 8);
-        const sw = ['#ffcf5a', '#e0463a', '#72d84c', '#4fa8ff', '#c062ff', '#f3e4c4'];
-        sw.forEach((c, i) => { s += `<rect x="${222 + (i % 2) * 34}" y="${36 + Math.floor(i / 2) * 34}" width="26" height="26" fill="${c}"/><rect x="${222 + (i % 2) * 34}" y="${36 + Math.floor(i / 2) * 34}" width="26" height="26" fill="none" stroke="#120c08" stroke-width="2"/>`; });
-        s += '<rect x="218" y="32" width="34" height="34" fill="none" stroke="#fff" stroke-width="2"/><rect x="214" y="146" width="80" height="12" fill="#8a5d12"/>';
-        return P.wrap(s, P.sky('gCr', '#22170f', '#0d0907'));
-      },
-      coop(P) {
-        let s = '<rect x="0" y="130" width="320" height="50" fill="#2a3a1a"/>';
-        for (let i = 0; i < 3; i++) s += `<rect x="${130 + i * 26}" y="${96 + (i % 2) * 8}" width="18" height="16" fill="#5a2a6a"/><rect x="${133 + i * 26}" y="${100 + (i % 2) * 8}" width="3" height="3" fill="#ff5a46"/><rect x="${142 + i * 26}" y="${100 + (i % 2) * 8}" width="3" height="3" fill="#ff5a46"/>`;
-        s += P.hero(70, 100, '#8a5d12', 3) + P.hero(240, 96, '#3a6fe0', 3) + P.hero(110, 140, '#72d84c', 3) + P.hero(200, 140, '#c062ff', 3);
-        s += '<polygon points="160,60 166,72 154,72" fill="#ffcf5a"/><rect x="159" y="72" width="2" height="12" fill="#ffcf5a"/>';
-        return P.wrap(s, P.sky('gCo', '#0d1a2a', '#3a5a3a'));
-      },
       dungeon(P) {
         let s = '<polygon points="0,0 120,60 200,60 320,0 320,180 200,120 120,120 0,180" fill="#2e2a2a"/><rect x="120" y="60" width="80" height="60" fill="#0b0808"/>';
         for (let i = 0; i < 6; i++) s += `<rect x="${i * 20}" y="${10 + i * 10}" width="14" height="6" fill="#3d3636"/><rect x="${306 - i * 20}" y="${10 + i * 10}" width="14" height="6" fill="#3d3636"/>`;
@@ -255,28 +217,94 @@
         host.appendChild(b);
       }
     },
-    // ---- Galerie: eigene Screenshots (SITE_CONFIG.SCREENSHOTS) statt gezeichneter Platzhalter ----
-    gallery() {
-      const host = $('[data-gallery]'), shots = Array.isArray(C.SCREENSHOTS) ? C.SCREENSHOTS.filter(s => s && s.src) : [];
-      if (!host || !shots.length) return;
-      const render = () => {
-        host.innerHTML = shots.map(s => { const alt = (s.alt && (s.alt[I18N.lang] || s.alt.de)) || ''; const cap = (s.caption && (s.caption[I18N.lang] || s.caption.de)) || alt; return `<figure class="shot"><img src="${esc(s.src)}" alt="${esc(alt)}" loading="lazy" decoding="async" width="${+s.width || 1280}" height="${+s.height || 720}"><figcaption>${esc(cap)}</figcaption></figure>`; }).join('');
-      };
-      render(); I18N.onChange(render);
+    // ---- Galerie: Bilder aus SITE_CONFIG.SCREENSHOTS, Großansicht im Dialog ----
+    // Spaltenbreite der Galerie (3 / 2 / 1 Spalten, siehe .gallery in site.css) – damit der Browser die passende Bildgröße lädt
+    SHOT_SIZES: '(max-width: 665px) calc(100vw - 32px), (max-width: 975px) calc(50vw - 27px), 348px',
+    shots() { return Array.isArray(C.SCREENSHOTS) ? C.SCREENSHOTS.filter(s => s && s.src) : []; },
+    shotData(s) {
+      const P = x => String(I18N.pick(x) || ''), full = P(s.src);
+      return { full, thumb: P(s.thumb) || full, tw: +s.thumbWidth || 640, w: +s.width || 1280, h: +s.height || 720, alt: P(s.alt), cap: P(s.caption) || P(s.alt) };
     },
-    // ---- Trailer: eigene Datei, externe Einbettung (erst nach Zustimmung) oder Platzhalter ----
+    shotHtml(s, i) {
+      const d = this.shotData(s), set = d.thumb !== d.full ? ` srcset="${esc(d.thumb)} ${d.tw}w, ${esc(d.full)} ${d.w}w" sizes="${this.SHOT_SIZES}"` : '';
+      return `<figure class="shot"><a class="shotLink" href="${esc(d.full)}" data-shot="${i}"><img src="${esc(d.thumb)}"${set} alt="${esc(d.alt)}" width="${d.w}" height="${d.h}" loading="lazy" decoding="async"><span class="srOnly"> (${esc(t('gallery.zoom'))})</span></a><figcaption>${esc(d.cap)}</figcaption></figure>`;
+    },
+    gallery() {
+      const host = $('[data-gallery]'); if (!host) return;
+      const shots = this.shots();
+      if (!shots.length) { host.hidden = true; return; }
+      const render = () => { host.innerHTML = shots.map((s, i) => this.shotHtml(s, i)).join(''); };
+      render(); I18N.onChange(render);
+      // ohne <dialog>-Unterstützung öffnet der Link einfach das große Bild
+      if (typeof window.HTMLDialogElement !== 'function') return;
+      host.addEventListener('click', e => {
+        const a = e.target.closest('a[data-shot]'); if (!a || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+        e.preventDefault(); this.lightbox(+a.dataset.shot, a);
+      });
+    },
+    lightbox(i, opener) {
+      let dlg = this.lbox;
+      if (!dlg) {
+        dlg = this.lbox = document.createElement('dialog'); dlg.className = 'lightbox';
+        dlg.innerHTML = '<figure class="lbFig"><img alt="" decoding="async"><figcaption><span data-lb-cap></span><span class="lbCount" data-lb-count></span></figcaption></figure>'
+          + '<div class="lbBar"><button type="button" class="btn small" data-lb="prev"><span aria-hidden="true">&lt;</span></button><button type="button" class="btn small" data-lb="next"><span aria-hidden="true">&gt;</span></button><button type="button" class="btn small" data-lb="close" autofocus><span aria-hidden="true">X</span></button></div>';
+        document.body.appendChild(dlg);
+        dlg.addEventListener('click', e => {
+          const b = e.target.closest('[data-lb]');
+          if (b) { if (b.dataset.lb === 'close') dlg.close(); else this.lbShow(this.lbIndex + (b.dataset.lb === 'next' ? 1 : -1)); }
+          else if (e.target === dlg) dlg.close(); // Klick neben das Bild (auf den abgedunkelten Hintergrund)
+        });
+        dlg.addEventListener('keydown', e => {
+          if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); this.lbShow(this.lbIndex + (e.key === 'ArrowRight' ? 1 : -1)); }
+        });
+        dlg.addEventListener('close', () => { document.documentElement.classList.remove('lbOpen'); const o = this.lbOpener; if (o && document.contains(o)) o.focus(); });
+        I18N.onChange(() => { if (dlg.open) this.lbShow(this.lbIndex); });
+      }
+      this.lbOpener = opener; this.lbShow(i);
+      if (!dlg.open) { dlg.showModal(); document.documentElement.classList.add('lbOpen'); }
+    },
+    lbShow(i) {
+      const shots = this.shots(), n = shots.length, k = ((i % n) + n) % n, d = this.shotData(shots[k]), dlg = this.lbox;
+      this.lbIndex = k;
+      const img = dlg.querySelector('img'); img.src = d.full; img.alt = d.alt; img.width = d.w; img.height = d.h;
+      dlg.querySelector('[data-lb-cap]').textContent = d.cap;
+      dlg.querySelector('[data-lb-count]').textContent = t('gallery.count', { n: k + 1, total: n });
+      dlg.setAttribute('aria-label', t('gallery.dialog'));
+      for (const [k2, key] of [['prev', 'gallery.prev'], ['next', 'gallery.next'], ['close', 'gallery.close']]) { const b = dlg.querySelector(`[data-lb="${k2}"]`); b.setAttribute('aria-label', t(key)); b.title = t(key); b.hidden = k2 !== 'close' && n < 2; }
+      // Nachbarbilder vorladen, damit das Blättern ohne Wartezeit klappt
+      if (n > 1) for (const j of [k + 1, k - 1]) { const p = new Image(); p.decoding = 'async'; p.src = this.shotData(shots[((j % n) + n) % n]).full; }
+    },
+    // ---- Trailer: eigene Datei (mit Untertiteln), externe Einbettung (erst nach Zustimmung) oder Platzhalter ----
     MEDIA_KEY: 'aetherfall_media_consent',
     trailer() {
       const host = $('[data-trailer]'); if (!host) return;
       if (C.TRAILER_URL) {
-        const v = document.createElement('video'); v.controls = true; v.preload = 'none'; v.playsInline = true; v.className = 'trailerVideo';
-        if (C.TRAILER_POSTER) v.poster = C.TRAILER_POSTER;
-        v.setAttribute('data-i18n-attr', 'aria-label:trailer.videoLabel'); v.setAttribute('aria-label', t('trailer.videoLabel'));
-        const s = document.createElement('source'); s.src = C.TRAILER_URL; s.type = /\.webm(\?|$)/i.test(C.TRAILER_URL) ? 'video/webm' : 'video/mp4'; v.appendChild(s);
-        const p = document.createElement('p'); p.setAttribute('data-i18n', 'trailer.noVideo'); p.textContent = t('trailer.noVideo'); v.appendChild(p);
-        host.innerHTML = ''; host.appendChild(v); return;
+        // Das HTML enthält das Video bereits (gleiche Datei) → wiederverwenden, sonst neu aufbauen
+        let v = host.querySelector('video');
+        const src = v && v.querySelector('source');
+        if (!v || !src || src.getAttribute('src') !== C.TRAILER_URL) {
+          v = document.createElement('video'); v.controls = true; v.preload = 'none'; v.playsInline = true; v.className = 'trailerVideo';
+          if (C.TRAILER_POSTER) v.poster = C.TRAILER_POSTER;
+          v.setAttribute('data-i18n-attr', 'aria-label:trailer.videoLabel'); v.setAttribute('aria-label', t('trailer.videoLabel'));
+          const s = document.createElement('source'); s.src = C.TRAILER_URL; s.type = /\.webm(\?|$)/i.test(C.TRAILER_URL) ? 'video/webm' : 'video/mp4'; v.appendChild(s);
+          const subs = C.TRAILER_SUBTITLES || {};
+          for (const L of Object.keys(subs)) { if (!subs[L]) continue; const tr = document.createElement('track'); tr.kind = 'subtitles'; tr.srclang = L; tr.label = (I18N.LANGS[L] || {}).name || L; tr.src = subs[L]; v.appendChild(tr); }
+          const p = document.createElement('p'); p.setAttribute('data-i18n', 'trailer.noVideo'); p.textContent = t('trailer.noVideo'); v.appendChild(p);
+          host.innerHTML = ''; host.appendChild(v);
+        }
+        // Untertitel der Seitensprache einschalten (der Trailer selbst ist deutsch beschriftet)
+        const sync = () => { for (const tt of Array.from(v.textTracks || [])) tt.mode = tt.language === I18N.lang ? 'showing' : 'disabled'; };
+        sync(); I18N.onChange(sync);
+        return;
       }
-      if (C.TRAILER_EMBED) { this.embedGate(host); return; }
+      if (C.TRAILER_EMBED) { this.placeholder(host); this.embedGate(host); return; }
+      this.placeholder(host);
+    },
+    // gezeichneter Platzhalter (ohne Trailer-Datei bzw. vor der Zustimmung zur externen Einbettung)
+    placeholder(host) {
+      if (host.querySelector('.trailerOverlay')) return;
+      host.innerHTML = `<div class="art" role="img" data-i18n-attr="aria-label:trailer.artLabel" aria-label="${esc(t('trailer.artLabel'))}">${Px.scene('trailer')}</div>`
+        + `<div class="trailerOverlay"><span class="badge" data-i18n="trailer.soon">${esc(t('trailer.soon'))}</span><span class="playIcon" aria-hidden="true"></span><p data-i18n="trailer.placeholder">${esc(t('trailer.placeholder'))}</p></div>`;
     },
     mediaChoice() { const v = SiteStore.get(this.MEDIA_KEY); return v === 'granted' || v === 'denied' ? v : null; },
     embedGate(host) {
@@ -304,7 +332,7 @@
     // ---- Strukturierte Daten (schema.org) aus der Konfiguration ----
     jsonLd() {
       const el = document.getElementById('ld'); if (!el) return;
-      const V = I18N.cfg(), base = String(C.SITE_URL || '').replace(/\/+$/, ''), isPh = s => /^\[.*\]$/.test(String(s).trim());
+      const V = I18N.cfg(), base = String(C.SITE_URL || '').replace(/\/+$/, ''), isPh = s => I18N.hasPh(s);
       const org = { '@type': 'Organization', '@id': base + '/#org', name: V.NAME && !isPh(V.NAME) ? V.NAME : 'Aetherfall: Dungeons', url: base + '/', logo: base + '/assets/img/icon-512.png' };
       if (V.EMAIL && !isPh(V.EMAIL)) org.email = V.EMAIL;
       const game = {

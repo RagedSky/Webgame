@@ -3,28 +3,29 @@
   Aetherfall: Dungeons – Website (statisches HTML, ohne Build-Schritt).
   Sichtbare Texte kommen aus assets/js/lang-site.js / lang-legal.js (Deutsch und Englisch); der deutsche Text im HTML
   ist nur der Rückfall ohne JavaScript. Platzhalter (Name, Anschrift, E-Mail …) stehen zentral in assets/js/config.js.
-  Die Domain https://aetherfall.example in <head> durch die eigene ersetzen (siehe README.md › Landing Page).
+  Adresse der Website: https://aetherfallroe.com/dungeons/ – bei einem Umzug in <head>, sitemap.xml, robots.txt und assets/js/config.js anpassen
+  (siehe README.md › Landing Page › Hosting).
 -->
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://*.clerk.accounts.dev https://clerk.aetherfall.example https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://img.clerk.com; font-src 'self'; connect-src 'self' https://*.clerk.accounts.dev https://clerk.aetherfall.example https://*.supabase.co; frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; media-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://*.clerk.accounts.dev https://clerk.aetherfallroe.com https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://img.clerk.com; font-src 'self'; connect-src 'self' https://*.clerk.accounts.dev https://clerk.aetherfallroe.com https://*.supabase.co; frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; media-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Widerrufsbelehrung – Aetherfall: Dungeons</title>
 <meta name="description" content="Widerrufsbelehrung und Hinweise zu digitalen Inhalten bei Aetherfall: Dungeons.">
 <meta name="robots" content="index, follow">
 <meta name="theme-color" content="#0d0907">
 <meta name="color-scheme" content="dark">
-<link rel="canonical" href="https://aetherfall.example/widerruf.html">
-<link rel="alternate" hreflang="de" href="https://aetherfall.example/widerruf.html">
-<link rel="alternate" hreflang="en" href="https://aetherfall.example/widerruf.html?lang=en">
-<link rel="alternate" hreflang="x-default" href="https://aetherfall.example/widerruf.html">
+<link rel="canonical" href="https://aetherfallroe.com/dungeons/widerruf.html">
+<link rel="alternate" hreflang="de" href="https://aetherfallroe.com/dungeons/widerruf.html">
+<link rel="alternate" hreflang="en" href="https://aetherfallroe.com/dungeons/widerruf.html?lang=en">
+<link rel="alternate" hreflang="x-default" href="https://aetherfallroe.com/dungeons/widerruf.html">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Aetherfall: Dungeons">
 <meta property="og:title" content="Widerrufsbelehrung – Aetherfall: Dungeons">
 <meta property="og:description" content="Widerrufsbelehrung und Hinweise zu digitalen Inhalten bei Aetherfall: Dungeons.">
-<meta property="og:url" content="https://aetherfall.example/widerruf.html">
-<meta property="og:image" content="https://aetherfall.example/assets/img/og-image.png">
+<meta property="og:url" content="https://aetherfallroe.com/dungeons/widerruf.html">
+<meta property="og:image" content="https://aetherfallroe.com/dungeons/assets/img/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Aetherfall: Dungeons – Logo mit Ätherkristall über schwebenden Himmelsinseln">
@@ -33,7 +34,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Widerrufsbelehrung – Aetherfall: Dungeons">
 <meta name="twitter:description" content="Widerrufsbelehrung und Hinweise zu digitalen Inhalten bei Aetherfall: Dungeons.">
-<meta name="twitter:image" content="https://aetherfall.example/assets/img/og-image.png">
+<meta name="twitter:image" content="https://aetherfallroe.com/dungeons/assets/img/og-image.png">
 <meta name="twitter:image:alt" content="Aetherfall: Dungeons – Logo mit Ätherkristall über schwebenden Himmelsinseln">
 <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon.ico" sizes="32x32">
@@ -84,7 +85,7 @@
     <nav data-i18n-attr="aria-label:foot.legalNav" aria-label="Rechtliches"><ul class="footLinks"><li><a href="impressum.html" data-i18n="foot.imprint">Impressum</a></li><li><a href="datenschutz.html" data-i18n="foot.privacy">Datenschutz</a></li><li><a href="agb.html" data-i18n="foot.terms">AGB</a></li><li><a href="widerruf.html" data-i18n="foot.withdrawal" aria-current="page">Widerruf</a></li><li><a href="kontakt.html" data-i18n="foot.contact">Kontakt</a></li></ul></nav>
     <div class="langSwitch" role="group" data-i18n-attr="aria-label:lang.label" aria-label="Sprache wählen"><button type="button" data-setlang="de" lang="de" aria-pressed="true" aria-label="DE – Deutsch">DE</button><button type="button" data-setlang="en" lang="en" aria-pressed="false" aria-label="EN – English">EN</button></div>
     <div class="footMeta">
-      <p>© <span data-year>2026</span> <span data-cfg="NAME">[NAME]</span> · Aetherfall: Dungeons · <span data-i18n="foot.rights">Alle Rechte vorbehalten.</span></p>
+      <p>© <span data-year>2026</span> <span data-cfg="NAME">RagedSky UG (haftungsbeschränkt) i. G.</span> · Aetherfall: Dungeons · <span data-i18n="foot.rights">Alle Rechte vorbehalten.</span></p>
       <p data-i18n-html="foot.storage">Diese Website verwendet nur technisch notwendige Speicherungen (Sprache, Anmeldung) – keine Tracker, keine Analyse, keine Werbung. <a href="datenschutz.html#s9">Mehr zu Cookies und Speicher</a></p>
       <p data-media-settings hidden><button type="button" class="linkBtn" data-i18n="foot.mediaSettings">Einstellungen für externe Medien</button></p>
     </div>

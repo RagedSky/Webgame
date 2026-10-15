@@ -2,7 +2,7 @@
 
 Ein Action-RPG im Voxel-Look mit offener Welt aus schwebenden Himmelsinseln. Das Repository enthält zwei Teile:
 
-- **Website** (Landing Page) im Wurzelverzeichnis: Startseite, Anmeldung/Registrierung (Clerk), Impressum, Datenschutz, AGB,
+- **Website** (Landing Page, online unter https://aetherfallroe.com/dungeons/) im Wurzelverzeichnis des Repositorys: Startseite, Anmeldung/Registrierung (Clerk), Impressum, Datenschutz, AGB,
   Widerruf, Kontakt, 404 – statisches HTML/CSS/JS ohne Build-Schritt, Deutsch und Englisch. Details: [Landing Page](#landing-page-website).
 - **Spiel** in [`play/index.html`](play/index.html) – weiterhin **eine einzige Datei**: HTML, CSS und JavaScript inline; Three.js (r128) und
   supabase-js liegen lokal in `play/vendor/` (Ersatz: CDN), die Pixel-Schriften in `assets/fonts/`. Figuren, Gebäude, Icons, Porträts,
@@ -11,19 +11,21 @@ Ein Action-RPG im Voxel-Look mit offener Welt aus schwebenden Himmelsinseln. Das
 ## Starten
 
 Die Website über **http(s)** ausliefern, z. B. im Repository-Ordner `npx serve .` oder `python3 -m http.server 8080`, dann
-`http://localhost:8080/` (Website) bzw. `http://localhost:8080/play/` (Spiel) öffnen. Für Online-Konten (Clerk) ist http(s) Pflicht,
+`http://localhost:8080/` (Website) bzw. `http://localhost:8080/play/` (Spiel) öffnen (Seiten und Spiel nutzen relative Pfade; nur die
+404-Seite erwartet den Ordner `/dungeons/`). Für Online-Konten (Clerk) ist http(s) Pflicht,
 `file://` geht nicht. Ohne Konfiguration läuft das Spiel im **Gastmodus** mit lokalem Speicher.
 
 ## Landing Page (Website)
 
-Einstiegspunkt auf der Hauptdomain: Startseite mit Anmeldung und allen Rechtsseiten, von dort ins Spiel unter `/play/` (gleiche Domain,
-damit Website und Spiel dieselbe Clerk-Sitzung nutzen). Statisches HTML/CSS/JavaScript ohne Framework und ohne Build-Schritt –
-jeder einfache Webspace reicht.
+Adresse: **https://aetherfallroe.com/dungeons/** – Startseite mit Anmeldung und allen Rechtsseiten, von dort ins Spiel unter
+`/dungeons/play/` (gleiche Domain, damit Website und Spiel dieselbe Clerk-Sitzung nutzen). Auf `aetherfallroe.com/` selbst liegt
+*Aetherfall: Realm of Embers*; die Website bleibt vollständig im Ordner `dungeons/`. Statisches HTML/CSS/JavaScript ohne Framework und
+ohne Build-Schritt – jeder einfache Webspace reicht (gehostet bei iFastNet, Apache).
 
 ### Ordnerstruktur
 
 ```
-/                              Wurzel der Domain
+dungeons/                      Ordner auf dem Webspace (public_html/dungeons/ = https://aetherfallroe.com/dungeons/)
 ├── index.html                 Startseite (Hero, Features, Galerie, Trailer, Story, FAQ, Neuigkeiten)
 ├── anmelden.html              Anmeldung (Clerk SignIn inkl. „Passwort vergessen“)
 ├── registrieren.html          Registrierung (Pflicht-Zustimmung + Clerk SignUp)
@@ -32,21 +34,23 @@ jeder einfache Webspace reicht.
 ├── agb.html                   Nutzungsbedingungen  │ (Deutsch + Englisch)
 ├── widerruf.html              Widerrufsbelehrung   ┘
 ├── kontakt.html               Kontakt (E-Mail, Themen mit Betreff, Postanschrift – bewusst ohne Formular)
-├── 404.html                   Fehlerseite (Pfade ab der Wurzel, da unter beliebigen Adressen ausgeliefert)
-├── favicon.ico  robots.txt  sitemap.xml  site.webmanifest
-├── _headers  _redirects       Sicherheits-Header/CSP und Weiterleitung für Netlify bzw. Cloudflare Pages
-├── .htaccess                  dasselbe für Apache
+├── 404.html                   Fehlerseite (absolute Pfade /dungeons/…, da unter beliebigen Adressen ausgeliefert)
+├── favicon.ico  sitemap.xml  site.webmanifest
+├── robots.txt                 nur Vorlage – Suchmaschinen lesen robots.txt ausschließlich im Hauptverzeichnis der Domain
+├── .htaccess                  Apache: Fehlerseite, HTTPS, /play → /play/, Sicherheits-Header/CSP, Caching
 ├── assets/
 │   ├── css/site.css           Gestaltung (Tokens in :root, responsiv, Fokus, reduzierte Bewegung, Druck)
 │   ├── fonts/                 Press Start 2P + VT323 (woff2, OFL), fonts.css – lokal, auch vom Spiel genutzt
 │   ├── img/                   favicon.svg, og-image.png (1200×630), apple-touch-icon.png, icon-192/512.png
+│   ├── media/                 trailer.mp4 (1280×720, 64 s), trailer-poster.webp, trailer-en.vtt (englische Untertitel),
+│   │                          shot-*.webp (Galerie, je 1280 px + 640 px; Karte und Creator je Sprache)
 │   └── js/
 │       ├── config.js          ZENTRALE KONFIGURATION (SITE_CONFIG)
 │       ├── i18n.js            Sprachsystem (t('schluessel'), Sprachwahl, Speicherung)
 │       ├── lang-site.js       Texte Website/Oberfläche (de/en)
 │       ├── lang-legal.js      Rechtstexte (de/en)
 │       ├── news.js            Neuigkeiten/Changelog (neuen Eintrag oben einfügen)
-│       ├── site.js            Seitenaufbau, Navigation, Platzhalter, Grafiken, FAQ, News, Trailer, strukturierte Daten
+│       ├── site.js            Seitenaufbau, Navigation, Platzhalter, Grafiken, FAQ, News, Galerie, Trailer, strukturierte Daten
 │       ├── auth.js            Clerk laden, Anmelde-/Registrierseite, Zustimmung (Tabelle consents)
 │       └── clerk-de.js        deutsche Texte der Clerk-Komponenten (@clerk/localizations, MIT)
 ├── play/
@@ -65,9 +69,11 @@ jeder einfache Webspace reicht.
 
 Alle anpassbaren Werte stehen nur hier und werden automatisch in Startseite, Anmeldung und alle Rechtsseiten eingesetzt:
 `SITE_URL`, `GAME_PATH`, `CLERK_PUBLISHABLE_KEY`, `SUPABASE_URL`, `SUPABASE_KEY`, `CONTACT_EMAIL`, `MIN_AGE` (Standard 16),
-`CONSENT_TEXT_VERSION`, die Angaben unter `LEGAL` (Name, Anschrift, USt-ID …), `LEGAL_DOCS` (Version und Datum je Rechtstext) und
-optional `TRAILER_URL`/`TRAILER_POSTER`, `TRAILER_EMBED`, `SCREENSHOTS`. Werte in `[ECKIGEN KLAMMERN]` sind Platzhalter: Sie werden
-auf der Seite gelb markiert und in der Konsole als Warnung gemeldet. Ein leerer Wert blendet die Angabe aus (z. B. keine USt-ID).
+`CONSENT_TEXT_VERSION`, die Angaben unter `LEGAL` (Firma, Anschrift, Geschäftsführung, Hoster, Aufsichtsbehörde …), `LEGAL_DOCS`
+(Version und Datum je Rechtstext) sowie die Medien `TRAILER_URL`, `TRAILER_POSTER`, `TRAILER_SUBTITLES`, `TRAILER_EMBED`, `SCREENSHOTS`.
+Werte in `[ECKIGEN KLAMMERN]` sind Platzhalter – auch als Teil eines Werts, z. B. `'[STRASSE UND HAUSNUMMER]\n47051 Duisburg'`: Sie
+werden auf der Seite gelb markiert und in der Konsole als Warnung gemeldet. Ein leerer Wert blendet die Angabe aus (z. B. keine USt-ID).
+Texte, die je Sprache verschieden sind, als `{ de: '…', en: '…' }` angeben.
 
 **Nur öffentliche Schlüssel** (Clerk Publishable Key, Supabase-URL und Publishable/Anon Key). Secret Keys (`sk_…`), Service-Role- oder
 `sb_secret_…`-Schlüssel erkennt die Website, ignoriert sie und meldet einen Fehler in der Konsole.
@@ -86,11 +92,17 @@ aus `lang-legal.js` aufgebaut (Abschnitte `präfix.s<n>.h/.b`, Inhaltsverzeichni
 
 ### Medien
 
-Screenshots und Trailer sind gezeichnete Platzhalter (SVG, prozedural), die ohne Medien sauber aussehen. Eigene Screenshots:
-`SCREENSHOTS: [{ src: 'assets/media/shot1.webp', alt: { de: '…', en: '…' } }]`. Eigener Trailer: `TRAILER_URL: 'assets/media/trailer.mp4'`
-(wird erst beim Abspielen geladen). Für ein externes Video (z. B. YouTube) `TRAILER_EMBED` setzen: Es erscheint eine Zwei-Klick-Lösung
-mit gleichwertigen Knöpfen „Video laden“ / „Nicht laden“; erst nach Zustimmung wird der Anbieter kontaktiert, widerrufbar über
-„Einstellungen für externe Medien“ in der Fußzeile. Dann zusätzlich die Domain in der CSP (`frame-src`) ergänzen.
+- **Trailer:** eigene Datei `assets/media/trailer.mp4` (H.264/AAC, „faststart“ – startet sofort, ohne die ganzen 21 MB zu laden;
+  geladen wird erst beim Abspielen). Die Texttafeln im Video sind deutsch; auf der englischen Seite sind englische Untertitel
+  (`trailer-en.vtt`) automatisch eingeschaltet, auf der deutschen über das Untertitel-Menü des Players wählbar.
+- **Galerie:** sechs echte Bilder aus dem Spiel bzw. Trailer (`SCREENSHOTS`: großes Bild `src`, Vorschau `thumb`, Alternativtext und
+  Bildunterschrift je Sprache; Weltkarte und Charakter-Creator zeigen die Spieloberfläche in der jeweiligen Sprache). Ein Klick öffnet
+  die Großansicht (`<dialog>`: Pfeiltasten blättern, Esc schließt, Fokus kehrt zurück); ohne JavaScript öffnet der Link das Bild.
+  Neue Bilder: WebP mit 1280×720 und 640×360 nach `assets/media/` legen und in `SCREENSHOTS` eintragen. `[]` blendet die Galerie aus,
+  `TRAILER_URL: ''` zeigt wieder den gezeichneten Platzhalter.
+- **Externes Video:** Für YouTube & Co. `TRAILER_EMBED` setzen (statt `TRAILER_URL`): Es erscheint eine Zwei-Klick-Lösung
+  mit gleichwertigen Knöpfen „Video laden“ / „Nicht laden“; erst nach Zustimmung wird der Anbieter kontaktiert, widerrufbar über
+  „Einstellungen für externe Medien“ in der Fußzeile. Dann zusätzlich die Domain in der CSP (`frame-src`) ergänzen.
 
 ### Anmeldung mit Clerk
 
@@ -119,12 +131,13 @@ mit gleichwertigen Knöpfen „Video laden“ / „Nicht laden“; erst nach Zus
 1. **User & Authentication › Email, phone, username:** E-Mail-Adresse als Kennung, Verifizierung per **E-Mail-Code**;
    **Password** aktivieren (Passwort-Reset per E-Mail-Code ist dann automatisch dabei).
 2. **SSO connections** (optional): z. B. Google; für die Produktion eigene OAuth-Zugangsdaten hinterlegen.
-3. **Paths** (Komponenten-Pfade der Instanz): Sign-in-URL `https://<deine-domain>/anmelden.html`, Sign-up-URL
-   `https://<deine-domain>/registrieren.html`, nach dem Abmelden `https://<deine-domain>/`. (Die Website setzt diese Werte zusätzlich
-   selbst, das Dashboard wird für E-Mail-Links und das Account Portal gebraucht.)
-4. **Domains:** Für die Produktionsinstanz die eigene Domain eintragen und die angezeigten DNS-Einträge setzen (Frontend-API
-   `clerk.<deine-domain>`, E-Mail). Website und Spiel laufen auf derselben Domain; andere Origins (z. B. `www.`) als erlaubte Origins
-   bzw. Weiterleitungsziele ergänzen. Die Entwicklungsinstanz (`pk_test_…`) funktioniert ohne DNS auch auf `localhost`.
+3. **Paths** (Komponenten-Pfade der Instanz): Sign-in-URL `https://aetherfallroe.com/dungeons/anmelden.html`, Sign-up-URL
+   `https://aetherfallroe.com/dungeons/registrieren.html`, nach dem Abmelden `https://aetherfallroe.com/dungeons/`. (Die Website setzt
+   diese Werte zusätzlich selbst, das Dashboard wird für E-Mail-Links und das Account Portal gebraucht.)
+4. **Domains:** Produktionsinstanz für `aetherfallroe.com` anlegen und die angezeigten DNS-Einträge bei iFastNet setzen
+   (cPanel › *Zone Editor*: CNAME `clerk` → Frontend-API, dazu `accounts`, `clkmail`, `clk._domainkey`, `clk2._domainkey` – genaue
+   Ziele zeigt das Clerk-Dashboard). Website und Spiel laufen auf derselben Domain; `https://www.aetherfallroe.com` ggf. als erlaubte
+   Origin ergänzen. Die Entwicklungsinstanz (`pk_test_…`) funktioniert ohne DNS auch auf `localhost`.
 5. **Integrations › Supabase** („Connect with Supabase“): setzt `role: authenticated` im Session-Token.
 6. **Attack protection › Bot protection** kann aktiv bleiben (Cloudflare Turnstile, in der CSP freigegeben).
 7. **Kontolöschung durch Nutzer im Clerk-Dialog ausschalten** (Einstellung „Allow users to delete their accounts“ / „Delete account“
@@ -158,8 +171,8 @@ Secrets im Code – alles kommt aus Umgebungsvariablen:
 ```bash
 supabase functions deploy delete-account --no-verify-jwt     # Clerk-Token wird in der Funktion selbst geprüft
 supabase secrets set CLERK_SECRET_KEY=sk_live_…              # Clerk Dashboard › API Keys (nur hier, nie im Frontend)
-supabase secrets set CLERK_ISSUER=https://clerk.deine-domain.de   # Frontend-API-URL (Entwicklung: https://<name>.clerk.accounts.dev)
-supabase secrets set ALLOWED_ORIGINS=https://deine-domain.de,https://www.deine-domain.de
+supabase secrets set CLERK_ISSUER=https://clerk.aetherfallroe.com    # Frontend-API-URL (Entwicklung: https://<name>.clerk.accounts.dev)
+supabase secrets set ALLOWED_ORIGINS=https://aetherfallroe.com,https://www.aetherfallroe.com
 # SUPABASE_URL und SUPABASE_SERVICE_ROLE_KEY stellt Supabase in Edge Functions automatisch bereit.
 ```
 
@@ -199,21 +212,35 @@ lokale Kopien des Kontos entfernen, abmelden (ohne erneuten Cloud-Abgleich).
 
 ### Hosting
 
-- **Netlify / Cloudflare Pages:** Repository-Wurzel als Veröffentlichungsordner (kein Build-Befehl). `_headers`, `_redirects` und
-  `404.html` werden automatisch genutzt.
-- **Apache:** `.htaccess` (Fehlerseite, HTTPS, `/play` → `/play/`, Header, Caching).
-- **nginx:** `error_page 404 /404.html;`, `location = /play { return 301 /play/; }`, die Header aus `_headers` per `add_header … always;`.
-- **GitHub Pages:** funktioniert (404.html wird genutzt), erlaubt aber keine eigenen Header – dann gilt für die Website nur die
-  CSP aus den `<meta>`-Tags, das Spiel hat keine CSP. Für `/play` auf derselben Domain eine eigene Domain verwenden.
-- **Domain:** In allen `*.html`, `sitemap.xml`, `robots.txt`, `_headers`, `.htaccess` und `assets/js/config.js` die Platzhalter-Domain
-  ersetzen (auch in der CSP: `clerk.aetherfall.example` = Clerk-Frontend-API der Produktion), z. B.
-  `grep -rlI --exclude-dir=.git 'aetherfall\.example' . | xargs sed -i 's/aetherfall\.example/deine-domain.de/g'`
-- **HTTPS** ist Pflicht (Clerk). `Strict-Transport-Security` erst aktivieren, wenn HTTPS dauerhaft funktioniert.
-- **Sicherheits-Header:** CSP, `X-Content-Type-Options`, `X-Frame-Options`/`frame-ancestors`, `Referrer-Policy`, `Permissions-Policy`,
-  `Cross-Origin-Opener-Policy`, HSTS. Erlaubte Fremdquellen: Clerk (`*.clerk.accounts.dev`, `clerk.<deine-domain>`, `img.clerk.com`),
-  Cloudflare Turnstile (`challenges.cloudflare.com`, Bot-Schutz von Clerk), Supabase (`*.supabase.co`, für das Spiel auch `wss://`).
-  Die Header-CSP erlaubt, was das Spiel braucht (inline-Skripte der Einzeldatei); die Website-Seiten verschärfen sie per
-  `<meta http-equiv="Content-Security-Policy">` (keine inline-Skripte). Eigene Supabase-Domain oder externe Videos → CSP ergänzen.
+**iFastNet (Premium, cPanel, Apache)** – die Website liegt im Ordner `public_html/dungeons/`:
+
+1. Hochladen (cPanel › *Dateimanager* oder FTP): `index.html`, `anmelden.html`, `registrieren.html`, `impressum.html`,
+   `datenschutz.html`, `agb.html`, `widerruf.html`, `kontakt.html`, `404.html`, `favicon.ico`, `sitemap.xml`, `site.webmanifest`,
+   `.htaccess` sowie die Ordner `assets/` und `play/` nach `public_html/dungeons/`. **Nicht** hochladen: `supabase/`, `README.md`,
+   `.git` (die `.htaccess` sperrt sie zusätzlich). Dateien mit Punkt (`.htaccess`) im Dateimanager über *Einstellungen › Versteckte
+   Dateien anzeigen* sichtbar machen.
+2. **HTTPS** (bei iFastNet bereits aktiv) ist Pflicht für Clerk. Die `.htaccess` leitet auf HTTPS um und setzt HSTS ohne
+   `includeSubDomains` – HSTS gilt trotzdem für den ganzen Host `aetherfallroe.com`, also auch für die Hauptseite.
+3. **robots.txt:** Suchmaschinen lesen nur `https://aetherfallroe.com/robots.txt` (Hauptseite). Dort die Zeile
+   `Sitemap: https://aetherfallroe.com/dungeons/sitemap.xml` ergänzen; die Datei `dungeons/robots.txt` ist nur die Vorlage.
+4. **Server-Logs** (für die Datenschutzerklärung, `LEGAL.LOG_DAYS`): cPanel › *Metriken › Raw Access* – „Archive logs in your home
+   directory“ ausschalten bzw. „Remove the previous month's archived logs“ einschalten. Wie lange iFastNet selbst Logs aufbewahrt und
+   ob ein Vertrag zur Auftragsverarbeitung (AV-Vertrag) möglich ist, beim iFastNet-Support erfragen (`LEGAL.HOSTING_DPA`).
+5. **Prüfen:** `https://aetherfallroe.com/dungeons/` lädt, `…/dungeons/gibtsnicht` zeigt die 404-Seite, `…/dungeons/play` leitet auf
+   `…/dungeons/play/` um, in den Entwicklertools (Netzwerk › Antwort-Header) stehen `Content-Security-Policy` und `X-Frame-Options`.
+
+**Sicherheits-Header** (`.htaccess`): CSP, `X-Content-Type-Options`, `X-Frame-Options`/`frame-ancestors`, `Referrer-Policy`,
+`Permissions-Policy`, `Cross-Origin-Opener-Policy`, HSTS. Erlaubte Fremdquellen: Clerk (`*.clerk.accounts.dev`,
+`clerk.aetherfallroe.com`, `img.clerk.com`), Cloudflare Turnstile (`challenges.cloudflare.com`, Bot-Schutz von Clerk), Supabase
+(`*.supabase.co`, für das Spiel auch `wss://`). Die Header-CSP erlaubt, was das Spiel braucht (inline-Skripte der Einzeldatei); die
+Website-Seiten verschärfen sie per `<meta http-equiv="Content-Security-Policy">` (keine inline-Skripte). Eigene Supabase-Domain oder
+externe Videos → CSP ergänzen (Header und `<meta>`).
+
+**Anderer Ort oder anderer Hoster:** Die Adresse steht in `assets/js/config.js` (`SITE_URL`), in den `<head>`-Bereichen der HTML-Dateien
+(canonical, hreflang, Open Graph), in `sitemap.xml`, `robots.txt`, in der `.htaccess` (`/dungeons/`) und in `404.html` (absolute Pfade).
+Ersetzen z. B. mit `grep -rlI --exclude-dir=.git 'aetherfallroe\.com/dungeons' . | xargs sed -i 's#aetherfallroe\.com/dungeons#neue-domain.de#g'`
+und danach `/dungeons/` in `.htaccess` und `404.html` anpassen. nginx: `error_page 404 /dungeons/404.html;`, die Header aus der
+`.htaccess` per `add_header … always;`. Netlify/Cloudflare Pages: die Header als `_headers`-Datei anlegen.
 
 ### Datenschutz-Technik
 
@@ -227,9 +254,8 @@ in der Konsole.
 
 | Wo | Platzhalter |
 |---|---|
-| `assets/js/config.js` | `SITE_URL`, `CONTACT_EMAIL` `[E-MAIL]`, `LEGAL.NAME` `[NAME]`, `LEGAL.ADDRESS` `[ANSCHRIFT]`, `LEGAL.VAT_ID` `[UST-ID, falls vorhanden]` (oder `''`), `LEGAL.AUTHORITY`, `LEGAL.HOSTING`, `LEGAL.HOSTING_THIRD_COUNTRY`, `LEGAL.LOG_DAYS`, `LEGAL.SUPABASE_REGION`; optional `PHONE`, `REGISTER`, `RESPONSIBLE`, `PRIVACY_EMAIL`, `DPO`; `LEGAL_DOCS` (Version/Datum) |
-| HTML-Köpfe, `sitemap.xml`, `robots.txt`, `_headers`, `.htaccess` | Domain `aetherfall.example` |
-| `play/index.html` (`CONFIG`) | dieselben Clerk-/Supabase-Schlüssel wie die Website; `legalTerms`, `legalPrivacy`, `minAge` passend zu `config.js` |
+| `assets/js/config.js` | **offen:** `LEGAL.ADDRESS` `[STRASSE UND HAUSNUMMER]`, `LEGAL.REPRESENTED` `[VOR- UND NACHNAME DER GESCHÄFTSFÜHRUNG]`, `LEGAL.HOSTING_DPA` (AV-Vertrag mit iFastNet), `LEGAL.LOG_DAYS` (Log-Speicherdauer bei iFastNet); **nach der Handelsregistereintragung:** „i. G.“ aus `LEGAL.NAME` entfernen, `LEGAL.REGISTER` und ggf. `LEGAL.VAT_ID` eintragen; **ausgefüllt:** `SITE_URL`, `CONTACT_EMAIL`, `NAME`, `PRIVACY_EMAIL`, `AUTHORITY` (LDI NRW), `HOSTING` (iFastNet), `HOSTING_THIRD_COUNTRY` (UK, Angemessenheitsbeschluss), `SUPABASE_REGION` (EU, Irland); `LEGAL_DOCS` (Version/Datum) |
+| `assets/js/config.js` und `play/index.html` (`CONFIG`) | nach der Umstellung auf Clerk-Produktion `pk_live_…` in **beiden** Dateien; `legalTerms`, `legalPrivacy`, `minAge` im Spiel passend zu `config.js` |
 | Datenschutz Abschnitt 16, AGB § 7 (als inaktiv markiert) | `[ZAHLUNGSANBIETER …]`, `[PREISE …]`, Fristen – erst bei Einführung eines Shops |
 | Supabase Secrets | `CLERK_SECRET_KEY`, `CLERK_ISSUER`, `ALLOWED_ORIGINS` (nur serverseitig) |
 
@@ -238,14 +264,16 @@ der Veröffentlichung prüfen lassen.
 
 ### Tests
 
-Ende-zu-Ende in Deutsch und Englisch (Playwright, echter HTTP-Server mit `_headers`, Clerk-Testattrappe, PostgREST-Nachbildung gegen
+Ende-zu-Ende in Deutsch und Englisch (Playwright, echter HTTP-Server unter `/dungeons/` mit den Headern der `.htaccess`, Clerk-Testattrappe, PostgREST-Nachbildung gegen
 eine lokale Postgres-Datenbank mit den Skripten aus `supabase/`): Startseite, Links, Fußzeile, Rechtsseiten mit eingetragenen Daten,
 SEO, Registrierung mit Pflicht-Checkbox und Speicherung in `consents`, Anmelden/Abmelden/Passwort-Reset, erneute Zustimmung, Spielstart
 als Gast und angemeldet (Sitzung und Sprache übernommen), Rechtslinks/Export/Löschen im Spiel, mobile Breiten 320/390 px, Tastatur,
 reduzierte Bewegung, axe-core (WCAG 2.1 AA inkl. Kontrast), keine Konsolenfehler, keine Anfragen an Dritte ohne Anmeldung.
 SQL (RLS, Rechte, Löschfunktion) und die Edge Function (Signatur, Aussteller, Herkunft, Bestätigung, Löschung, Clerk-Fehler) sind
-separat getestet. Lighthouse (mobil, lokaler Server mit gzip): Startseite 98 / 100 / 100 / 100 (Leistung, Barrierefreiheit,
-Best Practices, SEO), Rechtsseiten 93–96 / 100 / 100 / 100; Anmelde- und Registrierseite sind bewusst `noindex`.
+separat getestet. Dazu Galerie (Bilder je Sprache, Großansicht mit Tastatur), Trailer (Teilabruf, Untertitel), Adressen unter
+`/dungeons/`, Header/Weiterleitung/Sperren der `.htaccess` sowie die echte `config.js` mit ihren markierten offenen Angaben.
+Lighthouse (mobil, lokaler Server mit gzip): Startseite (de/en) und Datenschutz je 100 / 100 / 100 / 100 (Leistung,
+Barrierefreiheit, Best Practices, SEO); Anmelde- und Registrierseite sind bewusst `noindex`.
 
 ## Konfiguration (Online-Konten und Cloud-Spielstände)
 

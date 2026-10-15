@@ -3,12 +3,15 @@
   Aetherfall: Dungeons – Website (statisches HTML, ohne Build-Schritt).
   Sichtbare Texte kommen aus assets/js/lang-site.js / lang-legal.js (Deutsch und Englisch); der deutsche Text im HTML
   ist nur der Rückfall ohne JavaScript. Platzhalter (Name, Anschrift, E-Mail …) stehen zentral in assets/js/config.js.
-  Die Domain https://aetherfall.example in <head> durch die eigene ersetzen (siehe README.md › Landing Page).
+  Adresse der Website: https://aetherfallroe.com/dungeons/ – bei einem Umzug in <head>, sitemap.xml, robots.txt und assets/js/config.js anpassen
+  (siehe README.md › Landing Page › Hosting).
 -->
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://*.clerk.accounts.dev https://clerk.aetherfall.example https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://img.clerk.com; font-src 'self'; connect-src 'self' https://*.clerk.accounts.dev https://clerk.aetherfall.example https://*.supabase.co; frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; media-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://*.clerk.accounts.dev https://clerk.aetherfallroe.com https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://img.clerk.com; font-src 'self'; connect-src 'self' https://*.clerk.accounts.dev https://clerk.aetherfallroe.com https://*.supabase.co; frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; media-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<!-- relative Links in den Texten (z. B. „datenschutz.html#s9“) auf den Website-Ordner beziehen -->
+<base href="/dungeons/">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Seite nicht gefunden – Aetherfall: Dungeons</title>
 <meta name="description" content="Diese Seite gibt es nicht.">
@@ -19,7 +22,7 @@
 <meta property="og:site_name" content="Aetherfall: Dungeons">
 <meta property="og:title" content="Seite nicht gefunden – Aetherfall: Dungeons">
 <meta property="og:description" content="Diese Seite gibt es nicht.">
-<meta property="og:image" content="https://aetherfall.example/assets/img/og-image.png">
+<meta property="og:image" content="https://aetherfallroe.com/dungeons/assets/img/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Aetherfall: Dungeons – Logo mit Ätherkristall über schwebenden Himmelsinseln">
@@ -28,31 +31,31 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Seite nicht gefunden – Aetherfall: Dungeons">
 <meta name="twitter:description" content="Diese Seite gibt es nicht.">
-<meta name="twitter:image" content="https://aetherfall.example/assets/img/og-image.png">
+<meta name="twitter:image" content="https://aetherfallroe.com/dungeons/assets/img/og-image.png">
 <meta name="twitter:image:alt" content="Aetherfall: Dungeons – Logo mit Ätherkristall über schwebenden Himmelsinseln">
-<link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
-<link rel="icon" href="/favicon.ico" sizes="32x32">
-<link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png">
-<link rel="manifest" href="/site.webmanifest">
-<link rel="preload" href="/assets/fonts/press-start-2p-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/css/site.css">
+<link rel="icon" href="/dungeons/assets/img/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/dungeons/favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="/dungeons/assets/img/apple-touch-icon.png">
+<link rel="manifest" href="/dungeons/site.webmanifest">
+<link rel="preload" href="/dungeons/assets/fonts/press-start-2p-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/dungeons/assets/css/site.css">
 <noscript><style>@media (max-width: 940px) { .navToggle { display: none !important; } .headRow { flex-wrap: wrap; } .siteNav { display: flex !important; position: static !important; flex-wrap: wrap; padding: 0 0 12px !important; border: 0 !important; } }</style></noscript>
-<script src="/assets/js/config.js" defer></script>
-<script src="/assets/js/i18n.js" defer></script>
-<script src="/assets/js/lang-site.js" defer></script>
-<script src="/assets/js/site.js" defer></script>
-<script src="/assets/js/auth.js" defer></script>
+<script src="/dungeons/assets/js/config.js" defer></script>
+<script src="/dungeons/assets/js/i18n.js" defer></script>
+<script src="/dungeons/assets/js/lang-site.js" defer></script>
+<script src="/dungeons/assets/js/site.js" defer></script>
+<script src="/dungeons/assets/js/auth.js" defer></script>
 </head>
-<body data-page="404" data-root="/">
-<a class="skip" href="/#main" data-i18n="a11y.skip">Zum Inhalt springen</a>
+<body data-page="404" data-root="/dungeons/">
+<a class="skip" href="/dungeons/#main" data-i18n="a11y.skip">Zum Inhalt springen</a>
 <header class="siteHead">
   <div class="wrap headRow">
-    <a class="brand" href="/"><span class="logoMark" aria-hidden="true"></span><span class="brandTxt"><span class="bMain">Aetherfall</span><span class="srOnly">: </span><span class="bSub">Dungeons</span><span class="srOnly" data-i18n="nav.homeSuffix"> – zur Startseite</span></span></a>
+    <a class="brand" href="/dungeons/"><span class="logoMark" aria-hidden="true"></span><span class="brandTxt"><span class="bMain">Aetherfall</span><span class="srOnly">: </span><span class="bSub">Dungeons</span><span class="srOnly" data-i18n="nav.homeSuffix"> – zur Startseite</span></span></a>
     <button type="button" class="navToggle" aria-expanded="false" aria-controls="siteNav" data-i18n-attr="aria-label:nav.menu" aria-label="Menü öffnen"><span></span></button>
     <nav id="siteNav" class="siteNav" data-i18n-attr="aria-label:nav.main" aria-label="Hauptnavigation">
-      <ul><li><a href="/index.html#features" data-i18n="nav.features">Features</a></li><li><a href="/index.html#galerie" data-i18n="nav.gallery">Galerie</a></li><li><a href="/index.html#story" data-i18n="nav.story">Story</a></li><li><a href="/index.html#faq" data-i18n="nav.faq">FAQ</a></li><li><a href="/index.html#news" data-i18n="nav.news">News</a></li></ul>
+      <ul><li><a href="/dungeons/index.html#features" data-i18n="nav.features">Features</a></li><li><a href="/dungeons/index.html#galerie" data-i18n="nav.gallery">Galerie</a></li><li><a href="/dungeons/index.html#story" data-i18n="nav.story">Story</a></li><li><a href="/dungeons/index.html#faq" data-i18n="nav.faq">FAQ</a></li><li><a href="/dungeons/index.html#news" data-i18n="nav.news">News</a></li></ul>
       <div class="langSwitch" role="group" data-i18n-attr="aria-label:lang.label" aria-label="Sprache wählen"><button type="button" data-setlang="de" lang="de" aria-pressed="true" aria-label="DE – Deutsch">DE</button><button type="button" data-setlang="en" lang="en" aria-pressed="false" aria-label="EN – English">EN</button></div>
-      <div class="authSlot" id="authSlot"><a class="btn small" href="/anmelden.html">Anmelden</a></div>
+      <div class="authSlot" id="authSlot"><a class="btn small" href="/dungeons/anmelden.html">Anmelden</a></div>
     </nav>
   </div>
 </header>
@@ -62,16 +65,16 @@
   <p class="code" data-i18n="nf.code">Fehler 404</p>
   <h1 data-i18n="nf.title">Diese Kammer gibt es nicht</h1>
   <p data-i18n="nf.text">Der Weg, dem du gefolgt bist, endet im Nebel. Vielleicht wurde die Seite verschoben – oder sie hat nie existiert.</p>
-  <div class="ctaRow"><a class="btn gold" href="/" data-i18n="nf.home">Zur Startseite</a><a class="btn" href="/play/?lang=de&amp;start=guest" data-play data-i18n="nf.play">Jetzt spielen</a></div>
+  <div class="ctaRow"><a class="btn gold" href="/dungeons/" data-i18n="nf.home">Zur Startseite</a><a class="btn" href="/dungeons/play/?lang=de&amp;start=guest" data-play data-i18n="nf.play">Jetzt spielen</a></div>
 </main>
 
 <footer class="siteFoot">
   <div class="wrap footGrid">
     <div class="footBrand"><span class="logoMark" aria-hidden="true"></span><p data-i18n="foot.tagline">Ein Voxel-Action-RPG über den Himmelsinseln – kostenlos im Browser.</p></div>
-    <nav data-i18n-attr="aria-label:foot.legalNav" aria-label="Rechtliches"><ul class="footLinks"><li><a href="/impressum.html" data-i18n="foot.imprint">Impressum</a></li><li><a href="/datenschutz.html" data-i18n="foot.privacy">Datenschutz</a></li><li><a href="/agb.html" data-i18n="foot.terms">AGB</a></li><li><a href="/widerruf.html" data-i18n="foot.withdrawal">Widerruf</a></li><li><a href="/kontakt.html" data-i18n="foot.contact">Kontakt</a></li></ul></nav>
+    <nav data-i18n-attr="aria-label:foot.legalNav" aria-label="Rechtliches"><ul class="footLinks"><li><a href="/dungeons/impressum.html" data-i18n="foot.imprint">Impressum</a></li><li><a href="/dungeons/datenschutz.html" data-i18n="foot.privacy">Datenschutz</a></li><li><a href="/dungeons/agb.html" data-i18n="foot.terms">AGB</a></li><li><a href="/dungeons/widerruf.html" data-i18n="foot.withdrawal">Widerruf</a></li><li><a href="/dungeons/kontakt.html" data-i18n="foot.contact">Kontakt</a></li></ul></nav>
     <div class="langSwitch" role="group" data-i18n-attr="aria-label:lang.label" aria-label="Sprache wählen"><button type="button" data-setlang="de" lang="de" aria-pressed="true" aria-label="DE – Deutsch">DE</button><button type="button" data-setlang="en" lang="en" aria-pressed="false" aria-label="EN – English">EN</button></div>
     <div class="footMeta">
-      <p>© <span data-year>2026</span> <span data-cfg="NAME">[NAME]</span> · Aetherfall: Dungeons · <span data-i18n="foot.rights">Alle Rechte vorbehalten.</span></p>
+      <p>© <span data-year>2026</span> <span data-cfg="NAME">RagedSky UG (haftungsbeschränkt) i. G.</span> · Aetherfall: Dungeons · <span data-i18n="foot.rights">Alle Rechte vorbehalten.</span></p>
       <p data-i18n-html="foot.storage">Diese Website verwendet nur technisch notwendige Speicherungen (Sprache, Anmeldung) – keine Tracker, keine Analyse, keine Werbung. <a href="datenschutz.html#s9">Mehr zu Cookies und Speicher</a></p>
       <p data-media-settings hidden><button type="button" class="linkBtn" data-i18n="foot.mediaSettings">Einstellungen für externe Medien</button></p>
     </div>

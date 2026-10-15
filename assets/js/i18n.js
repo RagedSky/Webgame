@@ -11,7 +11,9 @@
   'use strict';
   const STORE_SITE = 'aetherfall_lang', STORE_GAME = 'aetherfall_settings';
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  const isPh = v => typeof v === 'string' && /^\[.*\]$/s.test(v.trim());
+  // Platzhalter sind Werte oder Teile von Werten in [ECKIGEN KLAMMERN], z. B. '[STRASSE UND HAUSNUMMER]\n47051 Duisburg'
+  const PH = /\[[^\[\]\n]+\]/g;
+  const phs = v => (typeof v === 'string' && v.match(PH)) || [];
   // Speicherzugriffe: nie werfen, Fehler aber protokollieren
   const Store = {
     get(k) { try { return window.localStorage ? localStorage.getItem(k) : null; } catch (e) { console.warn('[Aetherfall] localStorage nicht lesbar:', k, e); return null; } },
@@ -39,14 +41,22 @@
       console.warn(`[Aetherfall] Text fehlt (${this.lang}): ${key}`);
     },
     // Werte aus der Konfiguration, die in allen Texten als {NAME} usw. verfügbar sind
+    // Wert je Sprache: 'text' oder { de: '…', en: '…' } (fehlt die Sprache, gilt Deutsch)
+    pick(x) { if (x && typeof x === 'object') return x[this.lang] != null ? x[this.lang] : x.de != null ? x.de : ''; return x == null ? '' : x; },
+    hasPh(v) { return phs(String(v == null ? '' : v)).length > 0; },
+    // je Sprache einmal berechnet (jeder Text-Aufruf braucht die Werte); Rückgabe ist eine Kopie, die Aufrufer ergänzen dürfen
     cfg() {
-      const C = window.SITE_CONFIG || {}, L = C.LEGAL || {}, D = C.LEGAL_DOCS || {};
-      const email = C.CONTACT_EMAIL || '';
+      if (!this.cfgCache || this.cfgCache.lang !== this.lang) this.cfgCache = { lang: this.lang, v: this.cfgBuild() };
+      return Object.assign({}, this.cfgCache.v);
+    },
+    cfgBuild() {
+      const C = window.SITE_CONFIG || {}, L = C.LEGAL || {}, D = C.LEGAL_DOCS || {}, p = x => String(this.pick(x));
+      const email = p(C.CONTACT_EMAIL);
       const v = {
-        NAME: L.NAME || '', ADDRESS: L.ADDRESS || '', PHONE: L.PHONE || '', VAT_ID: L.VAT_ID || '', REGISTER: L.REGISTER || '',
-        RESPONSIBLE: L.RESPONSIBLE || '', DPO: L.DPO || '', AUTHORITY: L.AUTHORITY || '', HOSTING: L.HOSTING || '',
-        HOSTING_THIRD_COUNTRY: L.HOSTING_THIRD_COUNTRY || '', LOG_DAYS: L.LOG_DAYS || '', SUPABASE_REGION: L.SUPABASE_REGION || '',
-        EMAIL: email, PRIVACY_EMAIL: L.PRIVACY_EMAIL || email, MIN_AGE: String(C.MIN_AGE || 16),
+        NAME: p(L.NAME), ADDRESS: p(L.ADDRESS), REPRESENTED: p(L.REPRESENTED), PHONE: p(L.PHONE), VAT_ID: p(L.VAT_ID), REGISTER: p(L.REGISTER),
+        RESPONSIBLE: p(L.RESPONSIBLE), DPO: p(L.DPO), AUTHORITY: p(L.AUTHORITY), HOSTING: p(L.HOSTING), HOSTING_DPA: p(L.HOSTING_DPA),
+        HOSTING_THIRD_COUNTRY: p(L.HOSTING_THIRD_COUNTRY), LOG_DAYS: p(L.LOG_DAYS), SUPABASE_REGION: p(L.SUPABASE_REGION),
+        EMAIL: email, PRIVACY_EMAIL: p(L.PRIVACY_EMAIL) || email, MIN_AGE: String(C.MIN_AGE || 16),
         SITE_URL: C.SITE_URL || '', SITE: String(C.SITE_URL || '').replace(/^https?:\/\//, '').replace(/\/.*$/, ''), YEAR: String(new Date().getFullYear()),
         MEDIA_HOST: (() => { try { return C.TRAILER_EMBED ? new URL(C.TRAILER_EMBED).hostname : ''; } catch (e) { return ''; } })(),
       };
@@ -58,7 +68,7 @@
       const s = this.raw(key), V = Object.assign(this.cfg(), vars || {});
       return String(s).replace(/\{([A-Za-z0-9_]+)\}/g, (m, k) => {
         if (!(k in V)) return m;
-        const val = String(V[k]); if (isPh(val)) this.placeholders.add(val);
+        const val = String(V[k]); phs(val).forEach(x => this.placeholders.add(x));
         return val.replace(/\s*\n\s*/g, ', ');
       });
     },
@@ -66,22 +76,32 @@
     html(key, vars) {
       const s = this.raw(key), V = Object.assign(this.cfg(), vars || {});
       const email = V.EMAIL, pmail = V.PRIVACY_EMAIL;
-      const link = m => isPh(m) || !m ? this.mark(m) : `<a href="mailto:${esc(m)}">${esc(m)}</a>`;
+      const link = m => !m || this.hasPh(m) ? this.mark(m) : `<a href="mailto:${esc(m)}">${esc(m)}</a>`;
       V.EMAIL_LINK = { html: link(email) }; V.PRIVACY_EMAIL_LINK = { html: link(pmail) };
-      V.RESPONSIBLE_BLOCK = { html: V.RESPONSIBLE ? this.val(V.RESPONSIBLE) : this.val(V.NAME) + '<br>' + this.val(V.ADDRESS) };
+      // § 18 Abs. 2 MStV verlangt eine natürliche Person: ohne eigene Angabe die Geschäftsführung (sonst NAME) mit der Anschrift
+      V.RESPONSIBLE_BLOCK = { html: V.RESPONSIBLE ? this.val(V.RESPONSIBLE) : this.val(V.REPRESENTED || V.NAME) + '<br>' + this.val(V.ADDRESS) };
       return String(s).replace(/\{([A-Za-z0-9_]+)\}/g, (m, k) => {
         if (!(k in V)) return m;
         const val = V[k];
         return val && typeof val === 'object' && 'html' in val ? val.html : this.val(val);
       });
     },
-    val(v) { const s = String(v == null ? '' : v); return isPh(s) ? this.mark(s) : esc(s).replace(/\n/g, '<br>'); },
+    // Wert maskieren; Platzhalter darin markieren, Zeilenumbrüche → <br>
+    val(v) {
+      const s = String(v == null ? '' : v); let out = '', last = 0;
+      s.replace(PH, (m, at) => { out += esc(s.slice(last, at)) + this.mark(m); last = at + m.length; return m; });
+      return (out + esc(s.slice(last))).replace(/\n/g, '<br>');
+    },
     mark(s) { this.placeholders.add(s); return `<mark class="ph" title="${esc(this.t('ph.hint'))}">${esc(s)}</mark>`; },
     date(iso) {
       if (!iso) return '';
       const d = new Date(String(iso) + (String(iso).length <= 10 ? 'T12:00:00' : ''));
       if (isNaN(d)) return String(iso);
-      try { return d.toLocaleDateString(this.LANGS[this.lang].locale, { day: 'numeric', month: 'long', year: 'numeric' }); } catch (e) { return String(iso); }
+      try {
+        const f = this.dateFmt || (this.dateFmt = {});
+        if (!f[this.lang]) f[this.lang] = new Intl.DateTimeFormat(this.LANGS[this.lang].locale, { day: 'numeric', month: 'long', year: 'numeric' });
+        return f[this.lang].format(d);
+      } catch (e) { return String(iso); }
     },
     // ---- Sprachwahl ----
     detect() {

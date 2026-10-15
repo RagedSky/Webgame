@@ -1,128 +1,128 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Domain https://aetherfall.example durch die eigene ersetzen. Englische Fassung jeder Seite: ?lang=en -->
+<!-- Aetherfall: Dungeons unter https://aetherfallroe.com/dungeons/ · englische Fassung jeder Seite: ?lang=en -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
-    <loc>https://aetherfall.example/</loc>
-    <xhtml:link rel="alternate" hreflang="de" href="https://aetherfall.example/"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://aetherfall.example/?lang=en"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://aetherfall.example/"/>
+    <loc>https://aetherfallroe.com/dungeons/</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://aetherfallroe.com/dungeons/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aetherfallroe.com/dungeons/?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://aetherfallroe.com/dungeons/"/>
     <lastmod>2026-10-15</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://aetherfall.example/?lang=en</loc>
-    <xhtml:link rel="alternate" hreflang="de" href="https://aetherfall.example/"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://aetherfall.example/?lang=en"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://aetherfall.example/"/>
+    <loc>https://aetherfallroe.com/dungeons/?lang=en</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://aetherfallroe.com/dungeons/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aetherfallroe.com/dungeons/?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://aetherfallroe.com/dungeons/"/>
     <lastmod>2026-10-15</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://aetherfall.example/play/</loc>
-    <xhtml:link rel="alternate" hreflang="de" href="https://aetherfall.example/play/"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://aetherfall.example/play/?lang=en"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://aetherfall.example/play/"/>
+    <loc>https://aetherfallroe.com/dungeons/play/</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://aetherfallroe.com/dungeons/play/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aetherfallroe.com/dungeons/play/?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://aetherfallroe.com/dungeons/play/"/>
     <lastmod>2026-10-15</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://aetherfall.example/play/?lang=en</loc>
-    <xhtml:link rel="alternate" hreflang="de" href="https://aetherfall.example/play/"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://aetherfall.example/play/?lang=en"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://aetherfall.example/play/"/>
+    <loc>https://aetherfallroe.com/dungeons/play/?lang=en</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://aetherfallroe.com/dungeons/play/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aetherfallroe.com/dungeons/play/?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://aetherfallroe.com/dungeons/play/"/>
     <lastmod>2026-10-15</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://aetherfall.example/impressum.html</loc>
-    <xhtml:link rel="alternate" hreflang="de" href="https://aetherfall.example/impressum.html"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://aetherfall.example/impressum.html?lang=en"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://aetherfall.example/impressum.html"/>
+    <loc>https://aetherfallroe.com/dungeons/impressum.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://aetherfallroe.com/dungeons/impressum.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aetherfallroe.com/dungeons/impressum.html?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://aetherfallroe.com/dungeons/impressum.html"/>
     <lastmod>2026-10-15</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://aetherfall.example/impressum.html?lang=en</loc>
-    <xhtml:link rel="alternate" hreflang="de" href="https://aetherfall.example/impressum.html"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://aetherfall.example/impressum.html?lang=en"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://aetherfall.example/impressum.html"/>
+    <loc>https://aetherfallroe.com/dungeons/impressum.html?lang=en</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://aetherfallroe.com/dungeons/impressum.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aetherfallroe.com/dungeons/impressum.html?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://aetherfallroe.com/dungeons/impressum.html"/>
     <lastmod>2026-10-15</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://aetherfall.example/datenschutz.html</loc>
-    <xhtml:link rel="alternate" hreflang="de" href="https://aetherfall.example/datenschutz.html"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://aetherfall.example/datenschutz.html?lang=en"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://aetherfall.example/datenschutz.html"/>
+    <loc>https://aetherfallroe.com/dungeons/datenschutz.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://aetherfallroe.com/dungeons/datenschutz.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aetherfallroe.com/dungeons/datenschutz.html?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://aetherfallroe.com/dungeons/datenschutz.html"/>
     <lastmod>2026-10-15</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://aetherfall.example/datenschutz.html?lang=en</loc>
-    <xhtml:link rel="alternate" hreflang="de" href="https://aetherfall.example/datenschutz.html"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://aetherfall.example/datenschutz.html?lang=en"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://aetherfall.example/datenschutz.html"/>
+    <loc>https://aetherfallroe.com/dungeons/datenschutz.html?lang=en</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://aetherfallroe.com/dungeons/datenschutz.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aetherfallroe.com/dungeons/datenschutz.html?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://aetherfallroe.com/dungeons/datenschutz.html"/>
     <lastmod>2026-10-15</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://aetherfall.example/agb.html</loc>
-    <xhtml:link rel="alternate" hreflang="de" href="https://aetherfall.example/agb.html"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://aetherfall.example/agb.html?lang=en"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://aetherfall.example/agb.html"/>
+    <loc>https://aetherfallroe.com/dungeons/agb.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://aetherfallroe.com/dungeons/agb.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aetherfallroe.com/dungeons/agb.html?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://aetherfallroe.com/dungeons/agb.html"/>
     <lastmod>2026-10-15</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://aetherfall.example/agb.html?lang=en</loc>
-    <xhtml:link rel="alternate" hreflang="de" href="https://aetherfall.example/agb.html"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://aetherfall.example/agb.html?lang=en"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://aetherfall.example/agb.html"/>
+    <loc>https://aetherfallroe.com/dungeons/agb.html?lang=en</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://aetherfallroe.com/dungeons/agb.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aetherfallroe.com/dungeons/agb.html?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://aetherfallroe.com/dungeons/agb.html"/>
     <lastmod>2026-10-15</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://aetherfall.example/widerruf.html</loc>
-    <xhtml:link rel="alternate" hreflang="de" href="https://aetherfall.example/widerruf.html"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://aetherfall.example/widerruf.html?lang=en"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://aetherfall.example/widerruf.html"/>
+    <loc>https://aetherfallroe.com/dungeons/widerruf.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://aetherfallroe.com/dungeons/widerruf.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aetherfallroe.com/dungeons/widerruf.html?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://aetherfallroe.com/dungeons/widerruf.html"/>
     <lastmod>2026-10-15</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.2</priority>
   </url>
   <url>
-    <loc>https://aetherfall.example/widerruf.html?lang=en</loc>
-    <xhtml:link rel="alternate" hreflang="de" href="https://aetherfall.example/widerruf.html"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://aetherfall.example/widerruf.html?lang=en"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://aetherfall.example/widerruf.html"/>
+    <loc>https://aetherfallroe.com/dungeons/widerruf.html?lang=en</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://aetherfallroe.com/dungeons/widerruf.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aetherfallroe.com/dungeons/widerruf.html?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://aetherfallroe.com/dungeons/widerruf.html"/>
     <lastmod>2026-10-15</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.2</priority>
   </url>
   <url>
-    <loc>https://aetherfall.example/kontakt.html</loc>
-    <xhtml:link rel="alternate" hreflang="de" href="https://aetherfall.example/kontakt.html"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://aetherfall.example/kontakt.html?lang=en"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://aetherfall.example/kontakt.html"/>
+    <loc>https://aetherfallroe.com/dungeons/kontakt.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://aetherfallroe.com/dungeons/kontakt.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aetherfallroe.com/dungeons/kontakt.html?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://aetherfallroe.com/dungeons/kontakt.html"/>
     <lastmod>2026-10-15</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.4</priority>
   </url>
   <url>
-    <loc>https://aetherfall.example/kontakt.html?lang=en</loc>
-    <xhtml:link rel="alternate" hreflang="de" href="https://aetherfall.example/kontakt.html"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://aetherfall.example/kontakt.html?lang=en"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://aetherfall.example/kontakt.html"/>
+    <loc>https://aetherfallroe.com/dungeons/kontakt.html?lang=en</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://aetherfallroe.com/dungeons/kontakt.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aetherfallroe.com/dungeons/kontakt.html?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://aetherfallroe.com/dungeons/kontakt.html"/>
     <lastmod>2026-10-15</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.4</priority>
