@@ -45,16 +45,20 @@ window.SITE_CONFIG = {
 
   // ---- Angaben für Impressum und Datenschutzerklärung ------------------------
   LEGAL: {
-    // Firma mit Rechtsform. „i. G.“ (in Gründung) entfernen, sobald die UG im Handelsregister eingetragen ist.
-    NAME: 'RagedSky UG (haftungsbeschränkt) i. G.',
-    // ladungsfähige Anschrift (kein Postfach); Zeilen mit \n trennen
-    ADDRESS: { de: '[STRASSE UND HAUSNUMMER]\n47051 Duisburg\nDeutschland', en: '[STRASSE UND HAUSNUMMER]\n47051 Duisburg\nGermany' },
-    REPRESENTED: '[VOR- UND NACHNAME DER GESCHÄFTSFÜHRUNG]', // vertretungsberechtigte Person(en) der UG (Geschäftsführer/in)
+    // Betreiber: bis zur notariellen Gründung der UG ein Einzelunternehmen → Vor- und Nachname, „RagedSky“ als Geschäftsbezeichnung.
+    // Nach der Gründung: 'RagedSky UG (haftungsbeschränkt) i. G.', nach der Eintragung ohne „i. G.“ (dann REPRESENTED und REGISTER ausfüllen).
+    NAME: '[VOR- UND NACHNAME] – RagedSky',
+    // ladungsfähige Anschrift (kein Postfach, nicht postlagernd); c/o-Adresse mit Zustimmung der Person, die dort Post annimmt
+    ADDRESS: {
+      de: 'c/o Sidney Asiegbu-Joseph\nFriedrich-Wilhelm-Straße 13\n47051 Duisburg\nDeutschland',
+      en: 'c/o Sidney Asiegbu-Joseph\nFriedrich-Wilhelm-Straße 13\n47051 Duisburg\nGermany',
+    },
+    REPRESENTED: '',                            // nur bei einer Gesellschaft (UG): vertretungsberechtigte Geschäftsführung – '' blendet die Zeile aus
     PHONE: '',                                  // optional, z. B. '+49 …'
-    VAT_ID: '',                                 // Umsatzsteuer-Identifikationsnummer nach § 27a UStG, sobald vorhanden
+    VAT_ID: '[UST-ID]',                         // Umsatzsteuer-Identifikationsnummer nach § 27a UStG (z. B. 'DE123456789')
     // nach der Eintragung, z. B. { de: 'Registergericht: Amtsgericht Duisburg, HRB 12345', en: 'Register court: Amtsgericht Duisburg, HRB 12345' }
     REGISTER: '',
-    RESPONSIBLE: '',                            // Verantwortlich nach § 18 Abs. 2 MStV (natürliche Person) – '' = REPRESENTED mit ADDRESS
+    RESPONSIBLE: '',                            // Verantwortlich nach § 18 Abs. 2 MStV (natürliche Person) – '' = NAME (bei einer UG: REPRESENTED) mit ADDRESS
     PRIVACY_EMAIL: 'aetherfa@aetherfallroe.com', // Adresse für Datenschutzanfragen – '' = CONTACT_EMAIL
     DPO: '',                                    // Datenschutzbeauftragte(r), falls benannt – '' blendet den Abschnitt aus
     AUTHORITY: {

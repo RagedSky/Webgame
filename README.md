@@ -69,9 +69,9 @@ dungeons/                      Ordner auf dem Webspace (public_html/dungeons/ = 
 
 Alle anpassbaren Werte stehen nur hier und werden automatisch in Startseite, Anmeldung und alle Rechtsseiten eingesetzt:
 `SITE_URL`, `GAME_PATH`, `CLERK_PUBLISHABLE_KEY`, `SUPABASE_URL`, `SUPABASE_KEY`, `CONTACT_EMAIL`, `MIN_AGE` (Standard 16),
-`CONSENT_TEXT_VERSION`, die Angaben unter `LEGAL` (Firma, Anschrift, Geschäftsführung, Hoster, Aufsichtsbehörde …), `LEGAL_DOCS`
+`CONSENT_TEXT_VERSION`, die Angaben unter `LEGAL` (Betreiber, Anschrift, USt-ID, Hoster, Aufsichtsbehörde …), `LEGAL_DOCS`
 (Version und Datum je Rechtstext) sowie die Medien `TRAILER_URL`, `TRAILER_POSTER`, `TRAILER_SUBTITLES`, `TRAILER_EMBED`, `SCREENSHOTS`.
-Werte in `[ECKIGEN KLAMMERN]` sind Platzhalter – auch als Teil eines Werts, z. B. `'[STRASSE UND HAUSNUMMER]\n47051 Duisburg'`: Sie
+Werte in `[ECKIGEN KLAMMERN]` sind Platzhalter – auch als Teil eines Werts, z. B. `'[VOR- UND NACHNAME] – RagedSky'`: Sie
 werden auf der Seite gelb markiert und in der Konsole als Warnung gemeldet. Ein leerer Wert blendet die Angabe aus (z. B. keine USt-ID).
 Texte, die je Sprache verschieden sind, als `{ de: '…', en: '…' }` angeben.
 
@@ -254,7 +254,7 @@ in der Konsole.
 
 | Wo | Platzhalter |
 |---|---|
-| `assets/js/config.js` | **offen:** `LEGAL.ADDRESS` `[STRASSE UND HAUSNUMMER]`, `LEGAL.REPRESENTED` `[VOR- UND NACHNAME DER GESCHÄFTSFÜHRUNG]`, `LEGAL.HOSTING_DPA` (AV-Vertrag mit iFastNet), `LEGAL.LOG_DAYS` (Log-Speicherdauer bei iFastNet); **nach der Handelsregistereintragung:** „i. G.“ aus `LEGAL.NAME` entfernen, `LEGAL.REGISTER` und ggf. `LEGAL.VAT_ID` eintragen; **ausgefüllt:** `SITE_URL`, `CONTACT_EMAIL`, `NAME`, `PRIVACY_EMAIL`, `AUTHORITY` (LDI NRW), `HOSTING` (iFastNet), `HOSTING_THIRD_COUNTRY` (UK, Angemessenheitsbeschluss), `SUPABASE_REGION` (EU, Irland); `LEGAL_DOCS` (Version/Datum) |
+| `assets/js/config.js` | **offen:** `LEGAL.NAME` `[VOR- UND NACHNAME] – RagedSky` (Betreiber als Einzelunternehmen), `LEGAL.VAT_ID` `[UST-ID]`, `LEGAL.HOSTING_DPA` (AV-Vertrag mit iFastNet), `LEGAL.LOG_DAYS` (Log-Speicherdauer bei iFastNet); **nach der Gründung der UG:** `NAME` mit Rechtsform („i. G.“ bis zur Eintragung), `REPRESENTED` (Geschäftsführung), nach der Eintragung `REGISTER`; **ausgefüllt:** `SITE_URL`, `CONTACT_EMAIL`, `ADDRESS` (c/o-Anschrift in Duisburg), `PRIVACY_EMAIL`, `AUTHORITY` (LDI NRW), `HOSTING` (iFastNet), `HOSTING_THIRD_COUNTRY` (UK, Angemessenheitsbeschluss), `SUPABASE_REGION` (EU, Irland); `LEGAL_DOCS` (Version/Datum) |
 | `assets/js/config.js` und `play/index.html` (`CONFIG`) | nach der Umstellung auf Clerk-Produktion `pk_live_…` in **beiden** Dateien; `legalTerms`, `legalPrivacy`, `minAge` im Spiel passend zu `config.js` |
 | Datenschutz Abschnitt 16, AGB § 7 (als inaktiv markiert) | `[ZAHLUNGSANBIETER …]`, `[PREISE …]`, Fristen – erst bei Einführung eines Shops |
 | Supabase Secrets | `CLERK_SECRET_KEY`, `CLERK_ISSUER`, `ALLOWED_ORIGINS` (nur serverseitig) |

@@ -11,7 +11,7 @@
   'use strict';
   const STORE_SITE = 'aetherfall_lang', STORE_GAME = 'aetherfall_settings';
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  // Platzhalter sind Werte oder Teile von Werten in [ECKIGEN KLAMMERN], z. B. '[STRASSE UND HAUSNUMMER]\n47051 Duisburg'
+  // Platzhalter sind Werte oder Teile von Werten in [ECKIGEN KLAMMERN], z. B. '[VOR- UND NACHNAME] – RagedSky'
   const PH = /\[[^\[\]\n]+\]/g;
   const phs = v => (typeof v === 'string' && v.match(PH)) || [];
   // Speicherzugriffe: nie werfen, Fehler aber protokollieren
