@@ -56,7 +56,7 @@ window.SITE_CONFIG = {
     // nach der Eintragung, z. B. { de: 'Registergericht: Amtsgericht Duisburg, HRB 12345', en: 'Register court: Amtsgericht Duisburg, HRB 12345' }
     REGISTER: '',
     RESPONSIBLE: '',                            // Verantwortlich nach § 18 Abs. 2 MStV (natürliche Person) – '' = NAME (bei einer UG: REPRESENTED) mit ADDRESS
-    PRIVACY_EMAIL: 'aetherfa@aetherfallroe.com', // Adresse für Datenschutzanfragen – '' = CONTACT_EMAIL
+    PRIVACY_EMAIL: '',                          // eigene Adresse für Datenschutzanfragen – '' = CONTACT_EMAIL (info@aetherfallroe.com)
     DPO: '',                                    // Datenschutzbeauftragte(r), falls benannt – '' blendet den Abschnitt aus
     AUTHORITY: {
       de: 'Landesbeauftragte für Datenschutz und Informationsfreiheit Nordrhein-Westfalen (LDI NRW), Kavalleriestraße 2–4, 40213 Düsseldorf, www.ldi.nrw.de',
