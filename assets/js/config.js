@@ -52,7 +52,7 @@ window.SITE_CONFIG = {
     ADDRESS: { de: 'Friedrich-Wilhelm-Straße 13\n47051 Duisburg\nDeutschland', en: 'Friedrich-Wilhelm-Straße 13\n47051 Duisburg\nGermany' },
     REPRESENTED: '',                            // nur bei einer Gesellschaft (UG): vertretungsberechtigte Geschäftsführung – '' blendet die Zeile aus
     PHONE: '',                                  // optional, z. B. '+49 …'
-    VAT_ID: '[UST-ID]',                         // Umsatzsteuer-Identifikationsnummer nach § 27a UStG (z. B. 'DE123456789')
+    VAT_ID: '',                                 // USt-IdNr. nach § 27a UStG (Format DE123456789), sobald vorhanden – NICHT die Steuernummer vom Finanzamt
     // nach der Eintragung, z. B. { de: 'Registergericht: Amtsgericht Duisburg, HRB 12345', en: 'Register court: Amtsgericht Duisburg, HRB 12345' }
     REGISTER: '',
     RESPONSIBLE: '',                            // Verantwortlich nach § 18 Abs. 2 MStV (natürliche Person) – '' = NAME (bei einer UG: REPRESENTED) mit ADDRESS
