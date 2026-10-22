@@ -47,12 +47,9 @@ window.SITE_CONFIG = {
   LEGAL: {
     // Betreiber: bis zur notariellen Gründung der UG ein Einzelunternehmen → Vor- und Nachname, „RagedSky“ als Geschäftsbezeichnung.
     // Nach der Gründung: 'RagedSky UG (haftungsbeschränkt) i. G.', nach der Eintragung ohne „i. G.“ (dann REPRESENTED und REGISTER ausfüllen).
-    NAME: '[VOR- UND NACHNAME] – RagedSky',
-    // ladungsfähige Anschrift (kein Postfach, nicht postlagernd); c/o-Adresse mit Zustimmung der Person, die dort Post annimmt
-    ADDRESS: {
-      de: 'c/o Sidney Asiegbu-Joseph\nFriedrich-Wilhelm-Straße 13\n47051 Duisburg\nDeutschland',
-      en: 'c/o Sidney Asiegbu-Joseph\nFriedrich-Wilhelm-Straße 13\n47051 Duisburg\nGermany',
-    },
+    NAME: 'Sidney Asiegbu-Joseph – RagedSky',
+    // ladungsfähige Anschrift (kein Postfach, nicht postlagernd); bei einer fremden Adresse mit „c/o <Name>“ als erster Zeile
+    ADDRESS: { de: 'Friedrich-Wilhelm-Straße 13\n47051 Duisburg\nDeutschland', en: 'Friedrich-Wilhelm-Straße 13\n47051 Duisburg\nGermany' },
     REPRESENTED: '',                            // nur bei einer Gesellschaft (UG): vertretungsberechtigte Geschäftsführung – '' blendet die Zeile aus
     PHONE: '',                                  // optional, z. B. '+49 …'
     VAT_ID: '[UST-ID]',                         // Umsatzsteuer-Identifikationsnummer nach § 27a UStG (z. B. 'DE123456789')
