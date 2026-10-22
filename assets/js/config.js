@@ -31,7 +31,7 @@ window.SITE_CONFIG = {
   GAME_PATH: 'play/',                           // Spiel relativ zur Website (→ https://aetherfallroe.com/dungeons/play/, gleiche Domain → gemeinsame Clerk-Sitzung)
 
   // ---- Anmeldung (Clerk) und Datenbank (Supabase) – nur öffentliche Schlüssel ----
-  CLERK_PUBLISHABLE_KEY: 'pk_test_bGVhcm5pbmctc2VydmFsLTYzMTkuY2xlcmsuYWNjb3VudHMuZGV2JA', // nach der Umstellung auf Produktion: pk_live_…
+  CLERK_PUBLISHABLE_KEY: 'pk_live_Y2xlcmsuYWV0aGVyZmFsbHJvZS5jb20k', // Produktion: gemeinsame Clerk-App mit Realm of Embers (clerk.aetherfallroe.com)
   CLERK_JS_VERSION: '5',                        // Hauptversion von @clerk/clerk-js (wie im Spiel)
   SUPABASE_URL: 'https://omnviivimjbjgdoblewn.supabase.co',
   SUPABASE_KEY: 'sb_publishable_8B3JGbczUmMcBidmGTc5TA_oTRRnS7X',

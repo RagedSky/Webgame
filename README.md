@@ -128,16 +128,23 @@ aus `lang-legal.js` aufgebaut (Abschnitte `präfix.s<n>.h/.b`, Inhaltsverzeichni
 
 #### Clerk-Dashboard
 
+**Gemeinsame Clerk-App mit *Realm of Embers*:** `aetherfallroe.com` ist in Clerk bereits der Produktionsinstanz von Realm of Embers
+zugeordnet (pro Domain nur eine Haupt-App). Dungeons nutzt deshalb dieselbe Clerk-App (`pk_live_…` für `clerk.aetherfallroe.com`) –
+ein Aetherfall-Konto für beide Spiele, ohne Subdomain und ohne neue DNS-Einträge. Konten und Daten von Realm of Embers bleiben
+unverändert; wer von dort kommt, bestätigt beim ersten Besuch einmal die Zustimmung für Dungeons (Tabelle `consents`).
+Die folgenden Einstellungen betreffen daher immer beide Spiele.
+
 1. **User & Authentication › Email, phone, username:** E-Mail-Adresse als Kennung, Verifizierung per **E-Mail-Code**;
    **Password** aktivieren (Passwort-Reset per E-Mail-Code ist dann automatisch dabei).
 2. **SSO connections** (optional): z. B. Google; für die Produktion eigene OAuth-Zugangsdaten hinterlegen.
 3. **Paths** (Komponenten-Pfade der Instanz): Sign-in-URL `https://aetherfallroe.com/dungeons/anmelden.html`, Sign-up-URL
    `https://aetherfallroe.com/dungeons/registrieren.html`, nach dem Abmelden `https://aetherfallroe.com/dungeons/`. (Die Website setzt
    diese Werte zusätzlich selbst, das Dashboard wird für E-Mail-Links und das Account Portal gebraucht.)
-4. **Domains:** Produktionsinstanz für `aetherfallroe.com` anlegen und die angezeigten DNS-Einträge bei iFastNet setzen
-   (cPanel › *Zone Editor*: CNAME `clerk` → Frontend-API, dazu `accounts`, `clkmail`, `clk._domainkey`, `clk2._domainkey` – genaue
-   Ziele zeigt das Clerk-Dashboard). Website und Spiel laufen auf derselben Domain; `https://www.aetherfallroe.com` ggf. als erlaubte
-   Origin ergänzen. Die Entwicklungsinstanz (`pk_test_…`) funktioniert ohne DNS auch auf `localhost`.
+4. **Domains:** Die Produktionsinstanz für `aetherfallroe.com` besteht bereits (Realm of Embers); unter *Domains* müssen alle
+   DNS-Einträge als verifiziert angezeigt werden (sonst bei iFastNet in cPanel › *Zone Editor* nachtragen: CNAME `clerk`, `accounts`,
+   `clkmail`, `clk._domainkey`, `clk2._domainkey` – genaue Ziele zeigt das Clerk-Dashboard). Website und Spiel laufen auf derselben
+   Domain. Lokal (`localhost`) funktioniert der `pk_live_…`-Schlüssel nicht – zum Entwickeln vorübergehend einen `pk_test_…`-Schlüssel
+   einer Entwicklungsinstanz eintragen.
 5. **Integrations › Supabase** („Connect with Supabase“): setzt `role: authenticated` im Session-Token.
 6. **Attack protection › Bot protection** kann aktiv bleiben (Cloudflare Turnstile, in der CSP freigegeben).
 7. **Kontolöschung durch Nutzer im Clerk-Dialog ausschalten** (Einstellung „Allow users to delete their accounts“ / „Delete account“
@@ -145,7 +152,8 @@ aus `lang-legal.js` aufgebaut (Abschnitte `präfix.s<n>.h/.b`, Inhaltsverzeichni
    gelöscht. Gelöscht wird über das Spiel (Edge Function, siehe unten).
 8. Die Clerk-Option „Require express consent to legal documents“ **nicht** zusätzlich einschalten (sonst doppelte Checkbox; die
    Zustimmung läuft über die eigene Pflicht-Checkbox und `consents`).
-9. Für den Livebetrieb den `pk_live_…`-Schlüssel in **beiden** Konfigurationen eintragen (`assets/js/config.js` und `play/index.html`).
+9. Der `pk_live_…`-Schlüssel steht in **beiden** Konfigurationen (`assets/js/config.js` und `play/index.html`); bei einem Wechsel
+   beide Stellen gleich ändern.
 
 ### Supabase
 
@@ -255,7 +263,7 @@ in der Konsole.
 | Wo | Platzhalter |
 |---|---|
 | `assets/js/config.js` | **offen:** `LEGAL.HOSTING_DPA` (AV-Vertrag mit iFastNet), `LEGAL.LOG_DAYS` (Log-Speicherdauer bei iFastNet); **nach der Gründung der UG:** `NAME` mit Rechtsform („i. G.“ bis zur Eintragung), `REPRESENTED` (Geschäftsführung), nach der Eintragung `REGISTER`; **ausgefüllt:** `SITE_URL`, `CONTACT_EMAIL`, `NAME` (Betreiber als Einzelunternehmen), `ADDRESS` (Duisburg), `PRIVACY_EMAIL` (leer = `info@`), `AUTHORITY` (LDI NRW), `HOSTING` (iFastNet), `HOSTING_THIRD_COUNTRY` (UK, Angemessenheitsbeschluss), `SUPABASE_REGION` (EU, Irland); `VAT_ID` bleibt leer, bis eine USt-IdNr. (DE…) erteilt ist – die Steuernummer gehört nicht ins Impressum; `LEGAL_DOCS` (Version/Datum) |
-| `assets/js/config.js` und `play/index.html` (`CONFIG`) | nach der Umstellung auf Clerk-Produktion `pk_live_…` in **beiden** Dateien; `legalTerms`, `legalPrivacy`, `minAge` im Spiel passend zu `config.js` |
+| `assets/js/config.js` und `play/index.html` (`CONFIG`) | **ausgefüllt:** Clerk `pk_live_…` (gemeinsame App mit Realm of Embers) in beiden Dateien; `legalTerms`, `legalPrivacy`, `minAge` im Spiel passend zu `config.js` |
 | Datenschutz Abschnitt 16, AGB § 7 (als inaktiv markiert) | `[ZAHLUNGSANBIETER …]`, `[PREISE …]`, Fristen – erst bei Einführung eines Shops |
 | Supabase Secrets | `CLERK_SECRET_KEY`, `CLERK_ISSUER`, `ALLOWED_ORIGINS` (nur serverseitig) |
 
