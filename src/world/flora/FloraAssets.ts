@@ -1,4 +1,4 @@
-import { Color, MeshStandardMaterial, Vector2, type BufferGeometry } from 'three';
+import { Color, DoubleSide, MeshStandardMaterial, Vector2, type BufferGeometry } from 'three';
 import { textures } from '@/render/ProceduralTextures';
 import { addRim } from '@/render/stylize';
 import type { ArchiveEntry, FloraGenome } from '@/gen/archive/types';
@@ -14,8 +14,9 @@ export class FloraAssets {
   constructor(assets: VegetationAssets) {
     const bark = textures.get('bark');
     const crystal = textures.get('crystal');
-    this.material = new MeshStandardMaterial({ vertexColors: true, roughness: 0.85, metalness: 0, map: bark.map, normalMap: bark.normalMap, normalScale: new Vector2(0.5, 0.5), roughnessMap: bark.roughnessMap });
-    this.glowMaterial = new MeshStandardMaterial({ vertexColors: true, roughness: 0.35, metalness: 0, emissive: new Color(0.6, 0.55, 0.8), emissiveIntensity: 0.35, normalMap: crystal.normalMap, normalScale: new Vector2(0.5, 0.5) });
+    // Beidseitig: Kronen, Hüte und Schirme sind unten offen und wären von unten gesehen durchsichtig
+    this.material = new MeshStandardMaterial({ vertexColors: true, side: DoubleSide, roughness: 0.85, metalness: 0, map: bark.map, normalMap: bark.normalMap, normalScale: new Vector2(0.5, 0.5), roughnessMap: bark.roughnessMap });
+    this.glowMaterial = new MeshStandardMaterial({ vertexColors: true, side: DoubleSide, roughness: 0.35, metalness: 0, emissive: new Color(0.6, 0.55, 0.8), emissiveIntensity: 0.35, normalMap: crystal.normalMap, normalScale: new Vector2(0.5, 0.5) });
     assets.patchWind(this.material, 0.35);
     assets.patchWind(this.glowMaterial, 0.2);
     addRim(this.material, 0.8);

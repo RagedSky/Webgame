@@ -415,3 +415,26 @@ Zifferntasten bleiben als Abkürzung.
 Farben und Radien sind durch Variablen ersetzt. Die Akzentfarbe kommt vom Anzug, wird auf Lesbarkeit begrenzt und im
 Browser gemerkt, damit auch das Hauptmenü sie zeigt.
 
+## D-075 · Engere Schattenkarte, damit auch Gras Schatten wirft
+**Kontext:** Gras und kleine Pflanzen warfen keinen sichtbaren Schatten. Ursache war nicht nur das abgeschaltete
+`castShadow`, sondern ein Normalen-Bias von 0,6 m über einen Tiefenbereich von 600 m.
+**Entscheidung:** Ausschnitt ±70 m, Tiefenbereich 110–490 m, Bias −0,00022, Normalen-Bias 0,09. Halme werfen Schatten nur
+bis 22 m um die Kamera, mit eigenem Tiefenmaterial samt Wind. Der Preis: Baumschatten enden bei 70 m statt 90 m, und der
+Schattendurchgang zeichnet zusätzlich die nahen Graszellen.
+
+## D-076 · Belichtung als Effekt in der Foto-Kette
+**Kontext:** `toneMappingExposure` wirkt nicht, wenn das Bild über die Postprocessing-Kette entsteht.
+**Entscheidung:** `ExposureEffect` multipliziert das Bild mit 2^EV, vor Farbton, Helligkeit und Vignette. Der Wert des
+Renderers bleibt unberührt, dadurch gibt es nichts zurückzusetzen, wenn der Foto-Modus endet.
+
+## D-077 · Fundstücke folgen dem Gelände
+**Kontext:** Ruinen standen senkrecht auf einem Punkt des Hangs; talseitig schwebte der Sockel.
+**Entscheidung:** Flachere Standorte suchen, zur Geländenormale neigen, zum tiefsten Punkt der Standfläche einsinken und
+das Modell mit Fundament unter der Bodenlinie bauen. Das Gelände selbst wird nicht eingeebnet: Höhenfeld und Kollision
+bleiben rein vom Seed abhängig.
+
+## D-078 · Lage der Motive wird mit dem Foto gespeichert
+**Kontext:** Im Archiv war nicht erkennbar, welches Objekt auf dem Foto zum Eintrag gehört.
+**Entscheidung:** Die Bildlage jedes Motivs (`PhotoRegion`) wird beim Auslösen aus der Beobachtung übernommen und im
+Foto-Datensatz abgelegt. Der Rahmen ist eine CSS-Überlagerung, das Bild selbst bleibt unverändert und wird ohne Rahmen
+exportiert. Das Feld ist optional, alte Fotos bleiben gültig.

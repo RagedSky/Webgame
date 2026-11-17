@@ -22,6 +22,16 @@ export interface PhotoMeta {
   width: number;
   height: number;
   settings: PhotoSettingsMeta;
+  /** Wo die Motive im Bild liegen (für die Hervorhebung im Archiv); fehlt bei älteren Fotos. */
+  regions?: PhotoRegion[];
+}
+
+/** Bildbereich eines Motivs: Mittelpunkt in 0..1 (x nach rechts, y nach unten), Radius als Anteil der Bildhöhe. */
+export interface PhotoRegion {
+  entryId: string;
+  x: number;
+  y: number;
+  r: number;
 }
 
 export interface PhotoRecordDb extends PhotoMeta {

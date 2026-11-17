@@ -26,15 +26,18 @@ interface Cell {
   meshes: Array<InstancedMesh | BatchedMesh>;
   instances: number;
   species: SpeciesPlacement[];
-  /** Ferne Zelle: Mittelpunkt und halbe Kantenlänge (für den Schattenwurf in Kameranähe). */
+  /** Mittelpunkt und halbe Kantenlänge (für den Schattenwurf in Kameranähe); `far` = Baumzelle, `grass` = Grasring. */
   far: boolean;
+  grass: boolean;
   cx: number;
   cz: number;
   half: number;
 }
 
 /** Bis zu dieser Entfernung zum Zellrand werfen Bäume ferner Zellen Schatten (Reichweite der Schattenkarte). */
-const SHADOW_RANGE = 100;
+const SHADOW_RANGE = 78;
+/** Gras und Blumen werfen bis zu dieser Entfernung zum Zellrand Schatten (dahinter löst die Schattenkarte Halme nicht auf). */
+const GRASS_SHADOW_RANGE = 22;
 
 /** Hindernis einer Pflanze: Stamm bzw. Körper als Zylinder; kleine und weiche Gewächse bleiben begehbar. */
 function floraCollider(genome: FloraGenome, height: number, x: number, y: number, z: number): Collider | null {
@@ -461,7 +464,10 @@ export class VegetationManager {
       }
       mesh.instanceMatrix.needsUpdate = true;
       if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
-      mesh.castShadow = batch.type !== 'grass' && batch.type !== 'flower';
+      const blades = batch.type === 'grass' || batch.type === 'flower';
+      // Halme werfen Schatten nur nahe der Kamera (siehe refresh) und schwingen dabei im Wind mit
+      mesh.castShadow = !blades;
+      if (blades) mesh.customDepthMaterial = this.assets.grassDepthMaterial;
       mesh.receiveShadow = true;
       mesh.computeBoundingSphere();
       meshes.push(mesh);
@@ -488,7 +494,7 @@ export class VegetationManager {
       this.collision.set(`veg:${id}`, this.pending);
     }
     this.pending = [];
-    return { id, meshes, instances: total, species: species.map((i) => ({ entry: i.entry, x: i.x, y: i.y, z: i.z, height: i.height })), far, cx: x0 + size / 2, cz: z0 + size / 2, half: size / 2 };
+    return { id, meshes, instances: total, species: species.map((i) => ({ entry: i.entry, x: i.x, y: i.y, z: i.z, height: i.height })), far, grass: kind === 'g', cx: x0 + size / 2, cz: z0 + size / 2, half: size / 2 };
   }
 
   private removeCell(cell: Cell): void {
@@ -527,10 +533,11 @@ export class VegetationManager {
     for (const cell of Array.from(this.cells.values())) if (!wanted.has(cell.id)) this.removeCell(cell);
     // Bäume stehen in fernen Zellen: nur die Zellen in Reichweite der Schattenkarte werfen Schatten
     for (const cell of this.cells.values()) {
-      if (!cell.far) continue;
+      if (!cell.far && !cell.grass) continue;
+      const range = cell.far ? SHADOW_RANGE : GRASS_SHADOW_RANGE;
       const dx = Math.max(0, Math.abs(cx - cell.cx) - cell.half);
       const dz = Math.max(0, Math.abs(cz - cell.cz) - cell.half);
-      const cast = dx * dx + dz * dz < SHADOW_RANGE * SHADOW_RANGE;
+      const cast = dx * dx + dz * dz < range * range;
       for (const m of cell.meshes) if (m.castShadow !== cast) m.castShadow = cast;
     }
   }

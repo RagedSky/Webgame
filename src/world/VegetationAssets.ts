@@ -1,5 +1,5 @@
 import type { BufferGeometry} from 'three';
-import { Color, ConeGeometry, CylinderGeometry, DoubleSide, IcosahedronGeometry, MeshStandardMaterial, OctahedronGeometry, SphereGeometry, Vector2, type Material } from 'three';
+import { Color, ConeGeometry, CylinderGeometry, DoubleSide, IcosahedronGeometry, MeshDepthMaterial, MeshStandardMaterial, RGBADepthPacking, OctahedronGeometry, SphereGeometry, Vector2, type Material } from 'three';
 import { textures } from '@/render/ProceduralTextures';
 import type { VegetationProfile } from '@/gen/terrain/VegetationProfiles';
 import { blade, colorize, gradientColor, jitter, mergeParts, taperedQuad } from './geometry';
@@ -154,6 +154,8 @@ export class VegetationAssets {
   readonly plantMaterial: MeshStandardMaterial;
   readonly crystalMaterial: MeshStandardMaterial;
   readonly rockMaterial: MeshStandardMaterial;
+  /** Tiefenmaterial für den Schattenwurf von Gras und Blumen: gleiche Windbewegung und Ausblendung wie im Bild. */
+  readonly grassDepthMaterial: MeshDepthMaterial;
 
   /** Farbe der Grasspitzen (Planetenstil); wird von der Szene gesetzt. */
   readonly grassTip = { value: new Color(0.75, 0.8, 0.35) };
@@ -171,10 +173,12 @@ export class VegetationAssets {
     const rock = textures.get('rock');
     const crystal = textures.get('crystal');
     this.grassMaterial = new MeshStandardMaterial({ vertexColors: true, side: DoubleSide, roughness: 0.9, metalness: 0, map: leaf.map, normalMap: leaf.normalMap, normalScale: new Vector2(0.4, 0.4) });
-    this.plantMaterial = new MeshStandardMaterial({ vertexColors: true, roughness: 0.85, metalness: 0, map: bark.map, normalMap: bark.normalMap, normalScale: new Vector2(0.6, 0.6), roughnessMap: bark.roughnessMap });
-    this.crystalMaterial = new MeshStandardMaterial({ vertexColors: true, roughness: 0.2, metalness: 0.1, emissive: new Color(0.25, 0.2, 0.5), emissiveIntensity: 0.6, transparent: true, opacity: 0.9, normalMap: crystal.normalMap, normalScale: new Vector2(0.5, 0.5) });
+    this.plantMaterial = new MeshStandardMaterial({ vertexColors: true, side: DoubleSide, roughness: 0.85, metalness: 0, map: bark.map, normalMap: bark.normalMap, normalScale: new Vector2(0.6, 0.6), roughnessMap: bark.roughnessMap });
+    this.crystalMaterial = new MeshStandardMaterial({ vertexColors: true, side: DoubleSide, roughness: 0.2, metalness: 0.1, emissive: new Color(0.25, 0.2, 0.5), emissiveIntensity: 0.6, transparent: true, opacity: 0.9, normalMap: crystal.normalMap, normalScale: new Vector2(0.5, 0.5) });
     this.rockMaterial = new MeshStandardMaterial({ vertexColors: true, roughness: 1, metalness: 0, map: rock.map, normalMap: rock.normalMap, normalScale: new Vector2(0.9, 0.9), roughnessMap: rock.roughnessMap });
     this.patchWind(this.grassMaterial, 1.0, true);
+    this.grassDepthMaterial = new MeshDepthMaterial({ depthPacking: RGBADepthPacking, side: DoubleSide });
+    this.patchWind(this.grassDepthMaterial, 1.0, true);
     // Gras ist einlagig und doppelseitig: die Rückseite behält die (nach oben zeigende) Normale statt gespiegelt dunkel zu werden
     addShaderPatch(this.grassMaterial, 'unflip', (shader) => {
       shader.fragmentShader = shader.fragmentShader.replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\n#ifdef DOUBLE_SIDED\n  normal *= faceDirection;\n#endif');
@@ -196,7 +200,7 @@ export class VegetationAssets {
   }
 
   /** Wind-Schwingen im Vertex-Shader für Instanzen (InstancedMesh) und Batches (BatchedMesh); Stärke wächst mit der Höhe. */
-  patchWind(material: MeshStandardMaterial, strength: number, distanceFade = false): void {
+  patchWind(material: Material, strength: number, distanceFade = false): void {
     addShaderPatch(material, `wind-${strength}-${distanceFade ? 'fade' : 'nofade'}`, (shader) => {
       shader.uniforms.uTime = this.time;
       shader.uniforms.uWind = this.wind;
@@ -243,6 +247,7 @@ export class VegetationAssets {
     this.flower.dispose();
     for (const g of Object.values(this.trees)) g.dispose();
     this.grassMaterial.dispose();
+    this.grassDepthMaterial.dispose();
     this.plantMaterial.dispose();
     this.crystalMaterial.dispose();
     this.rockMaterial.dispose();

@@ -192,6 +192,22 @@ export class ArchiveUi {
     img.src = url;
   }
 
+  /** Hebt das Motiv `entryId` im Foto hervor (Bereich wurde beim Auslösen gespeichert; ältere Fotos haben keinen). */
+  private async markFor(photoId: string, entryId: string, mark: HTMLElement): Promise<void> {
+    const rec = await this.db.getPhoto(photoId);
+    const region = rec?.regions?.find((r) => r.entryId === entryId);
+    if (!rec || !region || region.r <= 0) return;
+    const aspect = rec.height / rec.width;
+    // etwas Luft um das Motiv, Mindestgröße für sehr kleine Motive
+    const d = Math.min(1.1, Math.max(0.14, region.r * 2 * 1.3));
+    mark.style.left = `${(region.x * 100).toFixed(1)}%`;
+    mark.style.top = `${(region.y * 100).toFixed(1)}%`;
+    mark.style.width = `${(d * aspect * 100).toFixed(1)}%`;
+    mark.style.height = `${(d * 100).toFixed(1)}%`;
+    mark.classList.toggle('low', region.y - d / 2 < 0.12);
+    mark.style.display = 'block';
+  }
+
   private renderArchive(): HTMLElement {
     const f = this.filter;
     const mk = (opts: Array<[string, string]>, value: string, onChange: (v: string) => void): HTMLSelectElement => {
@@ -303,8 +319,11 @@ export class ArchiveUi {
 
     if (p.bestPhotoId) {
       const img = el('img', { class: 'best-photo', alt: 'Bestes Foto' });
-      void this.thumbFor(p.bestPhotoId, img);
-      host.append(img, el('div', { class: 'row' }, el('button', { class: 'small', text: STR.photo.exportPng, onClick: () => this.cb.onExportPhoto(p.bestPhotoId as string) }), el('span', { class: 'muted small', text: `${p.photoIds.length} ${STR.archive.photos} · ${STR.archive.bestScore} ${p.bestScore}` })));
+      // Rahmen um das Motiv dieses Eintrags; der Rest des Bildes wird abgedunkelt
+      const mark = el('div', { class: 'photo-mark', style: 'display:none' }, el('span', { class: 'label', text: disc ? this.progress.displayName(e) : STR.archive.unknown }));
+      const bestId = p.bestPhotoId;
+      void this.thumbFor(bestId, img).then(() => this.markFor(bestId, e.id, mark));
+      host.append(el('div', { class: 'photo-wrap' }, img, mark), el('div', { class: 'row' }, el('button', { class: 'small', text: STR.photo.exportPng, onClick: () => this.cb.onExportPhoto(p.bestPhotoId as string) }), el('span', { class: 'muted small', text: `${p.photoIds.length} ${STR.archive.photos} · ${STR.archive.bestScore} ${p.bestScore}` })));
     }
 
     const kv = el('dl', { class: 'kv' });

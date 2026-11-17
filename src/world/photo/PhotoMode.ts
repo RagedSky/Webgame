@@ -1,3 +1,4 @@
+import { ExposureEffect } from '@/render/ExposureEffect';
 import { Raycaster, Vector3, type Object3D, type PerspectiveCamera, type WebGLRenderer } from 'three';
 import { BrightnessContrastEffect, DepthOfFieldEffect, EffectPass, HueSaturationEffect, SepiaEffect, VignetteEffect, type EffectComposer } from 'postprocessing';
 import { clamp } from '@/math/utils';
@@ -71,16 +72,16 @@ export class PhotoMode {
   private readonly hueSat: HueSaturationEffect;
   private readonly brightness: BrightnessContrastEffect;
   private readonly sepia: SepiaEffect;
+  private readonly exposureFx = new ExposureEffect();
   private readonly pass: EffectPass;
   private readonly raycaster = new Raycaster();
   private readonly baseFov: number;
-  private baseExposure = 1;
   private readonly candidates: SubjectCandidate[] = [];
   /** Fotograf-Hintergrund: Infrarot- und Noir-Filter freigeschaltet. */
   extraFilters = false;
 
   constructor(
-    private readonly gl: WebGLRenderer,
+    _gl: WebGLRenderer,
     private readonly camera: PerspectiveCamera,
     private readonly composer: EffectComposer,
     private readonly sources: PhotoSubjectSource[],
@@ -91,7 +92,8 @@ export class PhotoMode {
     this.hueSat = new HueSaturationEffect({ hue: 0, saturation: 0 });
     this.brightness = new BrightnessContrastEffect({ brightness: 0, contrast: 0 });
     this.sepia = new SepiaEffect({ intensity: 0 });
-    this.pass = new EffectPass(camera, this.dof, this.hueSat, this.brightness, this.sepia, this.vignette);
+    // Belichtung direkt nach der Tiefenschärfe, vor Farbfiltern und Vignette
+    this.pass = new EffectPass(camera, this.dof, this.exposureFx, this.hueSat, this.brightness, this.sepia, this.vignette);
     composer.addPass(this.pass);
     this.setPassEnabled(false);
   }
@@ -110,7 +112,6 @@ export class PhotoMode {
 
   enter(): void {
     this.active = true;
-    this.baseExposure = this.gl.toneMappingExposure;
     this.setPassEnabled(true);
     this.apply();
   }
@@ -120,7 +121,6 @@ export class PhotoMode {
     this.setPassEnabled(false);
     this.camera.fov = this.baseFov;
     this.camera.updateProjectionMatrix();
-    this.gl.toneMappingExposure = this.baseExposure;
     this.settings.selfie = false;
   }
 
@@ -134,7 +134,7 @@ export class PhotoMode {
     const s = this.settings;
     this.camera.fov = s.fov;
     this.camera.updateProjectionMatrix();
-    this.gl.toneMappingExposure = this.baseExposure * s.exposure;
+    this.exposureFx.exposure = s.exposure;
     this.dof.cocMaterial.focusDistance = s.focusDistance;
     this.dof.cocMaterial.focusRange = this.focusRange;
     this.dof.bokehScale = 1 + (1 - s.aperture) * 4;

@@ -1,11 +1,12 @@
 import type { BufferGeometry} from 'three';
-import { BoxGeometry, Color, ConeGeometry, CylinderGeometry, DodecahedronGeometry, IcosahedronGeometry, MeshPhysicalMaterial, OctahedronGeometry, SphereGeometry, TorusGeometry, Vector2 } from 'three';
+import { BoxGeometry, Color, CylinderGeometry, DodecahedronGeometry, IcosahedronGeometry, MeshPhysicalMaterial, OctahedronGeometry, SphereGeometry, TorusGeometry, Vector2 } from 'three';
 import { textures } from '@/render/ProceduralTextures';
 import { addRim } from '@/render/stylize';
 import { Random } from '@/math/Random';
 import { clamp } from '@/math/utils';
 import type { ArchiveEntry, FossilGenome, MineralGenome } from '@/gen/archive/types';
-import { colorize, hsl, jitter, mergeParts } from '../geometry';
+import { colorize, gradientColor, hsl, jitter, mergeParts } from '../geometry';
+import { arc, blob, lathe, prism, tube } from '../organic';
 
 export interface PropTemplate {
   geometry: BufferGeometry;
@@ -143,87 +144,221 @@ function fossilGeometry(g: FossilGenome, rng: Random, seed: string): { geo: Buff
   const stone = STONE.clone().offsetHSL(0, 0, (g.erosion - 0.5) * 0.1);
   const fossilTint = hsl(g.hue, 0.3, 0.55);
   if (g.ruinKind) {
-    const ruin = RUIN.clone().lerp(hsl(g.hue, 0.25, 0.4), 0.4);
+    const ruin = RUIN.clone().lerp(hsl(g.hue, 0.25, 0.4), 0.4).offsetHSL(0, 0, (0.5 - g.erosion) * 0.08);
+    // Am Fuß dunkel und erdig: Mauerwerk wächst aus dem Boden, statt auf ihm zu liegen
+    const dirt = ruin.clone().multiplyScalar(0.5).lerp(new Color(0.2, 0.17, 0.13), 0.35);
+    const glow = hsl(g.hue + 180, 0.8, 0.6);
+    /** Fundamenttiefe: so weit reicht jedes Teil unter den Boden (füllt Lücken am Hang). */
+    const BURY = S * 0.3;
+    /**
+     * Verwitterter Quader mit gefasten Kanten und Fundament. `w`/`d` Breite und Tiefe, `h` Höhe über dem Boden,
+     * `lean` Neigung um die Tiefenachse, `yaw` Drehung, `taper` Verjüngung nach oben.
+     */
+    const block = (w: number, h: number, d: number, x: number, z: number, lean = 0, yaw = 0, taper = 0.94, bottom = dirt, top = ruin): void => {
+      const r = w / Math.SQRT2;
+      const b = prism(
+        [
+          [r * 1.04, -BURY],
+          [r * 1.02, 0],
+          [r * taper, h * 0.93],
+          [r * taper * 0.9, h],
+          [0.001, h],
+        ],
+        4,
+      );
+      b.scale(1, 1, d / w);
+      if (lean) b.rotateZ(lean);
+      if (yaw) b.rotateY(yaw);
+      b.translate(x, 0, z);
+      parts.push(gradientColor(b, bottom, top, 0.55));
+    };
+    /** Umgestürztes, halb versunkenes Bruchstück. */
+    const fragment = (size: number, x: number, z: number, i: number): void => {
+      const f = blob(size, `${seed}:frag${i}`, 0.3, 1.7, 0.6, 7, 5);
+      f.rotateY(rng.float(0, Math.PI));
+      f.translate(x, size * 0.12, z);
+      parts.push(gradientColor(f, dirt, ruin, 0.7));
+    };
     switch (g.ruinKind) {
       case 'monolith': {
-        const m = new BoxGeometry(S * 0.25, S, S * 0.18);
-        m.rotateZ(rng.float(-0.08, 0.08));
-        m.translate(0, S * 0.5, 0);
-        parts.push(colorize(jitter(m, S * 0.01, seed), ruin, 0.3));
+        block(S * 0.27, S, S * 0.17, 0, 0, rng.float(-0.07, 0.07), 0, 0.82);
+        fragment(S * 0.1, S * 0.3, S * 0.12, 0);
+        fragment(S * 0.07, -S * 0.26, -S * 0.1, 1);
         centerY = S * 0.5;
         radius = S * 0.5;
         break;
       }
       case 'wall': {
         const n = 3 + rng.int(0, 4);
+        // durchgehendes Fundament, darauf unterschiedlich hohe Mauerreste
+        const course = prism(
+          [
+            [S * 0.11, -BURY],
+            [S * 0.11, S * 0.06],
+            [0.001, S * 0.06],
+          ],
+          4,
+        );
+        course.scale(n * 1.45, 1, 1.25);
+        parts.push(gradientColor(course, dirt, ruin.clone().multiplyScalar(0.85), 0.6));
         for (let i = 0; i < n; i++) {
           const h = S * rng.float(0.2, 0.45);
-          const b = new BoxGeometry(S * 0.28, h, S * 0.14);
-          b.translate((i - n / 2) * S * 0.3, h / 2, rng.float(-0.02, 0.02) * S);
-          parts.push(colorize(b, ruin, 0.3));
+          block(S * 0.27, h, S * 0.15, (i - (n - 1) / 2) * S * 0.29, rng.float(-0.015, 0.015) * S, rng.float(-0.03, 0.03), 0, 0.97);
         }
+        fragment(S * 0.08, S * 0.1, S * 0.2, 0);
+        fragment(S * 0.06, -S * 0.3, -S * 0.2, 1);
         radius = S * 0.5;
         centerY = S * 0.15;
         break;
       }
       case 'statue': {
-        const base = new BoxGeometry(S * 0.4, S * 0.15, S * 0.4);
-        base.translate(0, S * 0.075, 0);
-        parts.push(colorize(base, ruin));
-        const body = new CylinderGeometry(S * 0.08, S * 0.12, S * 0.55, 7);
-        body.translate(0, S * 0.42, 0);
-        parts.push(colorize(body, ruin, 0.2));
-        const head = new SphereGeometry(S * 0.1, 8, 6);
-        head.translate(0, S * 0.78, 0);
+        block(S * 0.42, S * 0.1, S * 0.42, 0, 0, 0, 0, 0.98);
+        const step = prism(
+          [
+            [S * 0.21, S * 0.1],
+            [S * 0.2, S * 0.17],
+            [0.001, S * 0.17],
+          ],
+          4,
+        );
+        parts.push(colorize(step, ruin));
+        // Gestalt: Gewand, Schultern, Kopf – als Rotationskörper verwittert und ohne Details
+        const body = lathe(
+          [
+            [S * 0.13, S * 0.17],
+            [S * 0.1, S * 0.36],
+            [S * 0.085, S * 0.52],
+            [S * 0.12, S * 0.62],
+            [S * 0.1, S * 0.68],
+            [S * 0.04, S * 0.72],
+          ],
+          9,
+        );
+        parts.push(gradientColor(body, ruin.clone().multiplyScalar(0.8), ruin, 0.8));
+        const head = blob(S * 0.085, `${seed}:head`, 0.12, 1.4, 1.1, 8, 6);
+        head.translate(0, S * 0.79, 0);
         parts.push(colorize(head, ruin));
+        fragment(S * 0.07, S * 0.3, S * 0.05, 0);
         centerY = S * 0.45;
         break;
       }
       case 'machine': {
-        const core = new BoxGeometry(S * 0.5, S * 0.35, S * 0.4);
-        core.translate(0, S * 0.18, 0);
-        parts.push(colorize(core, ruin.clone().multiplyScalar(0.8)));
+        const dark = ruin.clone().multiplyScalar(0.75);
+        block(S * 0.52, S * 0.3, S * 0.42, 0, 0, 0, 0, 0.9, dirt, dark);
+        const dome = lathe(
+          [
+            [S * 0.17, S * 0.29],
+            [S * 0.16, S * 0.36],
+            [S * 0.1, S * 0.43],
+            [0.001, S * 0.45],
+          ],
+          10,
+        );
+        parts.push(colorize(dome, hsl(g.hue, 0.5, 0.5)));
         for (let i = 0; i < 3; i++) {
-          const c = new CylinderGeometry(S * 0.06, S * 0.06, S * 0.5, 8);
-          c.rotateZ(Math.PI / 2);
-          c.translate(0, S * 0.3 + i * S * 0.08, (i - 1) * S * 0.12);
-          parts.push(colorize(c, hsl(g.hue, 0.5, 0.5)));
+          const a = (i / 3) * Math.PI * 2 + 0.4;
+          const px = Math.cos(a) * S * 0.2;
+          const pz = Math.sin(a) * S * 0.16;
+          parts.push(colorize(tube(arc([px, S * 0.3, pz], [px * 1.9, -S * 0.05, pz * 1.9], [0, S * 0.12, 0], S * 0.028, S * 0.028, 5), 6), dark));
         }
+        const eye = blob(S * 0.04, `${seed}:eye`, 0, 1, 1, 7, 5);
+        eye.translate(0, S * 0.2, S * 0.215);
+        parts.push(colorize(eye, glow));
         centerY = S * 0.2;
         break;
       }
       case 'glyph_stone': {
-        const slab = new BoxGeometry(S * 0.7, S * 0.5, S * 0.12);
-        slab.rotateX(-0.25);
-        slab.translate(0, S * 0.25, 0);
-        parts.push(colorize(slab, ruin, 0.2));
+        // nach hinten geneigte Tafel, Unterkante im Boden
+        const slab = prism(
+          [
+            [S * 0.36, -BURY],
+            [S * 0.35, 0],
+            [S * 0.33, S * 0.5],
+            [S * 0.28, S * 0.55],
+            [0.001, S * 0.55],
+          ],
+          4,
+        );
+        slab.scale(1.3, 1, 0.24);
+        slab.rotateX(-0.22);
+        parts.push(gradientColor(slab, dirt, ruin, 0.6));
         for (let i = 0; i < 5; i++) {
-          const gl = new BoxGeometry(S * 0.08, S * 0.08, S * 0.02);
-          gl.rotateX(-0.25);
-          gl.translate((i - 2) * S * 0.12, S * 0.3, S * 0.07);
-          parts.push(colorize(gl, hsl(g.hue + 180, 0.8, 0.6)));
+          const gl = prism(
+            [
+              [S * 0.04, 0],
+              [S * 0.04, S * 0.07],
+              [0.001, S * 0.07],
+            ],
+            4,
+          );
+          gl.scale(1, 1, 0.3);
+          gl.rotateX(-0.22);
+          gl.translate((i - 2) * S * 0.13, S * 0.26 + (i % 2) * S * 0.05, S * 0.07 - (S * 0.26 + (i % 2) * S * 0.05) * 0.22);
+          parts.push(colorize(gl, glow));
         }
+        fragment(S * 0.06, S * 0.38, S * 0.1, 0);
         centerY = S * 0.25;
         break;
       }
       case 'wreck': {
-        const hull = new CylinderGeometry(S * 0.18, S * 0.22, S * 0.9, 8);
-        hull.rotateZ(Math.PI / 2 + 0.2);
+        // schräg im Boden steckender Rumpf: das Heck ist versunken
+        const dark = ruin.clone().multiplyScalar(0.7);
+        const hull = lathe(
+          [
+            [0.001, -S * 0.5],
+            [S * 0.14, -S * 0.42],
+            [S * 0.21, -S * 0.15],
+            [S * 0.2, S * 0.2],
+            [S * 0.12, S * 0.4],
+            [0.001, S * 0.46],
+          ],
+          9,
+        );
+        hull.rotateZ(Math.PI / 2 - 0.32);
         hull.rotateY(0.3);
-        hull.translate(0, S * 0.2, 0);
-        parts.push(colorize(jitter(hull, S * 0.02, seed), ruin.clone().multiplyScalar(0.7), 0.3));
-        const fin = new BoxGeometry(S * 0.05, S * 0.35, S * 0.3);
-        fin.translate(-S * 0.35, S * 0.35, 0);
-        parts.push(colorize(fin, ruin.clone().multiplyScalar(0.7)));
+        hull.translate(0, S * 0.1, 0);
+        parts.push(gradientColor(hull, dirt, dark, 0.5));
+        const fin = prism(
+          [
+            [S * 0.2, -S * 0.1],
+            [S * 0.17, S * 0.2],
+            [S * 0.06, S * 0.38],
+            [0.001, S * 0.38],
+          ],
+          4,
+        );
+        fin.scale(0.16, 1, 1);
+        fin.translate(-S * 0.33, S * 0.12, 0);
+        parts.push(colorize(fin, dark));
+        for (let i = 0; i < 3; i++) fragment(S * rng.float(0.04, 0.08), S * rng.float(-0.45, 0.45), S * rng.float(0.2, 0.4) * (i % 2 ? -1 : 1), i);
         centerY = S * 0.2;
         break;
       }
       case 'beacon': {
-        const mast = new ConeGeometry(S * 0.12, S, 6);
-        mast.translate(0, S * 0.5, 0);
-        parts.push(colorize(mast, ruin, 0.3));
-        const top = new SphereGeometry(S * 0.1, 8, 6);
-        top.translate(0, S, 0);
+        const foot = lathe(
+          [
+            [S * 0.2, -BURY],
+            [S * 0.19, 0],
+            [S * 0.14, S * 0.06],
+            [S * 0.1, S * 0.08],
+          ],
+          8,
+        );
+        parts.push(gradientColor(foot, dirt, ruin, 0.6));
+        const mast = lathe(
+          [
+            [S * 0.1, S * 0.08],
+            [S * 0.07, S * 0.4],
+            [S * 0.085, S * 0.43],
+            [S * 0.06, S * 0.46],
+            [S * 0.04, S * 0.86],
+            [S * 0.07, S * 0.9],
+          ],
+          8,
+        );
+        parts.push(gradientColor(mast, ruin.clone().multiplyScalar(0.85), ruin, 0.8));
+        const top = blob(S * 0.09, `${seed}:top`, 0.05, 1.2, 1, 8, 6);
+        top.translate(0, S * 0.97, 0);
         parts.push(colorize(top, hsl(g.hue, 0.9, 0.65)));
         centerY = S * 0.5;
         radius = S * 0.5;

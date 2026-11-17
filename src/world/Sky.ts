@@ -31,6 +31,9 @@ import { atmosphereLook, type AtmosphereLook } from './Atmosphere';
 import type { DayCycle } from './DayCycle';
 import type { WeatherParams } from './Weather';
 
+/** Halbe Kantenlänge des Schattenbereichs um den Spieler in Metern. */
+export const SHADOW_EXTENT = 70;
+
 const SKY_VERT = /* glsl */ `
 varying vec3 vDir;
 void main() {
@@ -521,14 +524,16 @@ export class Sky {
     this.sun.castShadow = true;
     this.sun.shadow.mapSize.set(2048, 2048);
     const cam = this.sun.shadow.camera;
-    cam.left = -90;
-    cam.right = 90;
-    cam.top = 90;
-    cam.bottom = -90;
-    cam.near = 1;
-    cam.far = 600;
-    this.sun.shadow.bias = -0.0006;
-    this.sun.shadow.normalBias = 0.6;
+    // Enger Schattenbereich mit knappem Tiefenbereich: nur so bleiben die Abstände klein genug, dass auch Gras,
+    // Blumen und kleine Steine einen Schatten bekommen (große Abstände verschlucken alles unter Kniehöhe).
+    cam.left = -SHADOW_EXTENT;
+    cam.right = SHADOW_EXTENT;
+    cam.top = SHADOW_EXTENT;
+    cam.bottom = -SHADOW_EXTENT;
+    cam.near = 110;
+    cam.far = 490;
+    this.sun.shadow.bias = -0.00022;
+    this.sun.shadow.normalBias = 0.09;
     this.shadowSize = 2048;
     scene.add(this.sun);
     scene.add(this.sun.target);

@@ -1033,6 +1033,10 @@ export class PlanetScene implements GameScene {
       width,
       height,
       settings: { focusDistance: settings.focusDistance, aperture: settings.aperture, exposure: settings.exposure, fov: settings.fov, filter: settings.filter },
+      // Lage der Motive im Bild (Himmelsphänomene füllen den Himmel und bekommen keinen Rahmen)
+      regions: subjects
+        .filter((s) => s.entry.category !== 'weather')
+        .map((s) => ({ entryId: s.entry.id, x: (s.observation.ndcX + 1) / 2, y: (1 - s.observation.ndcY) / 2, r: Math.min(0.6, s.observation.frameFill / 2) })),
       blob: jpeg,
       thumb,
     });
@@ -1053,6 +1057,8 @@ export class PlanetScene implements GameScene {
       onArchive: () => {
         this.closePhotoReview(false);
         this.openCatalog();
+        // direkt zum Hauptmotiv springen: dort ist es im Bild hervorgehoben
+        if (primary) this.archiveUi.selectEntry(primary.entry.id);
       },
       onClose: () => this.closePhotoReview(true),
     });

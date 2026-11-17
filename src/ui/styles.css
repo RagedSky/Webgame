@@ -837,12 +837,67 @@ input[type='color'] {
   margin-bottom: 6px;
 }
 
-.best-photo {
-  width: 100%;
-  max-height: 300px;
-  object-fit: cover;
-  border-radius: 2px;
+.photo-wrap {
+  position: relative;
+  overflow: hidden;
   margin: 8px 0 4px;
+  border: 1px solid var(--line);
+  line-height: 0;
+}
+
+.best-photo {
+  display: block;
+  width: 100%;
+}
+
+/* Hervorhebung des Motivs: Eckmarken in der Akzentfarbe, der Rest des Bildes wird abgedunkelt */
+.photo-mark {
+  --c: var(--accent);
+  position: absolute;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 0 2000px rgba(4, 8, 16, 0.52);
+  outline: 1px solid rgba(255, 255, 255, 0.28);
+  background:
+    linear-gradient(var(--c), var(--c)) top left / 16px 2px no-repeat,
+    linear-gradient(var(--c), var(--c)) top left / 2px 16px no-repeat,
+    linear-gradient(var(--c), var(--c)) top right / 16px 2px no-repeat,
+    linear-gradient(var(--c), var(--c)) top right / 2px 16px no-repeat,
+    linear-gradient(var(--c), var(--c)) bottom left / 16px 2px no-repeat,
+    linear-gradient(var(--c), var(--c)) bottom left / 2px 16px no-repeat,
+    linear-gradient(var(--c), var(--c)) bottom right / 16px 2px no-repeat,
+    linear-gradient(var(--c), var(--c)) bottom right / 2px 16px no-repeat;
+  animation: mark-in 0.45s ease-out;
+  pointer-events: none;
+}
+
+.photo-mark .label {
+  position: absolute;
+  left: -1px;
+  bottom: calc(100% + 5px);
+  padding: 2px 8px;
+  border-left: 2px solid var(--c);
+  background: rgba(6, 10, 18, 0.82);
+  font-size: 10.5px;
+  line-height: 1.4;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.photo-mark.low .label {
+  bottom: auto;
+  top: calc(100% + 5px);
+}
+
+@keyframes mark-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.35);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
 }
 
 .archive-detail .desc {

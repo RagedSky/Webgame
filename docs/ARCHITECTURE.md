@@ -570,6 +570,32 @@ Unterteilungsflächen: ein grober Käfig mit sauberen Kantenschleifen, der durch
   eckige Schaltflächen in Versalien, Marken als Umriss, schmale Balken. Feste Akzentfarben sind durch `--accent` ersetzt;
   `setUiAccent` übernimmt die Farbe vom Anzug, hebt zu dunkle Töne an und merkt sie für das Hauptmenü.
 
+### 4.20 Schatten für alles, eingebettete Ruinen, Belichtung, Motiv-Rahmen im Archiv
+
+- **Gras- und Blumenschatten** (`world/Vegetation.ts`, `VegetationAssets.grassDepthMaterial`): Halme und Blüten werfen
+  Schatten, solange ihre Zelle näher als 22 m an der Kamera liegt. Ein eigenes Tiefenmaterial bewegt die Halme im
+  Schattendurchgang mit demselben Wind wie im Bild, sonst stünde der Schatten still unter schwingendem Gras. Sträucher,
+  Steine, Pilze, Bäume, Fundstücke, Knoten, Module, Schiff, Rover, Kreaturen und der Charakter warfen bereits Schatten.
+- **Schattenkarte der Sonne** (`world/Sky.ts`, `SHADOW_EXTENT`): Ausschnitt ±70 m statt ±90 m, Tiefenbereich 110–490 m
+  statt 1–600 m, Bias −0,00022 und Normalen-Bias 0,09 statt −0,0006 und 0,6. Der alte Normalen-Bias verschluckte Schatten
+  von allem unter etwa 0,6 m Höhe, deshalb fehlten sie bei Gras und kleinen Pflanzen. Baumzellen werfen passend dazu bis
+  78 m Schatten (vorher 100 m, siehe 4.19).
+- **Pflanzen von unten**: Die Materialien für Blätter, Kronen, Leuchtteile und Kristalle (`FloraAssets`,
+  `VegetationAssets`) zeichnen beide Seiten. Kronen sind offene Schalen; von unten sah man vorher durch sie hindurch.
+- **Ruinen im Gelände** (`world/props/PropBuilder.ts`, `PropManager.ts`): Ruinen und Fossilien suchen in zwölf Versuchen
+  eine Stelle mit höchstens 0,3 Hangneigung über ihre Standfläche. Jedes Fundstück neigt sich zur Geländenormale (gebaute
+  Stücke zu 60 %, natürliche zu 85 %) und sinkt bis nahe an den tiefsten Punkt seiner Standfläche ein. Die Ruinenformen
+  bestehen aus Bausteinen von `organic.ts` mit einem Fundament unter der Bodenlinie, einem Farbverlauf von Erde am Fuß zur
+  Steinfarbe und Schutt am Sockel; das Wrack liegt als halb versunkener Rumpf im Boden.
+- **Belichtung im Foto-Modus** (`render/ExposureEffect.ts`): Die Tasten 1/2 wirkten nicht, weil
+  `renderer.toneMappingExposure` in der Postprocessing-Kette nicht angewendet wird. Ein eigener Effekt multipliziert das
+  Bild im Foto-Pass mit 2^EV; Sucher und gespeichertes Foto stimmen überein.
+- **Motiv-Rahmen im Archiv** (`save/Db.ts` `PhotoRegion`, `ui/ArchiveUi.markFor`): Beim Auslösen wird für jedes erkannte
+  Motiv die Lage im Bild gespeichert (Mittelpunkt 0..1, Radius als Anteil der Bildhöhe). Der Archiv-Eintrag zeigt das beste
+  Foto ungeschnitten mit Eckwinkeln und Namen um genau dieses Motiv, der Rest ist abgedunkelt. „Im Archiv ansehen“ in der
+  Foto-Auswertung springt direkt zum Hauptmotiv. Himmelsphänomene bekommen keinen Rahmen, ältere Fotos ohne gespeicherte
+  Lage auch nicht.
+
 ## 5. Laufzeit-Architektur
 
 - **GameLoop**: `requestAnimationFrame`, Akkumulator mit festem Update-Schritt (1/60 s, max. 5 Schritte/Frame), Render pro Frame,

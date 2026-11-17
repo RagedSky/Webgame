@@ -1,11 +1,17 @@
+import { clamp, lerp } from '@/math/utils';
 import type { CollisionWorld } from '../Collision';
-import { Group, Mesh, Raycaster, Vector3, type Scene } from 'three';
+import { Group, Mesh, Raycaster, Vector3, type Scene, Quaternion } from 'three';
 import { Random } from '@/math/Random';
 import type { TerrainModel, TerrainSample } from '@/gen/terrain/TerrainModel';
 import type { Planet } from '@/gen/universe/types';
 import type { ArchiveEntry } from '@/gen/archive/types';
 import { RARITY_SPAWN_WEIGHT, matchesPlacement } from '@/gen/archive/conditions';
 import { buildPropTemplate, type PropTemplate } from './PropBuilder';
+
+const UP = new Vector3(0, 1, 0);
+const tmpNormal = new Vector3();
+const tmpTilt = new Quaternion();
+const tmpYaw = new Quaternion();
 
 export interface WorldProp {
   id: string;
@@ -68,21 +74,36 @@ export class PropManager {
       const chance = RARITY_SPAWN_WEIGHT[entry.rarity] * (entry.category === 'fossil' ? 0.55 : 0.8);
       const count = (rng.next() < chance ? 1 : 0) + (entry.rarity === 'common' && rng.next() < 0.35 ? 1 : 0);
       for (let c = 0; c < count; c++) {
-        // bis zu 4 Versuche, einen passenden Punkt zu finden
-        for (let attempt = 0; attempt < 4; attempt++) {
+        // Ruinen und Fossilien suchen länger nach ebenem Grund (Bauwerke stehen nicht am Steilhang)
+        const built = entry.category === 'fossil';
+        const attempts = built ? 12 : 4;
+        const maxSlope = built ? 0.3 : 0.75;
+        for (let attempt = 0; attempt < attempts; attempt++) {
           const x = x0 + rng.next() * CELL;
           const z = z0 + rng.next() * CELL;
           const s = this.model.sample(x, z, tmpSample);
           const biome = this.planet.biomes[s.blend > 0.5 ? s.biome2 : s.biome]!;
           const underwater = this.model.hasWater && s.height < this.model.seaLevel - 0.3;
           if (underwater || !matchesPlacement(entry, biome, s.altitude, false, 0.03)) continue;
-          if (this.model.slopeAt(x, z, 1) > 0.75) continue;
           const t = this.template(entry);
+          // Hang über die ganze Grundfläche messen, nicht nur am Mittelpunkt
+          const reach = clamp(t.radius * 0.7, 0.6, 6);
+          if (this.model.slopeAt(x, z, reach) > maxSlope) continue;
           const mesh = new Mesh(t.geometry, t.material);
           const scale = rng.float(0.85, 1.2);
           mesh.scale.setScalar(scale);
-          mesh.position.set(x, s.height - 0.02, z);
-          mesh.rotation.y = rng.float(0, Math.PI * 2);
+          // Ins Gelände einbetten: auf den tiefsten Punkt der Grundfläche absenken und der Hangneigung folgen
+          const hxp = this.model.heightAt(x + reach, z);
+          const hxm = this.model.heightAt(x - reach, z);
+          const hzp = this.model.heightAt(x, z + reach);
+          const hzm = this.model.heightAt(x, z - reach);
+          const low = Math.min(s.height, hxp, hxm, hzp, hzm);
+          const follow = built ? 0.6 : 0.85;
+          tmpNormal.set((-(hxp - hxm) / (2 * reach)) * follow, 1, (-(hzp - hzm) / (2 * reach)) * follow).normalize();
+          tmpTilt.setFromUnitVectors(UP, tmpNormal);
+          tmpYaw.setFromAxisAngle(UP, rng.float(0, Math.PI * 2));
+          mesh.quaternion.copy(tmpTilt).multiply(tmpYaw);
+          mesh.position.set(x, lerp(s.height, low, built ? 0.85 : 0.5) - 0.03, z);
           mesh.castShadow = true;
           mesh.receiveShadow = true;
           mesh.userData.entryId = entry.id;
