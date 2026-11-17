@@ -23,6 +23,7 @@ export function createPlanetTexture(planet: Planet, width = 256, height = 128): 
   const water = new Color(planet.type === 'ocean' ? '#2a6a95' : planet.type === 'toxic' ? '#4a5a8a' : '#2f6f9a');
   const ice = new Color('#e8f3fb');
   const tmp = new Color();
+  const tmp2 = new Color();
 
   // Kumulierte Abdeckung für die Biomzuordnung
   const thresholds: number[] = [];
@@ -47,9 +48,15 @@ export function createPlanetTexture(planet: Planet, width = 256, height = 128): 
       let bl: number;
       if (isGas) {
         const band = noise.fbm3D(px * 0.6, py * 6 + noise.noise3D(px * 2, py * 2, pz * 2) * 0.6, pz * 0.6, 3);
-        const t = clamp01(0.5 + band * 0.5);
-        const i = Math.min(biomes.length - 1, Math.floor(t * biomes.length));
-        tmp.copy(colors[i] ?? colors[0]!).lerp(accents[i] ?? accents[0]!, clamp01(0.5 + band));
+        // weiche Übergänge zwischen den Bändern, feine Wirbel als Aufhellung
+        const t = clamp01(0.5 + band * 0.5) * biomes.length - 0.5;
+        const i = Math.max(0, Math.min(biomes.length - 1, Math.floor(t)));
+        const j = Math.min(biomes.length - 1, i + 1);
+        const f = clamp01((t - i - 0.3) / 0.4);
+        const swirl = noise.fbm3D(px * 3 + 5, py * 14, pz * 3 + 5, 3);
+        tmp.copy(colors[i] ?? colors[0]!).lerp(colors[j] ?? colors[0]!, f * f * (3 - 2 * f));
+        tmp2.copy(accents[i] ?? accents[0]!).lerp(accents[j] ?? accents[0]!, f);
+        tmp.lerp(tmp2, clamp01(0.35 + swirl * 0.9));
         r = tmp.r;
         g = tmp.g;
         bl = tmp.b;

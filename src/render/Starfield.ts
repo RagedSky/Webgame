@@ -3,7 +3,14 @@ import { Random } from '@/math/Random';
 import type { Disposer } from '@/core/Disposer';
 
 /** Deterministisches Sternenfeld als Points-Wolke (Hintergrund für Menü und Systemansicht). */
-export function createStarfield(disposer: Disposer, seed: string, count = 2500, radius: [number, number] = [60, 200]): Points {
+export function createStarfield(
+  disposer: Disposer,
+  seed: string,
+  count = 2500,
+  radius: [number, number] = [60, 200],
+  hue: [number, number] = [0.55, 0.68],
+  saturation: [number, number] = [0.1, 0.5],
+): Points {
   const rng = new Random(seed);
   const positions = new Float32Array(count * 3);
   const colors = new Float32Array(count * 3);
@@ -15,7 +22,7 @@ export function createStarfield(disposer: Disposer, seed: string, count = 2500, 
     positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
     positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
     positions[i * 3 + 2] = r * Math.cos(phi);
-    tmp.setHSL(rng.float(0.55, 0.68), rng.float(0.1, 0.5), rng.float(0.55, 0.95));
+    tmp.setHSL(rng.float(hue[0], hue[1]) % 1, rng.float(saturation[0], saturation[1]), rng.float(0.55, 0.95));
     colors[i * 3] = tmp.r;
     colors[i * 3 + 1] = tmp.g;
     colors[i * 3 + 2] = tmp.b;
