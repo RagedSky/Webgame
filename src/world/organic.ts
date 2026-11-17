@@ -136,12 +136,29 @@ export function blob(radius: number, seed: string, amp = 0.18, freq = 1.3, squas
   return weldNormals(g);
 }
 
-/** Rotationskörper aus einem Profil [Radius, Höhe] von unten nach oben (Pilzhut, Knolle, Schirmkrone, Scheibe). */
-export function lathe(profile: Array<[number, number]>, segments = 12): BufferGeometry {
+/**
+ * Rotationskörper aus einem Profil [Radius, Höhe] von unten nach oben (Pilzhut, Knolle, Schirmkrone, Scheibe).
+ * Mit `phiStart`/`phiLength` entsteht nur ein Kreisausschnitt (Rüstungsplatte, Visier); φ = 0 zeigt nach +z.
+ */
+export function lathe(profile: Array<[number, number]>, segments = 12, phiStart = 0, phiLength = Math.PI * 2): BufferGeometry {
   return new LatheGeometry(
     profile.map(([r, y]) => new Vector2(Math.max(1e-4, r), y)),
     segments,
+    phiStart,
+    phiLength,
   );
+}
+
+/**
+ * Kantiges Prisma mit gefasten Enden: Rotationskörper mit wenigen Seiten und flachen Flächennormalen
+ * (Frachtkiste, Sockel, Konsole). Mit `sides = 4` und 45°-Drehung entsteht ein Quader mit Fasen.
+ */
+export function prism(profile: Array<[number, number]>, sides = 4, twist = Math.PI / 4): BufferGeometry {
+  const base = lathe(profile, sides, twist);
+  const flat = base.toNonIndexed();
+  base.dispose();
+  flat.computeVertexNormals();
+  return flat;
 }
 
 /** Facettierter Kristall: sechseckige Säule mit Spitze (flache Normalen, damit die Flächen glitzern). */
