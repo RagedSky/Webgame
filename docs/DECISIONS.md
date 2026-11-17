@@ -299,7 +299,7 @@ Atmosphärenfarben bleiben physikalisch hergeleitet und werden nur in Sättigung
 
 ## D-059 · Gras als eigener Nahring, Terrain trägt die Ferne
 **Kontext:** Flächendeckendes Gras bis zum Horizont ist im Browser zu teuer; ohne Gras wirkt jeder Planet kahl.
-**Entscheidung:** Gras steht nur in einem Ring von 72 m um die Kamera (kleine Zellen, schneller Aufbau, Ausblendung im
+**Entscheidung:** Gras steht nur in einem Ring um die Kamera (anfangs 72 m, seit D-064 56 m) (kleine Zellen, schneller Aufbau, Ausblendung im
 Shader). Dahinter übernimmt das Terrain denselben Farbton auf bewachsenen Hängen, sodass der Übergang nicht auffällt.
 Die Einstellung „Vegetationsdichte“ skaliert Gras, Blumen und Arten-Pflanzen gemeinsam.
 
@@ -332,3 +332,28 @@ Flora und Fauna ab.
 **Entscheidung:** Auch Technik entsteht aus `lathe`, `tube`, `arc`, `blob` und dem neuen `prism`. Harte Kanten kommen aus
 flachen Normalen und Fasen, nicht aus Box-Geometrien. Ein gemeinsames Hüllenmaterial (Panelfugen, Klarlack, Kantenlicht) und
 orange Lackbänder verbinden Lander, Module und Anzug. Sockelpositionen, Kollisionsradien und alle APIs bleiben gleich.
+
+## D-064 · Gelände aus Großrelief plus Landschaftsformen statt Rauschen je Biom
+**Kontext:** Das Gelände wirkte zackig und unnatürlich. Messung: mittlere Hangneigung 50–60°, weil je Biom ein eigenes
+Höhenband mit starkem, kurzwelligem Rauschen gefüllt wurde und benachbarte Biome beliebig weit auseinander liegen konnten.
+**Entscheidung:** Ein langwelliges, flächentreu entzerrtes Regionsfeld bestimmt Biom und Großform zugleich; die Biome sind
+dafür nach Höhenlage sortiert. Charakter kommt aus einer Bibliothek von Landschaftsformen mit Proportionen aus der
+Planetenforschung (Krater, Dünen, Vulkane, Canyons, Gräben, Eisrücken, Trogtäler, Rinnen), je Biom als Rezept kombiniert.
+Schwerkraft und Atmosphärendichte wirken planetenweit (Reliefhöhe, Kraterdichte, Schnee, Bodenhelligkeit). Steile Wände
+gibt es weiterhin, aber nur dort, wo eine Form sie verlangt.
+
+## D-065 · Spielhöhe und Geländehöhe getrennt
+**Kontext:** Spawn-Bedingungen nutzen eine normierte Höhe 0..1; seltene Arten haben enge Höhenfenster innerhalb des
+Höhenbands ihres Bioms. Bisher war diese Höhe direkt die Geländehöhe, das Band musste also physisch ausgefüllt werden –
+eine Ursache des steilen Geländes.
+**Entscheidung:** `altitude` ist die relative Lage im Biom (robuste Perzentile aus einer Vermessung im Konstruktor), abgebildet
+auf das Katalogband. Die Geländehöhe in Metern ist davon frei. Hinweise wie „bevorzugt hohe Lagen“ bleiben richtig: gemeint
+sind die hohen Lagen des Bioms. Ein Test stellt sicher, dass jedes Biom sein Band abdeckt.
+
+## D-066 · Alte Spielstände werden an das neue Gelände angepasst, nicht migriert
+**Kontext:** Das Höhenfeld ist nicht Teil des Spielstands, gespeicherte Positionen beziehen sich aber darauf.
+**Entscheidung:** Beim Laden wird der Spieler auf den Boden gesetzt (Schwimmer behalten ihre Tiefe). Liegt der gespeicherte
+Landeplatz des Schiffs im Wasser oder am Steilhang, wird ein neuer gesucht. Basis-Module und Rover stehen ohnehin auf der
+aktuellen Geländehöhe; ein Modul kann nach dem Update in einer Senke oder im Flachwasser stehen und muss dann umgesetzt
+werden, eine Tiefseesonden-Boje kann über Land liegen. Biomgrenzen haben sich verschoben, die Karte (Fog of War) bleibt gültig, zeigt aber das neue Relief.
+

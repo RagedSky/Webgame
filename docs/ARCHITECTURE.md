@@ -206,13 +206,14 @@ player, progress, photos?, settings? }` ist eine Kopie des Live-Stands. Fünf Sl
 Planetenszene speichert danach nicht mehr (`discardOnExit`). Export erzeugt eine JSON-Datei inkl. Fotos (Base64) und globalen
 Einstellungen, Import prüft `kind`/`version`, migriert und schreibt Live-Stand und Fotos.
 
-### 4.4 Terrain-Modell (Phase 2)
+### 4.4 Terrain-Modell (Phase 2, überarbeitet in 4.16)
 
 `src/gen/terrain/TerrainModel.ts` (rein, testbar): quadratische Welt von 6–10 km Kantenlänge (abhängig vom Planetenradius),
-maximale Höhe 400–760 m. Ein Regionsfeld (fBm mit Domain-Warping) wählt das Biom nach kumulierter Abdeckung; jedes Biom
-trägt sein Höhenband (`altitude`) bei, Übergänge werden geblendet. Wasserspiegel = 0,1 · maxHeight, nur Biome mit `hasWater`
-liegen darunter. `sample(x, z)` liefert Höhe, Biom, Nachbarbiom, Blendgewicht, Detail- und Höhenwert; `findSpawn()` einen
-deterministischen, flachen Landeplatz. `VegetationProfiles.ts` definiert Dichten je Biom.
+maximale Höhe 230–460 m (leichte Welten höher, schwere flacher). Ein weiches Regionsfeld ordnet die Biome nach Höhenlage und
+liefert das Großrelief; Landschaftsformen aus `Landforms.ts` prägen jedes Biom (Abschnitt 4.16). Wasserspiegel = 0,1 ·
+maxHeight, nur Biome mit `hasWater` liegen darunter. `sample(x, z)` liefert Höhe, Biom, Nachbarbiom, Blendgewicht, Detailwert
+und die relative Höhenlage im Biom; `findSpawn()` einen deterministischen, flachen Landeplatz. `VegetationProfiles.ts`
+definiert Dichten je Biom.
 
 ### 4.5 Kreaturen und Arten-Flora (Phase 3)
 
@@ -432,7 +433,7 @@ Ziel ist eine stilisierte, farbkräftige Optik mit weichen Formen statt aneinand
   Rosetten-Sukkulenten, Ranken mit Blättern, Kristallsäulen. Verläufe von dunkler Basis zu hellen, farbverschobenen Spitzen.
 - **Rohstoffknoten, Findlinge, Lander**: Knoten aus `blob`/`crystal`/`lathe`, Findlinge als weiche Klumpen, Lander-Rumpf als
   Rotationskörper mit Panelfugen, Klarlack und Lackstreifen.
-- **Bewuchs** (`Vegetation`): dichter Grasring (Zellen 24 m, Radius 72 m, ~1,6 Büschel/m², einlagige doppelseitige Halme mit
+- **Bewuchs** (`Vegetation`): dichter Grasring (Zellen 24 m, Radius 56 m, ~1,25 Büschel/m², einlagige doppelseitige Halme mit
   Aufwärts-Normalen, im Shader zur Ringgrenze ausgeblendet), eingestreute Blumen in drei planetenspezifischen Farben, Arten-
   Pflanzen nach Biom-Profil ausgedünnt oder verdichtet (0,35×–2,5×). Ferne Baumzellen werfen keinen Schatten.
 - **Terrain**: flache bis mittelsteile Hänge tragen die Vegetationsfarbe (mit Erdflecken aus dem Geländerauschen), Fels behält
@@ -473,6 +474,37 @@ Ziel ist eine stilisierte, farbkräftige Optik mit weichen Formen statt aneinand
   (Plattform- und Schirmbäume, Riesenpilze, Nadelriesen, Agaven, Kristallnadeln auf toten Welten). Sie entstehen aus
   synthetischen Flora-Genomen über `buildFloraGeometry`, stehen in Hainen in den fernen Zellen und sind von der Einstellung
   „Vegetationsdichte“ unabhängig. Sie sind Kulisse: keine Archiv-Einträge, keine Kollision.
+
+### 4.16 Natürliche Topografie nach Vorbildern aus der Planetenforschung
+
+Das frühere Höhenfeld legte starkes Rauschen (5 Oktaven ab 420 m Wellenlänge) über Höhenbänder, die je Biom unabhängig
+gewürfelt waren: mittlere Hangneigung 50–60°, Wände zwischen Biomen. Das neue Modell baut das Gelände in drei Schichten.
+
+- **Großrelief** (`TerrainModel`): ein Regionsfeld mit langen Wellen (5 km, zwei Oktaven, leichte Verzerrung) wird flächentreu
+  entzerrt, damit jedes Biom genau seinen Anteil der Karte bekommt. Die Biome sind nach Höhenlage sortiert; der Regionswert ist
+  damit zugleich die Großform: Tiefsee, Flachmeer, Küste, Ebene, Hügelland, Gebirge liegen nebeneinander. Eine geglättete Kurve
+  ordnet jedem Regionswert eine Höhe zu, ohne Stufen an Biomgrenzen. Ebenen und Plateaus (`flat`) bleiben innen flach und
+  steigen erst am Rand.
+- **Landschaftsformen** (`Landforms.ts`): je Biom ein Rezept aus Formen mit Amplitude in Metern. Vorbilder und Proportionen:
+  Einschlagkrater mit Tiefe ≈ 0,15 × Durchmesser, aufgeworfenem Rand, Auswurfdecke ∝ r⁻³, flachem Boden und Zentralberg bei
+  großen Kratern (Mond, Merkur, Mars); Dünen mit gewölbtem Luvhang, scharfem Kamm und Rutschhang, Megadünen mit aufgesetzten
+  kleinen Dünen in einer planetenweiten Windrichtung (Erde, Mars, Titan); Schildvulkane mit Caldera, Schlackenkegel im
+  Schüttwinkel und Lavaströme mit Stirnkanten (Tharsis, Io); Tafelberge und Canyons mit gestuften Wänden (Colorado-Plateau,
+  Valles Marineris); Grabenbrüche (Cerberus Fossae); Runzelrücken auf Lavaebenen (Mondmaria); Doppelrücken und Polygone auf
+  Eis (Europa, Sputnik Planitia); Trogtäler und Fjorde, Drumlins und Yardangs; Flussrinnen und Deltaarme; zertalte Hügel und
+  Gebirgskämme, deren Feinstruktur nur an den Graten sitzt. An Biomgrenzen werden die Rezepte überblendet.
+- **Planetenweite Regeln**: Schwerkraft skaliert das Relief (g⁻⁰·³, Mars trägt höhere Formen als die Erde). Dünne Atmosphären
+  (< 0,35) bekommen Krater auf allen trockenen Flächen, weil nichts die Einschläge bremst oder abträgt. Ohne Atmosphäre
+  fällt kein Schnee, und der Boden ist dunkler (Regolith), damit das Relief lesbar bleibt.
+- **Relative Höhenlage**: `altitude` einer Probe ist die Lage zwischen dem 3. und 97. Perzentil der Höhen im Biom, abgebildet
+  auf dessen Katalog-Höhenband. Spawn-Bedingungen, Temperatur und Schneegrenze nutzen diesen Wert; die Höhenfenster seltener
+  Arten bleiben damit unabhängig von der tatsächlichen Geländehöhe erreichbar (Test).
+- **Gesteinsschichten** (`TerrainManager`): waagrechte Bänder mit wechselnder Mächtigkeit und feinen Fugen entstehen je Pixel
+  im Shader aus der Welthöhe, nur an Steilwänden und nur in der Nähe. Sie hängen nicht mehr am Raster der Chunks.
+- **Messwerte** (3 m Basis, Landfläche): Median der Hangneigung vorher 42–63°, jetzt 4–16°; Ebenen 2–7°, Hügelland 8–17°,
+  Gebirge um 20°, Canyon- und Fjordwände über 50°. Tests prüfen Neigungsverteilung, Stetigkeit und Bandabdeckung.
+- **Bewuchs**: Im sanften Gelände scheitert kaum noch eine Pflanze am Hangtest. Arten-Dichten, Grasdichte (1,25 Büschel/m²)
+  und Grasring (56 m) sind darauf abgestimmt; die Dreieckszahl am Startplatz liegt wieder beim alten Wert.
 
 ## 5. Laufzeit-Architektur
 

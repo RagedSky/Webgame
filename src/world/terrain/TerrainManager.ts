@@ -55,22 +55,54 @@ export class TerrainManager {
       shader.vertexShader = shader.vertexShader.replace('#include <uv_vertex>', '#include <uv_vertex>\n{ vec4 twp = modelMatrix * vec4( position, 1.0 ); vec2 flatUv = twp.xz * 0.23; vec2 steepUv = vec2( twp.x + twp.z, twp.y ) * 0.23; vNormalMapUv = mix( steepUv, flatUv, smoothstep( 0.55, 0.8, normal.y ) ); }');
     });
     addRim(this.material, 0.35);
+    // Gesteinsschichten an Steilwänden: waagrechte Bänder je Pixel aus der Welthöhe (unabhängig vom Raster der Chunks)
+    const main = model.planet.biomes.reduce((best, b, i) => (b.coverage > model.planet.biomes[best]!.coverage ? i : best), 0);
+    const strata = { value: vivid(new Color(model.style.biomes[main]!.strata), 0.85).multiplyScalar(0.8) };
+    addShaderPatch(this.material, 'strata', (shader) => {
+      shader.uniforms.uStrata = strata;
+      shader.vertexShader = shader.vertexShader
+        .replace('#include <common>', '#include <common>\nvarying float vStrataY;\nvarying float vSteep;')
+        .replace('#include <begin_vertex>', '#include <begin_vertex>\nvStrataY = ( modelMatrix * vec4( position, 1.0 ) ).y;\nvSteep = 1.0 - normal.y;');
+      shader.fragmentShader = shader.fragmentShader
+        .replace('#include <common>', '#include <common>\nuniform vec3 uStrata;\nvarying float vStrataY;\nvarying float vSteep;')
+        .replace(
+          '#include <color_fragment>',
+          `#include <color_fragment>
+{
+  // nur an echten Steilwänden und in der Nähe (ferne LOD-Stufen lösen die Wand nicht auf)
+  float steep = smoothstep( 0.32, 0.54, vSteep ) * ( 1.0 - smoothstep( 380.0, 760.0, length( vViewPosition ) ) );
+  if ( steep > 0.0 ) {
+    // breite Schichten mit wechselnder Mächtigkeit, dazu feine dunkle Fugen; in der Ferne ausgeblendet
+    float ph = vStrataY * 0.21 + sin( vStrataY * 0.057 ) * 1.7;
+    float band = smoothstep( 0.6, 0.86, 0.5 + 0.5 * sin( ph ) ) * ( 1.0 - smoothstep( 0.6, 1.6, fwidth( ph ) ) );
+    diffuseColor.rgb = mix( diffuseColor.rgb, uStrata, band * steep * 0.45 );
+    float jp = vStrataY * 1.3;
+    float joint = smoothstep( 0.9, 1.0, 0.5 + 0.5 * sin( jp ) ) * ( 1.0 - smoothstep( 0.5, 1.4, fwidth( jp ) ) );
+    diffuseColor.rgb *= 1.0 - 0.2 * joint * steep;
+  }
+}`,
+        );
+    });
     const planet = model.planet;
     const style = model.style;
     // Ein Hauch der Grasspitzenfarbe im Bewuchston: ferne Wiesen passen zum zweifarbigen Gras im Nahbereich
     const tip = vivid(new Color(style.grassTip), 1.1);
+    // Ohne Atmosphäre fehlt das Streulicht, die Sonne trifft ungefiltert: Regolith ist in Wirklichkeit dunkel
+    // (Mond: Albedo um 0,12). Dunklerer Boden hält das Relief lesbar, statt weiß auszubrennen.
+    const albedo = 0.55 + 0.45 * clamp01(planet.atmosphere.density / 0.3);
     const palettes: BiomePalette[] = planet.biomes.map((b, i) => ({
-      ground: vivid(new Color(b.palette.ground), 1.35),
-      accent: vivid(new Color(b.palette.accent), 1.35),
+      ground: vivid(new Color(b.palette.ground), 1.35).multiplyScalar(albedo),
+      accent: vivid(new Color(b.palette.accent), 1.35).multiplyScalar(albedo),
       vegetation: vivid(new Color(b.palette.vegetation), 1.25).lerp(tip, 0.12),
-      ground2: vivid(new Color(style.biomes[i]!.ground2), 1.3),
+      ground2: vivid(new Color(style.biomes[i]!.ground2), 1.3).multiplyScalar(albedo),
       vegetation2: vivid(new Color(style.biomes[i]!.vegetation2), 1.25).lerp(tip, 0.12),
-      strata: vivid(new Color(style.biomes[i]!.strata), 1.2),
     }));
     const bio = Math.min(1, 0.45 + planet.biodiversity);
     const grass = planet.biomes.map((b) => clamp01(VEGETATION_PROFILES[b.kind].grass / 150) * bio);
     const waterBiome = planet.biomes.find((b) => b.hasWater);
-    const snowLine = planet.temperature.mean < 262 ? 0.25 : planet.temperature.mean < 285 ? 0.72 : planet.temperature.mean < 300 ? 0.9 : 2;
+    // Schnee braucht Niederschlag: ohne nennenswerte Atmosphäre (Mond, Merkur) bleibt auch eine kalte Welt schneefrei
+    const canSnow = planet.atmosphere.density >= 0.15 && planet.type !== 'barren';
+    const snowLine = !canSnow ? 2 : planet.temperature.mean < 262 ? 0.25 : planet.temperature.mean < 285 ? 0.72 : planet.temperature.mean < 300 ? 0.9 : 2;
     this.ctx = { model, palettes, waterTint: new Color(waterBiome?.palette.ground ?? '#2f6f9a'), snowLine, grass, vegZone: style.vegZone, groundZone: style.groundZone };
     scene.add(this.group);
   }

@@ -67,6 +67,75 @@ describe('TerrainModel', () => {
     }
   });
 
+  it('Gelände ist natürlich geneigt: überwiegend sanft, Steilwände bleiben die Ausnahme', () => {
+    for (const seed of SEEDS) {
+      const sys = generateStarSystem(seed);
+      const planet = sys.planets.find((p) => p.isStart)!;
+      const m = new TerrainModel(planet);
+      const slopes: number[] = [];
+      const half = m.size / 2;
+      const n = 70;
+      for (let j = 0; j < n; j++) {
+        for (let i = 0; i < n; i++) {
+          const x = -half + ((i + 0.37) / n) * m.size;
+          const z = -half + ((j + 0.61) / n) * m.size;
+          if (m.isWaterAt(x, z)) continue;
+          const gx = (m.heightAt(x + 3, z) - m.heightAt(x - 3, z)) / 6;
+          const gz = (m.heightAt(x, z + 3) - m.heightAt(x, z - 3)) / 6;
+          slopes.push((Math.atan(Math.hypot(gx, gz)) * 180) / Math.PI);
+        }
+      }
+      slopes.sort((a, b) => a - b);
+      const median = slopes[Math.floor(slopes.length / 2)]!;
+      const steep = slopes.filter((s) => s > 40).length / slopes.length;
+      expect(median, `${seed}: Median der Hangneigung`).toBeLessThan(15);
+      expect(steep, `${seed}: Anteil über 40°`).toBeLessThan(0.12);
+    }
+  });
+
+  it('Höhenfeld ist stetig (keine Sprünge an Biomgrenzen)', () => {
+    for (const seed of SEEDS) {
+      const sys = generateStarSystem(seed);
+      for (const planet of sys.planets.filter((p) => p.type !== 'gas_giant').slice(0, 3)) {
+        const m = new TerrainModel(planet);
+        for (let i = 0; i < 1500; i++) {
+          const x = ((i * 311.7) % m.size) - m.size / 2;
+          const z = ((i * 173.9) % m.size) - m.size / 2;
+          expect(Math.abs(m.heightAt(x + 0.05, z + 0.05) - m.heightAt(x, z)), `${seed}/${planet.id} bei ${x.toFixed(0)}/${z.toFixed(0)}`).toBeLessThan(1.5);
+        }
+      }
+    }
+  });
+
+  it('relative Höhenlage deckt das Höhenband jedes Bioms ab (seltene Arten bleiben auffindbar)', () => {
+    for (const seed of SEEDS) {
+      const sys = generateStarSystem(seed);
+      for (const planet of sys.planets.filter((p) => p.type !== 'gas_giant').slice(0, 3)) {
+        const m = new TerrainModel(planet);
+        const lo = planet.biomes.map(() => 1);
+        const hi = planet.biomes.map(() => 0);
+        const count = planet.biomes.map(() => 0);
+        const half = m.size / 2;
+        for (let z = -half; z < half; z += 90) {
+          for (let x = -half; x < half; x += 90) {
+            // wie im Spiel: es zählt das dominante Biom, Übergangszonen eingeschlossen
+            const s = m.sample(x, z);
+            count[s.biome]!++;
+            lo[s.biome] = Math.min(lo[s.biome]!, s.altitude);
+            hi[s.biome] = Math.max(hi[s.biome]!, s.altitude);
+          }
+        }
+        planet.biomes.forEach((b, i) => {
+          if (count[i]! < 60) return;
+          const width = b.altitude[1] - b.altitude[0];
+          // engstes Höhenfenster einer Art: 45 % des Bands (legendär) – 35 % Abstand zum Rand reichen sicher
+          expect(lo[i]!, `${seed}/${planet.id}/${b.kind}: untere Lagen`).toBeLessThanOrEqual(b.altitude[0] + width * 0.35);
+          expect(hi[i]!, `${seed}/${planet.id}/${b.kind}: obere Lagen`).toBeGreaterThanOrEqual(b.altitude[1] - width * 0.35);
+        });
+      }
+    }
+  });
+
   it('hat ein Vegetationsprofil für jedes Biom', () => {
     for (const kind of Object.keys(BIOMES) as Array<keyof typeof BIOMES>) {
       const p = VEGETATION_PROFILES[kind];

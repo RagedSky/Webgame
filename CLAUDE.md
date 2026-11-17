@@ -38,6 +38,7 @@ Konsole: `__stellar.scenes.active.setTimeOfDay(0.5)` / `.forceWeather('rain', tr
 - Keine Allokationen im Render-Loop; Vektoren/Arrays vorab anlegen und wiederverwenden.
 - UI-Texte Deutsch, zentral in `src/ui/strings.ts`. Spielwerte physikalisch (Kelvin, AU, km, g).
 - Entscheidungen mit Tragweite in `docs/DECISIONS.md` eintragen (D-xxx). Balancing-Annahmen in `docs/BALANCING.md`.
+- Gelände: neue Reliefformen als Schicht in `gen/terrain/Landforms.ts` mit Amplitude in Metern und plausiblem Verhältnis von Höhe zu Breite ergänzen und im Rezept des Bioms eintragen, kein Rauschen direkt in `TerrainModel`. Die Tests zu Hangneigung und Höhenband müssen grün bleiben.
 - Neue Formen aus `world/organic.ts` und `geometry.ts` (`blade`, `gradientColor`) bauen, nicht aus rohen Kugeln/Zylindern; Shader-Erweiterungen nur über `addShaderPatch`.
 - Vollflächige UI-Overlays ohne Klickfläche in die `#ui-root > …`-Liste in `styles.css` eintragen (sonst blockieren sie Canvas-Klicks).
 - Commits: aussagekräftig, eine Phase/ein Feature pro Commit. Vor jedem Commit `npm run check` und `npm run build`.
@@ -64,7 +65,7 @@ Konsole: `__stellar.scenes.active.setTimeOfDay(0.5)` / `.forceWeather('rain', tr
 - `src/gen/archive/ArchiveGenerator.ts` – Budget, Familien, Einträge
 - `src/scenes/SystemViewScene.ts` – 3D-Debug-Ansicht des Systems
 - `src/scenes/PlanetScene.ts` – Planetenoberfläche (verdrahtet world/*)
-- `src/gen/terrain/TerrainModel.ts` – Höhenfeld/Biome (rein, testbar)
+- `src/gen/terrain/TerrainModel.ts` – Höhenfeld/Biome (rein, testbar): Großrelief + `Landforms.ts` (Krater, Dünen, Vulkane, Canyons … als Rezept je Biom, ARCHITECTURE 4.16)
 - `src/world/terrain/TerrainManager.ts` – Quadtree-LOD-Chunks
 - `src/world/creatures/CreatureManager.ts` – Spawner, `CreatureBuilder.ts` – Genom → Mesh, `CreatureAI.ts` – Verhalten
 - `src/world/flora/FloraBuilder.ts` – Genom → Pflanzen-Geometrie, `src/world/Vegetation.ts` – Zellen/Batches

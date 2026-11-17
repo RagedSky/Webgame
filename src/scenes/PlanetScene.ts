@@ -323,6 +323,8 @@ export class PlanetScene implements GameScene {
       let site: { x: number; z: number; rot: number };
       if (loc?.kind === 'surface' && Number.isFinite(loc.x) && Number.isFinite(loc.z)) site = { x: loc.x, z: loc.z, rot: loc.rot };
       else site = this.state.sites[planet.id] ?? this.findShipSite();
+      // Spielstände aus älteren Versionen: liegt der Landeplatz im neuen Gelände im Wasser oder am Steilhang, neu suchen
+      if ((this.model.hasWater && this.model.heightAt(site.x, site.z) < this.model.seaLevel + 0.5) || this.model.slopeAt(site.x, site.z, 3) > 0.5) site = this.findShipSite();
       this.state.sites[planet.id] = site;
       this.state.ship.location = { kind: 'surface', planetId: planet.id, x: site.x, z: site.z, rot: site.rot };
       this.ship = new ShipActor(this.scene, this.model, this.state.ship.design, site.x, site.z, site.rot);
@@ -332,7 +334,12 @@ export class PlanetScene implements GameScene {
     gameState.arrival = null;
 
     const respawn = this.state.respawn[planet.id];
-    if (saved) this.player.spawn(saved.x, saved.y, saved.z, saved.yaw);
+    if (saved) {
+      // Auf den Boden setzen (das Gelände kann sich seit dem Speichern geändert haben); Schwimmer behalten ihre Tiefe
+      const ground = this.model.heightAt(saved.x, saved.z);
+      const swimming = this.model.hasWater && ground < this.model.seaLevel && saved.y <= this.model.seaLevel + 0.5;
+      this.player.spawn(saved.x, swimming ? Math.max(ground, saved.y) : ground, saved.z, saved.yaw);
+    }
     else if (this.ship) this.spawnBesideShip();
     else if (respawn) this.player.spawn(respawn.x + 3, this.model.heightAt(respawn.x + 3, respawn.z + 3), respawn.z + 3, 0);
     else {

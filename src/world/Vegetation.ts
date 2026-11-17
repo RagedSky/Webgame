@@ -59,22 +59,23 @@ export interface VegetationOptions {
 
 type CellKind = 'n' | 'f' | 'g';
 /** Grasbüschel je m² bei voller Bedeckung, Dichte 1. */
-const GRASS_PER_M2 = 1.6;
+const GRASS_PER_M2 = 1.25;
 /** Bezugsdichten der Biom-Profile: bei diesem Wert stehen Arten-Pflanzen in Normaldichte. */
 const SPECIES_REF = { tree: 8, shrub: 16, grass: 140 } as const;
 const SPECIES_MAX_FACTOR = 2.5;
 
 /** Arten-Dichte je Wuchsform (Instanzen pro 64 m × 64 m bei „häufig“, Biodiversität 1). */
 const SPECIES_DENSITY: Record<FloraForm, number> = {
-  tree: 8,
-  shrub: 9,
+  // Abgestimmt auf sanftes Gelände: kaum eine Pflanze scheitert noch am Hangtest, die Werte sind entsprechend niedriger
+  tree: 2.3,
+  shrub: 5,
   grass: 22,
-  fungus: 7,
-  aquatic: 10,
-  succulent: 7,
+  fungus: 4,
+  aquatic: 6,
+  succulent: 4,
   lichen: 16,
-  vine: 5,
-  crystal_plant: 6,
+  vine: 3,
+  crystal_plant: 4,
 };
 const FAR_FORMS = new Set<FloraForm>(['tree']);
 
@@ -134,7 +135,7 @@ export class VegetationManager {
     this.nearCell = options.nearCell ?? 64;
     this.farCell = options.farCell ?? 256;
     this.density = options.density ?? 1;
-    this.grassRadius = options.grassRadius ?? 72;
+    this.grassRadius = options.grassRadius ?? 56;
     this.grassCell = options.grassCell ?? 24;
     stylize.grassFar.value = this.grassRadius;
     // Dieselbe Stilisierung wie das Terrain, damit Gras und Boden farblich zusammenpassen

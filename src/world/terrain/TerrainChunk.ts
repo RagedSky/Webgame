@@ -17,10 +17,9 @@ export interface BiomePalette {
   ground: Color;
   accent: Color;
   vegetation: Color;
-  /** Zweite Boden- und Bewuchsfarbe (Zonen) und Farbe der Gesteinsbänder. */
+  /** Zweite Boden- und Bewuchsfarbe (Zonen). */
   ground2: Color;
   vegetation2: Color;
-  strata: Color;
 }
 
 /** Geometrie-Pool: Vertex-/Index-Anzahl ist für alle Chunks identisch. */
@@ -117,8 +116,6 @@ export interface ChunkBuildContext {
 export function buildChunkGeometry(geo: BufferGeometry, key: ChunkKey, ctx: ChunkBuildContext): void {
   const { model, palettes } = ctx;
   const step = key.size / S;
-  // Gesteinsbänder nur, wo das Raster sie auflösen kann (ferne LOD-Stufen würden flimmern)
-  const strataFade = clamp01(1.6 - step / 10);
   // Höhen inkl. Rand
   for (let z = 0; z < B; z++) {
     for (let x = 0; x < B; x++) {
@@ -186,12 +183,6 @@ export function buildChunkGeometry(geo: BufferGeometry, key: ChunkKey, ctx: Chun
       const slope = 1 - ny;
       // Fels behält den Farbton des Bodens (farbige Klippen statt neutralem Grau)
       cRockTint.copy(cTmp).multiplyScalar(0.5).lerp(cRock, 0.35);
-      if (slope > 0.5 && strataFade > 0) {
-        // Gesteinsbänder: schmale farbige Schichten folgen der Höhe, vom Geländerauschen leicht verbogen
-        const band = 0.5 + 0.5 * Math.sin(s.height * 0.21 + s.detail * 2.2);
-        cTmp2.copy(s.blend > 0.5 ? p2.strata : p1.strata).multiplyScalar(0.8);
-        cRockTint.lerp(cTmp2, smoothstep(0.62, 0.86, band) * 0.6 * strataFade);
-      }
       // Bewuchs: flache Hänge tragen die Vegetationsfarbe
       let grass = lerp(ctx.grass[s.biome] as number, ctx.grass[s.biome2] as number, s.blend) * (1 - smoothstep(0.3, 0.62, slope));
       if (hasWater) grass *= clamp01((s.height - sea - 0.2) / 1.5);
