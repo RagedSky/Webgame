@@ -107,10 +107,10 @@ export const PART_DEFS: PartDef[] = [
   { id: 'legs_2', type: 'legs', tier: 2, name: 'Schwerlast-Landebein', description: 'Bis 2,6 g.', mass: 1.2, cost: { ferrite: 8, quartz: 2 }, legRating: 2.6 },
   { id: 'shield_1', type: 'shield', tier: 1, name: 'Schildgenerator I', description: 'Schutzstufe 1: Strahlungszonen und dichte Atmosphären.', mass: 2, cost: { ferrite: 14, quartz: 10 }, shield: 1 },
   { id: 'shield_2', type: 'shield', tier: 2, name: 'Schildgenerator II', description: 'Schutzstufe 2: Glutwelten und harte Strahlung.', mass: 3, cost: { ferrite: 24, quartz: 18, fiber: 6 }, shield: 2 },
-  { id: 'scanner_1', type: 'scanner', tier: 1, name: 'Orbitalscanner', description: 'Höhenkarte aus dem Orbit (Phase 7).', mass: 1.2, cost: { ferrite: 8, quartz: 8 }, scanner: 1 },
-  { id: 'scanner_2', type: 'scanner', tier: 2, name: 'Tiefenscanner', description: 'Biom-, Erz- und Lebenszeichen-Layer (Phase 7).', mass: 1.8, cost: { ferrite: 14, quartz: 14, fiber: 4 }, scanner: 2 },
-  { id: 'cargo_1', type: 'cargo', tier: 1, name: 'Frachtraum', description: '1 Sonden-Slot (Phase 7).', mass: 1.5, cost: { ferrite: 10, fiber: 4 }, cargo: 1 },
-  { id: 'cargo_2', type: 'cargo', tier: 2, name: 'Großer Frachtraum', description: '2 Sonden-Slots (Phase 7).', mass: 2.5, cost: { ferrite: 18, fiber: 8, quartz: 4 }, cargo: 2 },
+  { id: 'scanner_1', type: 'scanner', tier: 1, name: 'Orbitalscanner', description: 'Höhenkarte aus dem Orbit (Satellit).', mass: 1.2, cost: { ferrite: 8, quartz: 8 }, scanner: 1 },
+  { id: 'scanner_2', type: 'scanner', tier: 2, name: 'Tiefenscanner', description: 'Biom-, Erz- und Lebenszeichen-Layer der Karte.', mass: 1.8, cost: { ferrite: 14, quartz: 14, fiber: 4 }, scanner: 2 },
+  { id: 'cargo_1', type: 'cargo', tier: 1, name: 'Frachtraum', description: '1 Sonden-Slot.', mass: 1.5, cost: { ferrite: 10, fiber: 4 }, cargo: 1 },
+  { id: 'cargo_2', type: 'cargo', tier: 2, name: 'Großer Frachtraum', description: '2 Sonden-Slots.', mass: 2.5, cost: { ferrite: 18, fiber: 8, quartz: 4 }, cargo: 2 },
 ];
 
 export const PART_BY_ID: Record<string, PartDef> = Object.fromEntries(PART_DEFS.map((p) => [p.id, p]));

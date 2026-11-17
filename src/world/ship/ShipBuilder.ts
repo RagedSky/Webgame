@@ -1,7 +1,8 @@
 import type { Object3D} from 'three';
-import { AdditiveBlending, BoxGeometry, Color, ConeGeometry, CylinderGeometry, Group, LatheGeometry, Mesh, MeshBasicMaterial, MeshPhysicalMaterial, MeshStandardMaterial, Quaternion, SphereGeometry, TorusGeometry, Vector2, Vector3, type BufferGeometry, type Texture } from 'three';
+import { AdditiveBlending, Color, ConeGeometry, CylinderGeometry, Group, LatheGeometry, Mesh, MeshBasicMaterial, MeshPhysicalMaterial, MeshStandardMaterial, SphereGeometry, TorusGeometry, Vector2, type BufferGeometry, type Texture } from 'three';
 import { textures } from '@/render/ProceduralTextures';
 import { addRim } from '@/render/stylize';
+import { arc, blob, lathe, prism, tube } from '../organic';
 import { partDef, type SocketDef, type SocketKind } from '@/game/ship/parts';
 import { hullOf, socketsOf, type ShipDesign } from '@/game/ship/ShipDesign';
 
@@ -27,7 +28,6 @@ export interface BuiltShip {
   dispose(): void;
 }
 
-const UP = new Vector3(0, 1, 0);
 const TIER_COLORS = [new Color(0x8c96a3), new Color(0x7fb2d9), new Color(0xd9a86b)];
 
 /** Gemeinsame Materialien (einmal je Besitzer anlegen, in dispose() freigeben). */
@@ -65,17 +65,6 @@ export class ShipMaterials {
 
 function tierMat(mats: ShipMaterials, tier: number): MeshStandardMaterial {
   return mats.tiers[Math.max(0, Math.min(2, tier - 1))] as MeshStandardMaterial;
-}
-
-function strut(from: Vector3, to: Vector3, radius: number, material: MeshStandardMaterial, geos: BufferGeometry[]): Mesh {
-  const dir = new Vector3().subVectors(to, from);
-  const len = dir.length();
-  const geo = new CylinderGeometry(radius, radius, len, 8);
-  geos.push(geo);
-  const mesh = new Mesh(geo, material);
-  mesh.position.copy(from).addScaledVector(dir, 0.5);
-  mesh.quaternion.copy(new Quaternion().setFromUnitVectors(UP, dir.normalize()));
-  return mesh;
 }
 
 /**
@@ -129,11 +118,33 @@ export function buildShip(design: ShipDesign, mats: ShipMaterials, options: { wi
     b.position.y = y;
     base.add(b);
   }
-  const plate = new CylinderGeometry(R, R * 1.05, 0.18, 20);
-  geos.push(plate);
-  const bottomPlate = new Mesh(plate, mats.dark);
-  bottomPlate.position.y = 0.09;
-  base.add(bottomPlate);
+  // Bodenschürze und Bullaugen
+  const skirt = lathe(
+    [
+      [R * 0.78, -0.04],
+      [R * 1.03, 0],
+      [R * 1.06, 0.1],
+      [R * 1.0, 0.2],
+    ],
+    28,
+  );
+  geos.push(skirt);
+  base.add(new Mesh(skirt, mats.dark));
+  const port = new SphereGeometry(0.16, 10, 8);
+  geos.push(port);
+  const portRing = new TorusGeometry(0.17, 0.03, 6, 14);
+  geos.push(portRing);
+  for (let i = 0; i < 4; i++) {
+    const a = (i / 4) * Math.PI * 2 + Math.PI / 4;
+    const w = new Mesh(port, mats.glass);
+    w.position.set(Math.cos(a) * R * 0.97, H * 0.76, Math.sin(a) * R * 0.97);
+    w.scale.set(1, 1, 1);
+    base.add(w);
+    const r = new Mesh(portRing, tierMat(mats, hull.tier));
+    r.position.set(Math.cos(a) * R * 1.0, H * 0.76, Math.sin(a) * R * 1.0);
+    r.rotation.y = -a + Math.PI / 2;
+    base.add(r);
+  }
   parts.set('hull', hullMesh);
 
   const socketDefs = socketsOf(design);
@@ -146,31 +157,95 @@ export function buildShip(design: ShipDesign, mats: ShipMaterials, options: { wi
     const obj = new Group();
     obj.userData.placedId = p.id;
     const tm = tierMat(mats, def.tier);
+    const add = (geo: BufferGeometry, material: MeshStandardMaterial | MeshBasicMaterial, x = 0, y = 0, z = 0): Mesh => {
+      geos.push(geo);
+      const m = new Mesh(geo, material);
+      m.position.set(x, y, z);
+      obj.add(m);
+      return m;
+    };
+    const ox = Math.cos(s.angle);
+    const oz = Math.sin(s.angle);
     switch (def.type) {
       case 'cockpit': {
-        const dome = new SphereGeometry(R * 0.8, 20, 12, 0, Math.PI * 2, 0, Math.PI / 2);
-        geos.push(dome);
-        const d = new Mesh(dome, mats.glass);
-        obj.add(d);
-        const ring = new CylinderGeometry(R * 0.86, R * 0.92, 0.25, 20);
-        geos.push(ring);
-        const rm = new Mesh(ring, tm);
-        rm.position.y = -0.1;
-        obj.add(rm);
+        // Kanzel: gewölbte Glaskuppel mit Spanten, Sockelring und Funkmast
+        const dome = lathe(
+          [
+            [R * 0.84, 0],
+            [R * 0.86, R * 0.16],
+            [R * 0.74, R * 0.46],
+            [R * 0.48, R * 0.7],
+            [R * 0.2, R * 0.82],
+            [0, R * 0.85],
+          ],
+          24,
+        );
+        add(dome, mats.glass);
+        for (let i = 0; i < 3; i++) {
+          const a = (i / 3) * Math.PI;
+          const rib = tube(arc([Math.cos(a) * R * 0.86, R * 0.02, Math.sin(a) * R * 0.86], [-Math.cos(a) * R * 0.86, R * 0.02, -Math.sin(a) * R * 0.86], [0, R * 0.86, 0], 0.035, 0.035, 10), 6);
+          add(rib, tm);
+        }
+        const ring = lathe(
+          [
+            [R * 0.92, -0.24],
+            [R * 0.97, -0.12],
+            [R * 0.93, 0.02],
+            [R * 0.84, 0.06],
+          ],
+          24,
+        );
+        add(ring, tm);
+        add(tube(arc([R * 0.6, 0.05, 0], [R * 0.72, R * 1.15, 0], [0.04, 0, 0], 0.025, 0.014, 4), 5), mats.dark);
+        add(new SphereGeometry(0.05, 8, 6), mats.paint, R * 0.72, R * 1.15, 0);
         obj.position.set(s.x, s.y, s.z);
         break;
       }
       case 'engine': {
-        const nozzle = new CylinderGeometry(0.28 + def.tier * 0.04, 0.5 + def.tier * 0.08, 0.9, 14, 1, true);
-        geos.push(nozzle);
-        const n = new Mesh(nozzle, mats.dark);
-        n.position.y = -0.45;
-        obj.add(n);
-        const throat = new CylinderGeometry(0.3 + def.tier * 0.04, 0.3 + def.tier * 0.04, 0.3, 12);
-        geos.push(throat);
-        const t = new Mesh(throat, tm);
-        t.position.y = -0.05;
-        obj.add(t);
+        // Triebwerk: Glockendüse mit Kühlrippen, Brennkammer und Halsring
+        const t0 = 0.28 + def.tier * 0.04;
+        const t1 = 0.5 + def.tier * 0.08;
+        const bell = lathe(
+          [
+            [t1, -0.9],
+            [t1 * 0.97, -0.82],
+            [t1 * 0.8, -0.55],
+            [t0 * 1.02, -0.26],
+            [t0 * 0.92, -0.12],
+            [t0 * 1.15, 0],
+          ],
+          18,
+        );
+        add(bell, mats.dark);
+        const inner = lathe(
+          [
+            [t0 * 0.85, -0.14],
+            [t0 * 0.95, -0.26],
+            [t1 * 0.74, -0.55],
+            [t1 * 0.9, -0.84],
+          ],
+          18,
+        );
+        add(inner, mats.dark).scale.set(1, 1, 1);
+        for (const y of [-0.45, -0.68]) {
+          const rr = t0 + (t1 - t0) * ((-y - 0.26) / 0.64) * 0.98 + 0.02;
+          const rib = new TorusGeometry(rr, 0.022, 6, 20);
+          add(rib, tm, 0, y, 0).rotation.x = Math.PI / 2;
+        }
+        const collar = lathe(
+          [
+            [t0 * 1.1, -0.1],
+            [t0 * 1.45, -0.04],
+            [t0 * 1.5, 0.1],
+            [t0 * 1.2, 0.18],
+          ],
+          16,
+        );
+        add(collar, tm);
+        for (let i = 0; i < 3; i++) {
+          const a = (i / 3) * Math.PI * 2;
+          add(tube(arc([Math.cos(a) * t0 * 1.35, 0.1, Math.sin(a) * t0 * 1.35], [Math.cos(a) * t1 * 0.85, -0.52, Math.sin(a) * t1 * 0.85], [Math.cos(a) * 0.1, 0, Math.sin(a) * 0.1], 0.025, 0.02, 4), 5), mats.hull);
+        }
         const flameGeo = new ConeGeometry(0.42 + def.tier * 0.06, 2.2, 12, 1, true);
         geos.push(flameGeo);
         const flame = new Mesh(flameGeo, mats.flame);
@@ -190,77 +265,145 @@ export function buildShip(design: ShipDesign, mats: ShipMaterials, options: { wi
         break;
       }
       case 'legs': {
-        const out = new Vector3(Math.cos(s.angle), 0, Math.sin(s.angle));
-        const from = new Vector3(s.x, s.y + 0.4, s.z);
-        const foot = new Vector3().copy(out).multiplyScalar(R + 0.9 + def.tier * 0.15).setY(-HULL_BASE_Y);
-        const upper = strut(from, foot, 0.07 + def.tier * 0.02, tm, geos);
-        obj.add(upper);
-        const brace = strut(new Vector3(s.x, s.y + 1.3, s.z), new Vector3().copy(foot).addScaledVector(out, -0.4).setY(-HULL_BASE_Y * 0.55), 0.045, mats.dark, geos);
-        obj.add(brace);
-        const padGeo = new CylinderGeometry(0.32 + def.tier * 0.08, 0.38 + def.tier * 0.08, 0.1, 10);
-        geos.push(padGeo);
-        const pad = new Mesh(padGeo, mats.dark);
-        pad.position.copy(foot).setY(-HULL_BASE_Y + 0.05);
-        obj.add(pad);
+        // Landebein: gebogener Holm mit Hüftgelenk, Hydraulikstrebe und gewölbtem Fußteller
+        const reach = R + 0.9 + def.tier * 0.15;
+        const hipY = s.y + 0.4;
+        const footY = -HULL_BASE_Y;
+        const r0 = 0.1 + def.tier * 0.02;
+        const path = arc([s.x, hipY, s.z], [ox * reach, footY + 0.14, oz * reach], [ox * 0.45, 0.5, oz * 0.45], r0, r0 * 0.68, 8);
+        add(tube(path, 8), tm);
+        const hip = blob(r0 * 1.7, `leg${p.socket}`, 0.06, 1.2, 1, 8, 6);
+        add(hip, mats.dark, s.x + ox * 0.05, hipY, s.z + oz * 0.05);
+        const mid = path[5]!;
+        add(tube(arc([s.x, s.y + 1.3, s.z], [mid.x, mid.y, mid.z], [ox * 0.1, 0.05, oz * 0.1], 0.04, 0.03, 4), 6), mats.dark);
+        add(tube(arc([s.x + ox * 0.25, s.y + 1.05, s.z + oz * 0.25], [mid.x, mid.y, mid.z], [0, 0, 0], 0.06, 0.06, 2), 6), mats.hull);
+        const padR = 0.34 + def.tier * 0.08;
+        const pad = lathe(
+          [
+            [padR * 0.95, 0],
+            [padR, 0.03],
+            [padR * 0.8, 0.09],
+            [padR * 0.35, 0.14],
+            [0, 0.15],
+          ],
+          14,
+        );
+        add(pad, mats.dark, ox * reach, footY, oz * reach);
+        add(blob(r0 * 1.1, `ankle${p.socket}`, 0.05, 1.2, 1, 8, 6), tm, ox * reach, footY + 0.16, oz * reach);
         break;
       }
       case 'tank': {
+        // Tank: Kapsel mit Spannbändern und Leitung zum Rumpf
         const len = 1.1 + def.tier * 0.5;
         const rad = 0.3 + def.tier * 0.08;
-        const tg = new CylinderGeometry(rad, rad, len, 12);
-        geos.push(tg);
-        const t = new Mesh(tg, tm);
-        t.position.set(s.x + Math.cos(s.angle) * (rad + 0.05), s.y, s.z + Math.sin(s.angle) * (rad + 0.05));
-        obj.add(t);
-        const cap = new SphereGeometry(rad, 12, 8);
-        geos.push(cap);
-        for (const dy of [-len / 2, len / 2]) {
-          const c = new Mesh(cap, mats.hull);
-          c.position.copy(t.position).setY(s.y + dy);
-          obj.add(c);
+        const tx = s.x + ox * (rad + 0.05);
+        const tz = s.z + oz * (rad + 0.05);
+        const capsule = lathe(
+          [
+            [0, -len / 2 - rad * 0.9],
+            [rad * 0.6, -len / 2 - rad * 0.68],
+            [rad * 0.95, -len / 2 - rad * 0.2],
+            [rad, -len / 2 + rad * 0.2],
+            [rad, len / 2 - rad * 0.2],
+            [rad * 0.95, len / 2 + rad * 0.2],
+            [rad * 0.6, len / 2 + rad * 0.68],
+            [0, len / 2 + rad * 0.9],
+          ],
+          16,
+        );
+        add(capsule, tm, tx, s.y, tz);
+        for (const dy of [-len * 0.3, len * 0.3]) {
+          const strap = new TorusGeometry(rad * 1.03, 0.03, 6, 20);
+          add(strap, mats.dark, tx, s.y + dy, tz).rotation.x = Math.PI / 2;
         }
+        add(tube(arc([tx, s.y + len / 2 + rad * 0.7, tz], [s.x - ox * 0.05, s.y + len / 2 + rad * 0.2, s.z - oz * 0.05], [0, 0.18, 0], 0.035, 0.035, 5), 6), mats.hull);
+        add(new SphereGeometry(0.05, 8, 6), mats.paint, tx + ox * rad, s.y, tz + oz * rad);
         break;
       }
       case 'cargo': {
+        // Frachtbehälter: gefaster Quader mit Griffleiste und Markierungsband
         const w = 0.8 + def.tier * 0.2;
-        const bg = new BoxGeometry(w, 0.9 + def.tier * 0.3, w);
-        geos.push(bg);
-        const b = new Mesh(bg, mats.dark);
-        b.position.set(s.x + Math.cos(s.angle) * (w / 2 + 0.05), s.y, s.z + Math.sin(s.angle) * (w / 2 + 0.05));
-        b.rotation.y = -s.angle;
-        obj.add(b);
-        const stripe = new BoxGeometry(w + 0.02, 0.12, w + 0.02);
-        geos.push(stripe);
-        const st = new Mesh(stripe, tm);
-        st.position.copy(b.position);
-        st.rotation.y = -s.angle;
-        obj.add(st);
+        const h = 0.9 + def.tier * 0.3;
+        const cx = s.x + ox * (w / 2 + 0.05);
+        const cz = s.z + oz * (w / 2 + 0.05);
+        const half = (w / 2) * Math.SQRT2;
+        const crate = prism(
+          [
+            [half * 0.82, -h / 2],
+            [half, -h / 2 + 0.09],
+            [half, h / 2 - 0.09],
+            [half * 0.82, h / 2],
+            [0, h / 2],
+          ],
+          4,
+        );
+        add(crate, mats.dark, cx, s.y, cz).rotation.y = -s.angle;
+        const band = prism(
+          [
+            [half * 1.02, -0.07],
+            [half * 1.02, 0.07],
+          ],
+          4,
+        );
+        add(band, tm, cx, s.y + h * 0.18, cz).rotation.y = -s.angle;
+        add(tube(arc([cx + ox * (w / 2 + 0.03) - oz * w * 0.25, s.y - h * 0.12, cz + oz * (w / 2 + 0.03) + ox * w * 0.25], [cx + ox * (w / 2 + 0.03) + oz * w * 0.25, s.y - h * 0.12, cz + oz * (w / 2 + 0.03) - ox * w * 0.25], [ox * 0.06, 0, oz * 0.06], 0.025, 0.025, 4), 5), mats.hull);
+        add(new SphereGeometry(0.045, 8, 6), mats.paint, cx + ox * (w / 2 + 0.01), s.y + h * 0.34, cz + oz * (w / 2 + 0.01));
         break;
       }
       case 'scanner': {
-        const arm = strut(new Vector3(s.x, s.y, s.z), new Vector3(s.x + Math.cos(s.angle) * 0.7, s.y + 0.5, s.z + Math.sin(s.angle) * 0.7), 0.05, mats.dark, geos);
-        obj.add(arm);
-        const dish = new SphereGeometry(0.45 + def.tier * 0.1, 14, 8, 0, Math.PI * 2, 0, Math.PI / 3);
+        // Scanner: Schwenkarm, Parabolschüssel mit Empfänger
+        const dr = 0.45 + def.tier * 0.1;
+        const hx = s.x + ox * 0.75;
+        const hy = s.y + 0.55;
+        const hz = s.z + oz * 0.75;
+        add(tube(arc([s.x, s.y, s.z], [hx, hy, hz], [0, 0.22, 0], 0.06, 0.045, 5), 6), mats.dark);
+        add(blob(0.09, `scan${p.socket}`, 0.05, 1.2, 1, 8, 6), tm, hx, hy, hz);
+        const dishGroup = new Group();
+        dishGroup.position.set(hx, hy, hz);
+        dishGroup.rotation.y = -s.angle + Math.PI / 2;
+        dishGroup.rotation.x = 0.9;
+        obj.add(dishGroup);
+        const dish = lathe(
+          [
+            [0.02, 0.04],
+            [dr * 0.45, 0.09],
+            [dr * 0.8, 0.2],
+            [dr, 0.36],
+            [dr * 0.98, 0.38],
+            [dr * 0.78, 0.23],
+            [dr * 0.44, 0.12],
+            [0.02, 0.07],
+          ],
+          18,
+        );
         geos.push(dish);
-        const d = new Mesh(dish, tm);
-        d.position.set(s.x + Math.cos(s.angle) * 0.75, s.y + 0.55, s.z + Math.sin(s.angle) * 0.75);
-        d.rotation.z = -0.9;
-        d.rotation.y = -s.angle;
-        obj.add(d);
+        dishGroup.add(new Mesh(dish, tm));
+        const feed = tube(arc([0, 0.07, 0], [0, 0.52, 0], [0, 0, 0], 0.02, 0.014, 2), 5);
+        geos.push(feed);
+        dishGroup.add(new Mesh(feed, mats.dark));
+        const tip = new SphereGeometry(0.05, 8, 6);
+        geos.push(tip);
+        const tipMesh = new Mesh(tip, mats.paint);
+        tipMesh.position.y = 0.54;
+        dishGroup.add(tipMesh);
         break;
       }
       case 'shield': {
-        const ring = new TorusGeometry(0.45 + def.tier * 0.12, 0.07, 8, 20);
-        geos.push(ring);
-        const r = new Mesh(ring, tm);
-        r.position.set(s.x + Math.cos(s.angle) * 0.35, s.y, s.z + Math.sin(s.angle) * 0.35);
-        r.rotation.y = -s.angle + Math.PI / 2;
-        obj.add(r);
-        const coreGeo = new SphereGeometry(0.2, 10, 8);
-        geos.push(coreGeo);
-        const c = new Mesh(coreGeo, mats.glass);
-        c.position.copy(r.position);
-        obj.add(c);
+        // Schildgenerator: Emitterring mit Kern und drei Haltearmen
+        const rr = 0.45 + def.tier * 0.12;
+        const sx = s.x + ox * 0.38;
+        const sz = s.z + oz * 0.38;
+        const ring = new TorusGeometry(rr, 0.075, 10, 24);
+        add(ring, tm, sx, s.y, sz).rotation.y = -s.angle + Math.PI / 2;
+        add(blob(0.2, `shield${p.socket}`, 0.1, 1.5, 1, 10, 8), mats.glass, sx, s.y, sz);
+        for (let i = 0; i < 3; i++) {
+          const a = (i / 3) * Math.PI * 2 + 0.5;
+          // Ringpunkt in der Ebene senkrecht zur Auswärtsrichtung
+          const px = sx - oz * Math.cos(a) * rr;
+          const py = s.y + Math.sin(a) * rr;
+          const pz = sz + ox * Math.cos(a) * rr;
+          add(tube(arc([s.x, s.y + Math.sin(a) * 0.15, s.z], [px, py, pz], [ox * 0.05, 0, oz * 0.05], 0.035, 0.028, 3), 5), mats.dark);
+        }
         break;
       }
       case 'hull':
