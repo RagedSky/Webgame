@@ -118,15 +118,18 @@ export class CharacterScene implements GameScene {
     this.scene.add(this.built.group);
   }
 
-  private view(which: 'face' | 'body'): void {
+  private view(which: 'helmet' | 'body' | 'back'): void {
     const h = this.built?.height ?? 1.8;
-    // Gesicht zeigt nach −z: Kamera davor, Drehteller aus und Figur zur Kamera drehen
+    // Visier zeigt nach −z: Kamera davor, Drehteller aus und Figur zur Kamera drehen
     this.turntable = false;
     this.spin = 0;
     if (this.built) this.built.group.rotation.y = 0;
-    if (which === 'face') {
-      this.targetGoal.set(0, h - 0.12, 0);
-      this.camGoal.set(0.3, h - 0.05, -0.85);
+    if (which === 'helmet') {
+      this.targetGoal.set(0, h - 0.16, 0);
+      this.camGoal.set(0.34, h - 0.08, -0.95);
+    } else if (which === 'back') {
+      this.targetGoal.set(0, h * 0.62, 0);
+      this.camGoal.set(-1.5, h * 0.85, 2.6);
     } else {
       this.targetGoal.set(0, h * 0.55, 0);
       this.camGoal.set(2.4, h * 0.8, -3.2);

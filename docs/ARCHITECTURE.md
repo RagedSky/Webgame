@@ -105,7 +105,7 @@ Sternsystem, baust ein Raumschiff, synthetisierst Treibstoff und füllst ein Arc
     │   ├── ship/ShipActor.ts  Lander auf der Oberfläche: Position, Schub/Licht, Start- und Landehöhe, Raycast-Auswahl
     │   ├── probes/Rover.ts    Ferngesteuerter Rover: Fahrphysik auf dem Terrain (Nick/Roll), Wasser-/Grenzsperre, Augpunkt
     │   ├── probes/Buoys.ts    Bojen der Tiefseesonden (wippen auf dem Wasser)
-    │   ├── character/CharacterBuilder.ts  Konfiguration → Avatar aus Primitiven (Gelenke, Gesicht, Frisur, Anzug, Helm, Animation)
+    │   ├── character/                     QuadMesh (Catmull-Clark), BodyCage (Körperkäfig), CharacterBuilder (Skelett, Materialien, Anbauteile)
     │   ├── organic.ts         Organische Grundformen: Röhre, Bogen, Klumpen, Rotationskörper, Kristall
     │   └── HintSystem.ts      Spuren/Kot/Nester als Objekte, Geräusche/Gerüche als Meldung, Gerüchte über seltene Verwandte
     │   └── Player.ts          Ego-/Schulter-Controller, Terrain-Kollision, Schwimmen, Gravitation
@@ -334,23 +334,22 @@ definiert Dichten je Biom.
 
 ### 4.10 Charaktererstellung und Hintergründe (Phase 8)
 
-- **Konfiguration** (`CharacterConfig`, rein, Version 1): Name, Körper (Größe, Statur, Schultern, Beinlänge), Gesicht (Kiefer,
-  Augengröße/-abstand, Nase, Hautton/-stich, Augenfarbe, Markierungen), Haare (8 Frisuren, Farbe, 4 Bärte), Anzug (Primär/Sekundär/
-  Akzent, 5 Muster, 5 Abzeichen, Helm-Modus), Hintergrund. `sanitizeCharacter()` begrenzt alle Regler auf 0..1, prüft Farben und
-  Enums und dient als Migration (unbekannte Felder fallen weg). Zufall ist seedbar (`randomCharacter(rng, base, locks)`), Gruppen
-  lassen sich sperren. **Share-Code** `SA1.<base36>.<name>` (unter 110 Zeichen) kodiert alle Werte (Regler mit 1/1295 Auflösung),
-  JSON-Export/-Import ergänzt ihn. Sechs mitgelieferte Presets, eigene Presets in IndexedDB (`character-presets`).
+- **Konfiguration** (`CharacterConfig`, rein, Version 2): Name, Körper (Größe, Statur, Schultern, Beinlänge), Anzug (Primär/
+  Sekundär/Akzent, 5 Muster, 3 Lackierungen, Panzerung, 5 Abzeichen), Helm (4 Formen, 4 Visiere, Tönung, Aufsatz), Ausrüstung
+  (Rucksack), Hintergrund. Der Helm bleibt immer geschlossen; Gesicht und Haare aus Version 1 gibt es nicht mehr.
+  `sanitizeCharacter()` begrenzt alle Regler auf 0..1, prüft Farben und Enums und dient als Migration (unbekannte Felder fallen
+  weg, entfallene Muster werden abgebildet). Zufall ist seedbar (`randomCharacter(rng, base, locks)`), Gruppen lassen sich
+  sperren. **Share-Code** `SA2.<base36>.<name>` (unter 90 Zeichen) kodiert alle Werte (Regler mit 1/1295 Auflösung); Codes
+  `SA1.` werden weiter gelesen. JSON-Export/-Import ergänzt ihn. Sechs mitgelieferte Presets, eigene in IndexedDB.
 - **Hintergründe** (`backgrounds.ts`): Biologe (Hinweise ×1,7, Sichtungsweite +35 %), Geologin (Scan-Qualität +0,25,
   Analyse +0,2, +1 Einheit je Abbau), Ingenieur (Rezepte und Schiffsteile −20 %, Sammeltempo +35 %), Fotografin (Bewertungstoleranz
   0,35, Filter Infrarot/Noir). Die Boni sind ein `BackgroundBonus`-Objekt, das die Planetenszene an HintSystem, Foto-Modus,
   Analyse, Abbau und Kosten reicht (`effectiveCost` in InventoryUi/ShipEditor).
-- **Avatar** (`CharacterBuilder`, Three.js): Gelenkgruppen für Hüften, Schultern und Kopf; Gliedmaßen als Kapseln, Gesicht aus
-  Kugeln/Kegel, Frisur je Stil, Bart, Anzugmuster als Ringe/Panels/Platten, Abzeichen auf der Brust, Helm als Visierkugel. Die
-  Geh-Animation schwenkt Gliedmaßen phasengesteuert nach Geschwindigkeit, Idle-Atmung über die Torso-Skalierung. Der Spieler
-  (`Player.setCharacter`) ersetzt damit die Platzhalterkapsel; Augenhöhe folgt der Körpergröße, Helm bei nicht atembarer Atmosphäre
-  (Modus „auto“) oder nach Wahl. Sichtbar in Schulterperspektive (V) und Selfie-Modus (C).
+- **Avatar** (`CharacterBuilder`, Three.js): ein zusammenhängendes, gehäutetes Körpernetz mit Skelett, siehe Abschnitt 4.17.
+  Der Spieler (`Player.setCharacter`) ersetzt damit die Platzhalterkapsel; Augenhöhe folgt der Körpergröße. Sichtbar in
+  Schulterperspektive (V) und Selfie-Modus (C).
 - **Szene** (`CharacterScene`): Studio-Licht (Key/Fill/Rim), Boden, Sterne, Orbit-Kamera mit Drehteller und Schnellansichten
-  (Gesicht/Ganzkörper), Live-Neuaufbau bei jeder Änderung. Vor dem ersten Spiel eines Seeds öffnet „Neues Spiel“ den Editor
+  (Helm/Ganzkörper/Rückseite, passend zum gewählten Reiter), Live-Neuaufbau bei jeder Änderung. Vor dem ersten Spiel eines Seeds öffnet „Neues Spiel“ den Editor
   (`character === null` im `PlayerState` v4); „Charakter“ im Hauptmenü bearbeitet ihn später (Boni greifen beim nächsten
   Planetenbesuch).
 
@@ -448,7 +447,7 @@ Ziel ist eine stilisierte, farbkräftige Optik mit weichen Formen statt aneinand
   lackierte Panzerplatten (Brust, Rücken, Schultern, Oberschenkel, Schienbeine), dunkle Stulpen und Stiefel in der
   Sekundärfarbe, leuchtende Akzente. Der Helm hat ein dunkles, spiegelndes Visier mit Rahmen, Ohrkapseln, Stirnlampen,
   Atemgerät und Antenne; die Visierkanten liegen auf der Tessellierung der Helmschale. Gelenkgruppen (Hüfte, Knie, Schulter,
-  Ellbogen) tragen die Laufanimation. Die API (`setHelmet`, `animate`, `height`, `eyeHeight`) ist unverändert.
+  Ellbogen) tragen die Laufanimation. (Abgelöst durch das zusammenhängende Körpernetz in Abschnitt 4.17.)
 - **Schiffsteile und Basis-Module** (`ShipBuilder`, `BaseModules`): dieselben Grundformen wie die Natur, aber technisch
   gelesen. `lathe` für Kanzel, Triebwerksglocke, Tanks, Kuppeln und Sockel; `prism` (Rotationskörper mit wenigen Seiten und
   flachen Normalen) für Kisten und Konsolen; `tube`/`arc` für Landebeine, Leitungen und Greifarm. Gemeinsames Hüllenmaterial
@@ -505,6 +504,31 @@ gewürfelt waren: mittlere Hangneigung 50–60°, Wände zwischen Biomen. Das ne
   Gebirge um 20°, Canyon- und Fjordwände über 50°. Tests prüfen Neigungsverteilung, Stetigkeit und Bandabdeckung.
 - **Bewuchs**: Im sanften Gelände scheitert kaum noch eine Pflanze am Hangtest. Arten-Dichten, Grasdichte (1,25 Büschel/m²)
   und Grasring (56 m) sind darauf abgestimmt; die Dreieckszahl am Startplatz liegt wieder beim alten Wert.
+
+### 4.17 Charakter als ein zusammenhängendes Quad-Netz
+
+Der Körper samt Helm, Händen und Stiefeln ist eine einzige geschlossene Fläche. Der Aufbau folgt der Arbeitsweise bei
+Unterteilungsflächen: ein grober Käfig mit sauberen Kantenschleifen, der durch Catmull-Clark verfeinert wird.
+
+- **`QuadMesh.ts`** (rein): Quad-Netz mit Punktattributen (Knochengewichte) und Flächenattributen (Zone, UV je Ecke).
+  `subdivide` wendet die Catmull-Clark-Regeln auf Positionen und Gewichte an, `orient` richtet alle Flächen einheitlich nach
+  außen, `analyze` prüft Geschlossenheit, Mannigfaltigkeit, Euler-Charakteristik, Zusammenhang und Valenzen,
+  `roundedBox` liefert Käfige für harte Technikteile.
+- **`BodyCage.ts`** (rein): Käfig aus 534 Punkten und 532 Vierecken. Rumpf und Helm sind Ringe mit 8 Punkten, oben mit vier
+  Vierecken geschlossen. Der Hüftring teilt sich über einen Schrittpunkt in zwei Beinschleifen mit 6 Punkten; die Arme sind
+  aus der Randschleife zweier offener Brustflächen ausgezogen, der Daumen aus einer Handfläche. Kragen, Gürtel,
+  Schulterkappen, Knieschützer, Stulpen und Stiefelschäfte entstehen aus eng gesetzten Schleifen, nicht aus aufgesetzten
+  Teilen. Jede Fläche gehört zu einem Körperteil; Muster ordnen den Teilen Zonen zu (Stoff und Schale je in zwei Farben,
+  Gelenkgummi, Leuchtband, Visier). Helmform und Visier verändern nur Ringmaße und Zonen, nie die Topologie.
+- **Fertiges Netz**: zwei Stufen Unterteilung ergeben 8 512 Vierecke. Es bleibt eine geschlossene Fläche vom Geschlecht 0
+  (V − E + F = 2), eine Komponente, 99,5 % der Punkte haben Valenz 4; irreguläre Punkte gibt es nur an Schritt, Schultern,
+  Deckeln und Daumen (46 Stück, unabhängig von der Stufe). Auf dem feinen Netz werden ein Rahmen ums Visier und dunkle Fugen
+  zwischen Stoff und Schale als Zonen nachgezeichnet. Tests sichern all das für Standard, Presets und Zufallsfiguren.
+- **`CharacterBuilder.ts`**: macht daraus eine `SkinnedMesh` mit fünf Materialgruppen. Punkte werden nur an Farb- und
+  Texturnähten verdoppelt, Positionen und Normalen bleiben gleich. 16 Knochen (Hüfte, Wirbelsäule, Brust, Kopf, je Seite
+  Ober-/Unterarm, Hand, Ober-/Unterschenkel, Fuß) verformen das Netz weich; die Bindehaltung ist eine A-Pose, in Ruhe hängen
+  die Arme. Die Geh-Animation dreht nur Knochen. Starre Anbauteile an Knochen: Ohrkapseln, Helmaufsatz, Rucksack mit
+  Schläuchen, Abzeichen. Die Rucksäcke sind selbst unterteilte Quad-Käfige.
 
 ## 5. Laufzeit-Architektur
 

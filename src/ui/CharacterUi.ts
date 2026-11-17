@@ -1,7 +1,7 @@
 import { clear, downloadBlob, el } from './dom';
 import { STR } from './strings';
 import { showToast } from './toast';
-import { BADGES, BADGE_LABELS, BEARD_LABELS, BEARD_STYLES, HAIR_LABELS, HAIR_STYLES, HELMET_LABELS, HELMET_MODES, MARKINGS, MARKING_LABELS, PATTERN_LABELS, SUIT_PALETTES, SUIT_PATTERNS, decodeShareCode, defaultCharacter, encodeShareCode, randomCharacter, sanitizeCharacter, type CharacterConfig, type CharacterPreset } from '@/game/character/Character';
+import { BADGES, BADGE_LABELS, CRESTS, CREST_LABELS, FINISH_LABELS, HELMET_SHAPES, HELMET_SHAPE_LABELS, PACKS, PACK_LABELS, PATTERN_LABELS, SUIT_FINISHES, SUIT_PALETTES, SUIT_PATTERNS, VISOR_LABELS, VISOR_STYLES, VISOR_TINTS, decodeShareCode, defaultCharacter, encodeShareCode, randomCharacter, sanitizeCharacter, type CharacterConfig, type CharacterPreset } from '@/game/character/Character';
 import { BACKGROUNDS } from '@/game/character/backgrounds';
 import { Random, randomSeedString } from '@/math/Random';
 
@@ -11,11 +11,11 @@ export interface CharacterUiCallbacks {
   onCancel: () => void;
   onSavePreset: (preset: CharacterPreset) => Promise<void>;
   onDeletePreset: (id: string) => Promise<void>;
-  onCamera: (view: 'face' | 'body') => void;
+  onCamera: (view: 'helmet' | 'body' | 'back') => void;
   onTurntable: (on: boolean) => void;
 }
 
-type Tab = 'body' | 'face' | 'hair' | 'suit' | 'background' | 'presets';
+type Tab = 'body' | 'suit' | 'helmet' | 'gear' | 'background' | 'presets';
 
 /** Charakter-Editor (DOM): Tabs mit Reglern, Farben, Hintergrund-Karten, Presets, Share-Code und JSON. */
 export class CharacterUi {
@@ -31,7 +31,7 @@ export class CharacterUi {
   private codeInput: HTMLInputElement | null = null;
   private nameInput: HTMLInputElement | null = null;
   private turnBtn: HTMLElement | null = null;
-  private readonly locks = { body: false, face: false, hair: false, suit: false };
+  private readonly locks = { body: false, suit: false, helmet: false, gear: false };
   private turntable = true;
 
   constructor(
@@ -110,14 +110,21 @@ export class CharacterUi {
     clear(this.tabsHost);
     const tabs: Array<[Tab, string]> = [
       ['body', STR.character.tabBody],
-      ['face', STR.character.tabFace],
-      ['hair', STR.character.tabHair],
       ['suit', STR.character.tabSuit],
+      ['helmet', STR.character.tabHelmet],
+      ['gear', STR.character.tabGear],
       ['background', STR.character.tabBackground],
       ['presets', STR.character.tabPresets],
     ];
     for (const [id, label] of tabs) {
-      this.tabsHost.append(el('button', { class: `small ${this.tab === id ? 'primary' : ''}`, text: label, onClick: () => { this.tab = id; this.render(); } }));
+      this.tabsHost.append(el('button', { class: `small ${this.tab === id ? 'primary' : ''}`, text: label, onClick: () => {
+        this.tab = id;
+        // passende Ansicht zum Reiter: Helm von vorn, Ausrüstung von hinten
+        if (id === 'helmet') this.cb.onCamera('helmet');
+        else if (id === 'gear') this.cb.onCamera('back');
+        else if (id === 'body' || id === 'suit') this.cb.onCamera('body');
+        this.render();
+      } }));
     }
     this.renderContent();
     if (!this.sideName) this.renderSide();
@@ -135,23 +142,6 @@ export class CharacterUi {
         this.slider(STR.character.shoulders, () => c.body.shoulders, (v) => (this.cfg.body.shoulders = v)),
         this.slider(STR.character.legLength, () => c.body.legLength, (v) => (this.cfg.body.legLength = v)),
       );
-    } else if (this.tab === 'face') {
-      host.append(
-        this.slider(STR.character.jaw, () => c.face.jaw, (v) => (this.cfg.face.jaw = v)),
-        this.slider(STR.character.eyeSize, () => c.face.eyeSize, (v) => (this.cfg.face.eyeSize = v)),
-        this.slider(STR.character.eyeSpacing, () => c.face.eyeSpacing, (v) => (this.cfg.face.eyeSpacing = v)),
-        this.slider(STR.character.nose, () => c.face.nose, (v) => (this.cfg.face.nose = v)),
-        this.slider(STR.character.skinTone, () => c.face.skinTone, (v) => (this.cfg.face.skinTone = v)),
-        this.slider(STR.character.skinHue, () => c.face.skinHue, (v) => (this.cfg.face.skinHue = v)),
-        this.color(STR.character.eyeColor, () => c.face.eyeColor, (v) => (this.cfg.face.eyeColor = v)),
-        this.select(STR.character.markings, MARKINGS, MARKING_LABELS, () => c.face.markings, (v) => (this.cfg.face.markings = v)),
-      );
-    } else if (this.tab === 'hair') {
-      host.append(
-        this.select(STR.character.hairStyle, HAIR_STYLES, HAIR_LABELS, () => c.hair.style, (v) => (this.cfg.hair.style = v)),
-        this.color(STR.character.hairColor, () => c.hair.color, (v) => (this.cfg.hair.color = v)),
-        this.select(STR.character.beard, BEARD_STYLES, BEARD_LABELS, () => c.hair.beard, (v) => (this.cfg.hair.beard = v)),
-      );
     } else if (this.tab === 'suit') {
       const pal = el('div', { class: 'row wrap' });
       for (const [p, s, a] of SUIT_PALETTES) {
@@ -165,8 +155,28 @@ export class CharacterUi {
         this.color(STR.character.secondary, () => c.suit.secondary, (v) => (this.cfg.suit.secondary = v)),
         this.color(STR.character.accent, () => c.suit.accent, (v) => (this.cfg.suit.accent = v)),
         this.select(STR.character.pattern, SUIT_PATTERNS, PATTERN_LABELS, () => c.suit.pattern, (v) => (this.cfg.suit.pattern = v)),
+        this.select(STR.character.finish, SUIT_FINISHES, FINISH_LABELS, () => c.suit.finish, (v) => (this.cfg.suit.finish = v)),
+        this.slider(STR.character.armor, () => c.suit.armor, (v) => (this.cfg.suit.armor = v)),
         this.select(STR.character.badge, BADGES, BADGE_LABELS, () => c.suit.badge, (v) => (this.cfg.suit.badge = v)),
-        this.select(STR.character.helmet, HELMET_MODES, HELMET_LABELS, () => c.suit.helmet, (v) => (this.cfg.suit.helmet = v)),
+      );
+    } else if (this.tab === 'helmet') {
+      const tints = el('div', { class: 'row wrap' });
+      for (const t of VISOR_TINTS) {
+        const sw = el('button', { class: 'small swatch', title: t, onClick: () => this.update((cc) => (cc.helmet.visorTint = t), true) });
+        sw.style.background = t;
+        tints.append(sw);
+      }
+      host.append(
+        this.select(STR.character.helmetShape, HELMET_SHAPES, HELMET_SHAPE_LABELS, () => c.helmet.shape, (v) => (this.cfg.helmet.shape = v)),
+        this.select(STR.character.visor, VISOR_STYLES, VISOR_LABELS, () => c.helmet.visor, (v) => (this.cfg.helmet.visor = v)),
+        el('div', { class: 'char-row' }, el('span', { text: STR.character.visorTints }), tints),
+        this.color(STR.character.visorTint, () => c.helmet.visorTint, (v) => (this.cfg.helmet.visorTint = v)),
+        this.select(STR.character.crest, CRESTS, CREST_LABELS, () => c.helmet.crest, (v) => (this.cfg.helmet.crest = v)),
+      );
+    } else if (this.tab === 'gear') {
+      host.append(
+        this.select(STR.character.pack, PACKS, PACK_LABELS, () => c.gear.pack, (v) => (this.cfg.gear.pack = v)),
+        el('p', { class: 'muted small', text: STR.character.gearHint }),
       );
     } else if (this.tab === 'background') {
       for (const b of BACKGROUNDS) {
@@ -185,7 +195,7 @@ export class CharacterUi {
         el(
           'div',
           { class: 'part-row' },
-          el('div', { class: 'col' }, el('span', { class: 'name', text: p.name }), el('span', { class: 'muted small', text: `${BACKGROUNDS.find((b) => b.id === p.config.background)?.name ?? ''} · ${HAIR_LABELS[p.config.hair.style]} · ${PATTERN_LABELS[p.config.suit.pattern]}` })),
+          el('div', { class: 'col' }, el('span', { class: 'name', text: p.name }), el('span', { class: 'muted small', text: `${BACKGROUNDS.find((b) => b.id === p.config.background)?.name ?? ''} · ${HELMET_SHAPE_LABELS[p.config.helmet.shape]} · ${PATTERN_LABELS[p.config.suit.pattern]}` })),
           el('div', { class: 'row' }, el('button', { class: 'small primary', text: STR.character.load, onClick: () => this.update((cc) => Object.assign(cc, JSON.parse(JSON.stringify(p.config)), { name: cc.name }), true) }), p.builtIn ? null : el('button', { class: 'small', text: STR.character.delete, onClick: () => void this.cb.onDeletePreset(p.id) })),
         );
       host.append(el('h3', { text: STR.character.presetsBuiltIn }));
@@ -211,9 +221,9 @@ export class CharacterUi {
     name.addEventListener('change', () => this.update((cc) => (cc.name = name.value)));
     const bg = BACKGROUNDS.find((b) => b.id === c.background)!;
     const code = el('input', { type: 'text', value: encodeShareCode(c), readonly: true });
-    const importInput = el('input', { type: 'text', placeholder: 'SA1.…' });
+    const importInput = el('input', { type: 'text', placeholder: 'SA2.…' });
     const locks = el('div', { class: 'row wrap small' });
-    for (const [key, label] of [['body', STR.character.lockBody], ['face', STR.character.lockFace], ['hair', STR.character.lockHair], ['suit', STR.character.lockSuit]] as Array<[keyof typeof this.locks, string]>) {
+    for (const [key, label] of [['body', STR.character.lockBody], ['suit', STR.character.lockSuit], ['helmet', STR.character.lockHelmet], ['gear', STR.character.lockGear]] as Array<[keyof typeof this.locks, string]>) {
       const cbx = el('input', { type: 'checkbox' });
       cbx.checked = this.locks[key];
       cbx.addEventListener('change', () => (this.locks[key] = cbx.checked));
@@ -229,7 +239,7 @@ export class CharacterUi {
       this.sideName,
       el('label', { class: 'char-row' }, el('span', { text: STR.character.name }), name),
       this.sideGoal,
-      el('div', { class: 'row wrap' }, el('button', { class: 'small', text: STR.character.camFace, onClick: () => this.cb.onCamera('face') }), el('button', { class: 'small', text: STR.character.camBody, onClick: () => this.cb.onCamera('body') }), turn),
+      el('div', { class: 'row wrap' }, el('button', { class: 'small', text: STR.character.camHelmet, onClick: () => this.cb.onCamera('helmet') }), el('button', { class: 'small', text: STR.character.camBody, onClick: () => this.cb.onCamera('body') }), el('button', { class: 'small', text: STR.character.camBack, onClick: () => this.cb.onCamera('back') }), turn),
       el('h3', { text: STR.character.random }),
       el('div', { class: 'row wrap' }, el('button', { class: 'small', text: STR.character.random, onClick: () => this.update((cc) => Object.assign(cc, randomCharacter(new Random(`char:${randomSeedString(8)}`), cc, this.locks), { name: cc.name, background: cc.background }), true) }), el('span', { class: 'muted small', text: `${STR.character.randomLocked}:` }), locks),
       el('button', { class: 'small', text: STR.character.reset, onClick: () => this.update((cc) => Object.assign(cc, defaultCharacter(), { name: cc.name }), true) }),

@@ -45,7 +45,6 @@ export class Player {
   private readonly bodyGeometry: CapsuleGeometry;
   private readonly placeholder: Mesh;
   private built: BuiltCharacter | null = null;
-  private helmet = false;
 
   constructor(
     private readonly model: TerrainModel,
@@ -77,13 +76,6 @@ export class Player {
     this.built = buildCharacter(cfg);
     this.placeholder.visible = false;
     this.body.add(this.built.group);
-    this.setHelmet(this.helmet);
-  }
-
-  /** Helm sichtbar (nicht atembare Atmosphäre) – Modus 'on'/'off' des Charakters hat Vorrang. */
-  setHelmet(on: boolean, mode: 'auto' | 'on' | 'off' = 'auto'): void {
-    this.helmet = on;
-    this.built?.setHelmet(mode === 'on' ? true : mode === 'off' ? false : on);
   }
 
   spawn(x: number, y: number, z: number, yaw = 0): void {

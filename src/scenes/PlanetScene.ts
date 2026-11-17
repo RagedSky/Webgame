@@ -307,7 +307,6 @@ export class PlanetScene implements GameScene {
     this.bonus = bonusesFor(this.state.character?.background);
     if (this.state.character) {
       this.player.setCharacter(this.state.character);
-      this.player.setHelmet(!planet.atmosphere.breathable, this.state.character.suit.helmet);
     }
     const roverState = this.state.rovers[planet.id];
     if (roverState) this.rover = new Rover(this.scene, this.model, roverState.x, roverState.z, roverState.yaw);

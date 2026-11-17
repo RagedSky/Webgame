@@ -357,3 +357,21 @@ Landeplatz des Schiffs im Wasser oder am Steilhang, wird ein neuer gesucht. Basi
 aktuellen Geländehöhe; ein Modul kann nach dem Update in einer Senke oder im Flachwasser stehen und muss dann umgesetzt
 werden, eine Tiefseesonden-Boje kann über Land liegen. Biomgrenzen haben sich verschoben, die Karte (Fog of War) bleibt gültig, zeigt aber das neue Relief.
 
+## D-067 · Helm dauerhaft geschlossen, Gesicht und Haare entfallen
+**Kontext:** Der Charakter trug bisher Gesicht, Frisur und einen umschaltbaren Helm. Gewünscht ist eine Figur, deren Helm
+immer geschlossen bleibt.
+**Entscheidung:** `CharacterConfig` Version 2 kennt nur noch Körper, Anzug, Helm und Ausrüstung. Die frei werdenden
+Optionen gehen in die Gestaltung des Helms (Form, Visier, Tönung, Aufsatz) und des Anzugs (Lackierung, Panzerung,
+Rucksack). Alte Konfigurationen und Share-Codes (`SA1.`) werden gelesen; Körper, Farben, Muster, Abzeichen und Hintergrund
+bleiben, Gesichtswerte werden verworfen. Der Helmmodus (automatisch nach Atmosphäre) entfällt, `setHelmet` gibt es nicht mehr.
+
+## D-068 · Körper als ein Quad-Netz aus Käfig und Catmull-Clark
+**Kontext:** Die Figur bestand aus rund 150 Einzelteilen (Röhren, Rotationskörper, Klumpen), die sich durchdrangen. Die
+Gelenke waren starre Gruppen. Gefordert sind eine saubere Topologie und ein weitgehend zusammenhängendes Netz.
+**Entscheidung:** Ein handgebauter Käfig mit durchgehenden Kantenschleifen wird zweimal unterteilt. Daraus folgen ein reines
+Quad-Netz, eine geschlossene Fläche und nur an den unvermeidlichen Stellen irreguläre Punkte. Rüstungsteile sind Formen im
+selben Netz (enge Schleifen), keine aufgesetzten Körper; Farben und Materialien liegen als Zonen auf den Flächen. Ein
+Skelett mit Hautgewichten ersetzt die starren Gruppen. Nur Rucksack, Schläuche, Helmaufsatz, Ohrkapseln und Abzeichen
+bleiben eigene Teile. Die Eigenschaften (geschlossen, eine Komponente, Euler 2, Anteil regulärer Punkte) stehen als Tests
+im Projekt, damit spätere Änderungen am Käfig sie nicht unbemerkt brechen.
+

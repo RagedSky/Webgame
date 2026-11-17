@@ -39,6 +39,7 @@ Konsole: `__stellar.scenes.active.setTimeOfDay(0.5)` / `.forceWeather('rain', tr
 - UI-Texte Deutsch, zentral in `src/ui/strings.ts`. Spielwerte physikalisch (Kelvin, AU, km, g).
 - Entscheidungen mit Tragweite in `docs/DECISIONS.md` eintragen (D-xxx). Balancing-Annahmen in `docs/BALANCING.md`.
 - Gelände: neue Reliefformen als Schicht in `gen/terrain/Landforms.ts` mit Amplitude in Metern und plausiblem Verhältnis von Höhe zu Breite ergänzen und im Rezept des Bioms eintragen, kein Rauschen direkt in `TerrainModel`. Die Tests zu Hangneigung und Höhenband müssen grün bleiben.
+- Charakter: Änderungen am Körper im Käfig (`BodyCage.ts`) über Ringe und Kantenschleifen vornehmen, keine Einzelteile aufsetzen. Das Netz muss geschlossen, einteilig und ein reines Quad-Netz bleiben (Tests in `BodyCage.test.ts`).
 - Neue Formen aus `world/organic.ts` und `geometry.ts` (`blade`, `gradientColor`) bauen, nicht aus rohen Kugeln/Zylindern; Shader-Erweiterungen nur über `addShaderPatch`.
 - Vollflächige UI-Overlays ohne Klickfläche in die `#ui-root > …`-Liste in `styles.css` eintragen (sonst blockieren sie Canvas-Klicks).
 - Commits: aussagekräftig, eine Phase/ein Feature pro Commit. Vor jedem Commit `npm run check` und `npm run build`.
@@ -78,7 +79,8 @@ Konsole: `__stellar.scenes.active.setTimeOfDay(0.5)` / `.forceWeather('rain', tr
 - `src/scenes/ShipEditorScene.ts` – Werft, `src/scenes/SpaceScene.ts` – Orbit/Transfer/Landung, `src/world/ship/*` – Schiffsmesh/-aktor
 - `src/game/map/{MapGrid,hotspots}.ts` – Fog of War, Katalog-Lücken (rein); `src/ui/MapUi.ts` – Karte; `src/world/probes/*` – Rover, Bojen
 - `src/game/character/{Character,backgrounds}.ts` – Charakter-Konfiguration, Share-Code, Presets, Hintergrund-Boni (rein);
-  `src/world/character/CharacterBuilder.ts` – Avatar; `src/scenes/CharacterScene.ts` + `src/ui/CharacterUi.ts` – Editor
+  `src/world/character/{QuadMesh,BodyCage,CharacterBuilder}.ts` – Avatar als ein geschlossenes Quad-Netz (Käfig + Catmull-Clark,
+  Skelett, Zonen; ARCHITECTURE 4.17); `src/scenes/CharacterScene.ts` + `src/ui/CharacterUi.ts` – Editor
 - `src/game/settings/{Settings,SettingsManager,Keybindings}.ts` – Einstellungen (Presets, Lautstärken, adaptive Qualität, Tastenbelegung); `src/ui/SettingsUi.ts`
 - `src/save/{SaveBundle,SaveManager}.ts` – Spielstand-Bundle (rein, Migration), Slots/Export/Import; `src/ui/SaveUi.ts`; `src/scenes/startGame.ts`
 - `src/game/tutorial/Tutorial.ts` – Tutorial-Schritte (rein); `src/audio/{AudioManager,ambientMix}.ts` – prozedurales Audio
