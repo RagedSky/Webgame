@@ -56,16 +56,22 @@ export class TerrainManager {
     });
     addRim(this.material, 0.35);
     const planet = model.planet;
-    const palettes: BiomePalette[] = planet.biomes.map((b) => ({
+    const style = model.style;
+    // Ein Hauch der Grasspitzenfarbe im Bewuchston: ferne Wiesen passen zum zweifarbigen Gras im Nahbereich
+    const tip = vivid(new Color(style.grassTip), 1.1);
+    const palettes: BiomePalette[] = planet.biomes.map((b, i) => ({
       ground: vivid(new Color(b.palette.ground), 1.35),
       accent: vivid(new Color(b.palette.accent), 1.35),
-      vegetation: vivid(new Color(b.palette.vegetation), 1.25),
+      vegetation: vivid(new Color(b.palette.vegetation), 1.25).lerp(tip, 0.12),
+      ground2: vivid(new Color(style.biomes[i]!.ground2), 1.3),
+      vegetation2: vivid(new Color(style.biomes[i]!.vegetation2), 1.25).lerp(tip, 0.12),
+      strata: vivid(new Color(style.biomes[i]!.strata), 1.2),
     }));
     const bio = Math.min(1, 0.45 + planet.biodiversity);
     const grass = planet.biomes.map((b) => clamp01(VEGETATION_PROFILES[b.kind].grass / 150) * bio);
     const waterBiome = planet.biomes.find((b) => b.hasWater);
     const snowLine = planet.temperature.mean < 262 ? 0.25 : planet.temperature.mean < 285 ? 0.72 : planet.temperature.mean < 300 ? 0.9 : 2;
-    this.ctx = { model, palettes, waterTint: new Color(waterBiome?.palette.ground ?? '#2f6f9a'), snowLine, grass };
+    this.ctx = { model, palettes, waterTint: new Color(waterBiome?.palette.ground ?? '#2f6f9a'), snowLine, grass, vegZone: style.vegZone, groundZone: style.groundZone };
     scene.add(this.group);
   }
 

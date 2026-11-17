@@ -155,7 +155,12 @@ export class VegetationAssets {
   readonly crystalMaterial: MeshStandardMaterial;
   readonly rockMaterial: MeshStandardMaterial;
 
-  constructor() {
+  /** Farbe der Grasspitzen (Planetenstil); wird von der Szene gesetzt. */
+  readonly grassTip = { value: new Color(0.75, 0.8, 0.35) };
+
+  /** `grassTip`: Farbe, in die die Halme zur Spitze hin auslaufen (zweifarbiges Gras). */
+  constructor(grassTip?: Color) {
+    if (grassTip) this.grassTip.value.copy(grassTip);
     this.grass = grassGeometry();
     this.shrub = shrubGeometry();
     this.rock = rockGeometry();
@@ -173,6 +178,16 @@ export class VegetationAssets {
     // Gras ist einlagig und doppelseitig: die Rückseite behält die (nach oben zeigende) Normale statt gespiegelt dunkel zu werden
     addShaderPatch(this.grassMaterial, 'unflip', (shader) => {
       shader.fragmentShader = shader.fragmentShader.replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\n#ifdef DOUBLE_SIDED\n  normal *= faceDirection;\n#endif');
+    });
+    // Zweifarbiges Gras: der Halm läuft von der Instanzfarbe (Bewuchston) in die Spitzenfarbe des Planeten aus
+    addShaderPatch(this.grassMaterial, 'tip', (shader) => {
+      shader.uniforms.uGrassTip = this.grassTip;
+      shader.vertexShader = shader.vertexShader
+        .replace('#include <common>', '#include <common>\nvarying float vTip;')
+        .replace('#include <begin_vertex>', '#include <begin_vertex>\nvTip = smoothstep(0.1, 0.4, position.y);');
+      shader.fragmentShader = shader.fragmentShader
+        .replace('#include <common>', '#include <common>\nuniform vec3 uGrassTip;\nvarying float vTip;')
+        .replace('#include <color_fragment>', '#include <color_fragment>\ndiffuseColor.rgb = mix(diffuseColor.rgb, uGrassTip, vTip * 0.72);');
     });
     this.patchWind(this.plantMaterial, 0.35);
     addRim(this.plantMaterial, 0.8);

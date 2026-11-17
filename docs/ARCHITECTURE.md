@@ -419,8 +419,8 @@ deterministischen, flachen Landeplatz. `VegetationProfiles.ts` definiert Dichten
 Ziel ist eine stilisierte, farbkräftige Optik mit weichen Formen statt aneinandergesetzter Primitiven.
 
 - **Organische Grundformen** (`world/organic.ts`): `tube` (gebogene, verjüngte Röhre mit fortgeschriebenem Rahmen), `arc`
-  (Bogen als Punktfolge), `blob` (verrauschte Kugel mit verschweißten Normalen), `lathe` (Rotationskörper), `crystal`
-  (facettierte Säule). `geometry.ts` ergänzt `blade` (gebogenes Band, optional zweiseitig, Normalen nach oben gemischt) und
+  (Bogen als Punktfolge), `blob` (verrauschte Kugel mit verschweißten Normalen), `lathe` (Rotationskörper, auch als
+  Kreisausschnitt), `prism` (kantiger Rotationskörper mit flachen Normalen), `crystal` (facettierte Säule). `geometry.ts` ergänzt `blade` (gebogenes Band, optional zweiseitig, Normalen nach oben gemischt) und
   `gradientColor` (Vertexfarb-Verlauf). `jitter` verschiebt Eckpunkte gleicher Position gleich (keine aufgerissenen Flächen).
 - **Kreaturen** (`CreatureBuilder`): Schwanz, Rumpf, Hals und Kopf sind ein durchgehender Loft entlang der Körperachse
   (elliptische Querschnitte, flacherer Bauch, Schädelprofil je Kopftyp). Jeder Ring trägt zwei Knochen mit weichem Übergang
@@ -440,6 +440,39 @@ Ziel ist eine stilisierte, farbkräftige Optik mit weichen Formen statt aneinand
 - **Atmosphäre und Bild** (`render/stylize.ts`, `Atmosphere`, `PlanetScene`): gesättigter Zenit und farbiger Horizont,
   dichterer Dunst, Kantenlicht in Himmelsfarbe auf allen Weltmaterialien (zusammensetzbare Shader-Patches), Bloom mit
   niedrigerer Schwelle, Sättigung, Kontrast und leichte Vignette.
+
+### 4.15 Stil, zweite Runde: Exo-Anzug, Technik-Formensprache, Himmel, Planetenfarben
+
+- **Charakter** (`CharacterBuilder`): Exo-Anzug aus Röhren, Rotationskörpern und Klumpen. Stoffanzug in der Primärfarbe,
+  lackierte Panzerplatten (Brust, Rücken, Schultern, Oberschenkel, Schienbeine), dunkle Stulpen und Stiefel in der
+  Sekundärfarbe, leuchtende Akzente. Der Helm hat ein dunkles, spiegelndes Visier mit Rahmen, Ohrkapseln, Stirnlampen,
+  Atemgerät und Antenne; die Visierkanten liegen auf der Tessellierung der Helmschale. Gelenkgruppen (Hüfte, Knie, Schulter,
+  Ellbogen) tragen die Laufanimation. Die API (`setHelmet`, `animate`, `height`, `eyeHeight`) ist unverändert.
+- **Schiffsteile und Basis-Module** (`ShipBuilder`, `BaseModules`): dieselben Grundformen wie die Natur, aber technisch
+  gelesen. `lathe` für Kanzel, Triebwerksglocke, Tanks, Kuppeln und Sockel; `prism` (Rotationskörper mit wenigen Seiten und
+  flachen Normalen) für Kisten und Konsolen; `tube`/`arc` für Landebeine, Leitungen und Greifarm. Gemeinsames Hüllenmaterial
+  mit Panelfugen, Klarlack und Kantenlicht, orange Lackbänder als Wiedererkennungsfarbe.
+- **Himmel** (`Sky`): Die Kuppel zeichnet zwei Wolkenschichten. Haufenwolken haben klare Ränder, Selbstschatten (zweite
+  Dichteprobe in Richtung Sonne), leuchtende Säume im Gegenlicht und verschmelzen am Horizont mit dem Dunst; Federwolken sind
+  verwirbelte Schleier. Wolkenmenge und Schleieranteil hängen von Luftfeuchte und Atmosphärendichte des Planeten ab, auch
+  bei klarem Wetter stehen einzelne Wolken am Himmel. Die Sonne ist eine Scheibe mit Korona, ihre Größe folgt Sternradius
+  und Bahnabstand. Nachts liegt ein Sternenband mit Staubbahnen über dem Himmel (im Shader, dreht mit den Sternen), dazu
+  helle farbige Einzelsterne und dichter Sternstaub entlang des Bands.
+- **Himmelskörper**: eigener kleiner Shader statt Szenenlicht. Beleuchtung aus der Sonnenrichtung (Phasen, auch nachts
+  sichtbar), Atmosphärensaum, weicher Rand. Vormultipliziertes Alpha lässt den Tagdunst additiv durchscheinen, zum Horizont
+  nimmt er zu, dichte Wolken verdecken den Körper, vor der Sonnenscheibe deckt er voll (Finsternis). Monde tragen eine
+  prozedurale Kratertextur (`render/MoonTexture.ts`, rein, getestet). Der Gasriese steht als Landmarke fest am Himmel, meist
+  mit Ring (Bänder, Lücken, Schatten des Planeten auf dem Ring). Bis zu zwei Nachbarplaneten wandern mit der Tagesdrehung;
+  innere stehen nahe der Sonne und zeigen Sicheln.
+- **Planetenstil** (`gen/terrain/PlanetStyle.ts`, rein, getestet): je Biom eine zweite Bewuchs- und Bodenfarbe sowie eine
+  Farbe für Gesteinsbänder, dazu drei Zonenfelder aus Rauschen (Bewuchs, Boden, Haine), die Farbe der Grasspitzen und die
+  Genome der Signaturpflanzen. Das Terrain mischt die Farben in Zonen und zeichnet Gesteinsbänder an Steilhängen (auf fernen
+  LOD-Stufen ausgeblendet). Gras nimmt dieselbe Zonenfarbe als Instanzfarbe und läuft im Shader zur Spitze in die
+  Planetenfarbe aus (zweifarbig). Das `TerrainModel` hält den Stil (`model.style`), Terrain und Vegetation lesen ihn dort.
+- **Signaturpflanzen** (`Vegetation.placeLandmarks`): zwei Sorten je Planet, 5 bis 36 m hoch, in Kontrastfarbe zum Bewuchs
+  (Plattform- und Schirmbäume, Riesenpilze, Nadelriesen, Agaven, Kristallnadeln auf toten Welten). Sie entstehen aus
+  synthetischen Flora-Genomen über `buildFloraGeometry`, stehen in Hainen in den fernen Zellen und sind von der Einstellung
+  „Vegetationsdichte“ unabhängig. Sie sind Kulisse: keine Archiv-Einträge, keine Kollision.
 
 ## 5. Laufzeit-Architektur
 

@@ -85,5 +85,7 @@ Konsole: `__stellar.scenes.active.setTimeOfDay(0.5)` / `.forceWeather('rain', tr
 - `src/game/progress/ArchiveProgress.ts` – Fortschritt (rein), `src/game/photo/PhotoScoring.ts` – Bewertung (rein)
 - `src/world/photo/PhotoMode.ts` – Foto-Modus, `src/ui/ArchiveUi.ts` – Enzyklopädie, `src/save/Db.ts` – IndexedDB
 - `src/render/{ProceduralTextures,Environment,stylize}.ts` – Detailtexturen-Bank, PMREM-Umgebungslicht, Stil (Kantenlicht, Paletten, Shader-Patches)
-- `src/world/organic.ts` – organische Grundformen (Röhre, Klumpen, Rotationskörper, Kristall) für Flora, Kreaturen, Knoten (ARCHITECTURE 4.13/4.14)
+- `src/world/organic.ts` – organische Grundformen (Röhre, Klumpen, Rotationskörper, Prisma, Kristall) für Flora, Kreaturen, Knoten, Technik (ARCHITECTURE 4.13–4.15)
+- `src/gen/terrain/PlanetStyle.ts` – Farbstil je Planet (Zweitfarben, Zonen, Grasspitzen, Signaturpflanzen; rein), über `model.style` erreichbar
+- `src/world/Sky.ts` – Himmelskuppel (Wolken, Sonne, Sternenband), Himmelskörper mit eigenem Shader; `src/render/MoonTexture.ts` – Mondoberfläche (rein)
 - `src/core/GameLoop.ts`, `src/core/SceneManager.ts`, `src/core/Input.ts`

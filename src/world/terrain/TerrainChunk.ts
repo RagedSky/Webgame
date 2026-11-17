@@ -17,6 +17,10 @@ export interface BiomePalette {
   ground: Color;
   accent: Color;
   vegetation: Color;
+  /** Zweite Boden- und Bewuchsfarbe (Zonen) und Farbe der Gesteinsbänder. */
+  ground2: Color;
+  vegetation2: Color;
+  strata: Color;
 }
 
 /** Geometrie-Pool: Vertex-/Index-Anzahl ist für alle Chunks identisch. */
@@ -91,6 +95,7 @@ const samples: TerrainSample[] = Array.from({ length: (S + 1) * (S + 1) }, () =>
 const cRock = new Color(0x6a655f);
 const cRockTint = new Color();
 const cVeg = new Color();
+const cVeg2 = new Color();
 const cSnow = new Color(0xeef4fa);
 const cSand = new Color(0xd6c48c);
 const cTmp = new Color();
@@ -103,12 +108,17 @@ export interface ChunkBuildContext {
   snowLine: number; // normierte Höhe ab der Schnee liegt (>1 = nie)
   /** Grasbedeckung je Biom 0..1 (färbt flache Hänge in der Vegetationsfarbe, damit Bewuchs auch in der Ferne wirkt). */
   grass: number[];
+  /** Zonen des Planetenstils: Anteil der zweiten Bewuchs- bzw. Bodenfarbe an einer Weltposition. */
+  vegZone: (x: number, z: number) => number;
+  groundZone: (x: number, z: number) => number;
 }
 
 /** Füllt die Geometrie eines Chunks aus dem Terrain-Modell. */
 export function buildChunkGeometry(geo: BufferGeometry, key: ChunkKey, ctx: ChunkBuildContext): void {
   const { model, palettes } = ctx;
   const step = key.size / S;
+  // Gesteinsbänder nur, wo das Raster sie auflösen kann (ferne LOD-Stufen würden flimmern)
+  const strataFade = clamp01(1.6 - step / 10);
   // Höhen inkl. Rand
   for (let z = 0; z < B; z++) {
     for (let x = 0; x < B; x++) {
@@ -164,22 +174,34 @@ export function buildChunkGeometry(geo: BufferGeometry, key: ChunkKey, ctx: Chun
       const p1 = palettes[s.biome] as BiomePalette;
       const p2 = palettes[s.biome2] as BiomePalette;
       const t = clamp01(0.5 + s.detail * 0.7);
-      cTmp.copy(p1.ground).lerp(p1.accent, t);
+      const wx = key.x + lx;
+      const wz = key.z + lz;
+      // Bodenzonen: großflächiger Wechsel zur zweiten Bodenfarbe
+      const gz = ctx.groundZone(wx, wz) * 0.8;
+      cTmp.copy(p1.ground).lerp(p1.ground2, gz).lerp(p1.accent, t * (1 - gz * 0.5));
       if (s.blend > 0) {
-        cTmp2.copy(p2.ground).lerp(p2.accent, t);
+        cTmp2.copy(p2.ground).lerp(p2.ground2, gz).lerp(p2.accent, t * (1 - gz * 0.5));
         cTmp.lerp(cTmp2, s.blend);
       }
       const slope = 1 - ny;
       // Fels behält den Farbton des Bodens (farbige Klippen statt neutralem Grau)
       cRockTint.copy(cTmp).multiplyScalar(0.5).lerp(cRock, 0.35);
+      if (slope > 0.5 && strataFade > 0) {
+        // Gesteinsbänder: schmale farbige Schichten folgen der Höhe, vom Geländerauschen leicht verbogen
+        const band = 0.5 + 0.5 * Math.sin(s.height * 0.21 + s.detail * 2.2);
+        cTmp2.copy(s.blend > 0.5 ? p2.strata : p1.strata).multiplyScalar(0.8);
+        cRockTint.lerp(cTmp2, smoothstep(0.62, 0.86, band) * 0.6 * strataFade);
+      }
       // Bewuchs: flache Hänge tragen die Vegetationsfarbe
       let grass = lerp(ctx.grass[s.biome] as number, ctx.grass[s.biome2] as number, s.blend) * (1 - smoothstep(0.3, 0.62, slope));
       if (hasWater) grass *= clamp01((s.height - sea - 0.2) / 1.5);
       // Erdflecken: großflächiges Rauschen lässt den Boden durchscheinen (Abwechslung statt Einheitsgrün)
       grass *= clamp01(0.62 + s.detail * 0.9);
       if (grass > 0.01) {
-        cVeg.copy(p1.vegetation);
-        if (s.blend > 0) cVeg.lerp(p2.vegetation, s.blend);
+        // Bewuchszonen: Wiesen wechseln zwischen zwei Farbtönen
+        const vz = ctx.vegZone(wx, wz);
+        cVeg.copy(p1.vegetation).lerp(p1.vegetation2, vz);
+        if (s.blend > 0) cVeg.lerp(cVeg2.copy(p2.vegetation).lerp(p2.vegetation2, vz), s.blend);
         cTmp.lerp(cVeg.multiplyScalar(0.62 + 0.26 * t), grass);
       }
       if (slope > 0.48) cTmp.lerp(cRockTint, smoothstep(0.48, 0.78, slope) * 0.85);

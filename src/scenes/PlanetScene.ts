@@ -55,7 +55,7 @@ import { ambientMixFor, footSurfaceFor } from '@/audio/ambientMix';
 import type { CompassMarker } from '@/ui/Hud';
 import { startGame } from './startGame';
 import { EnvironmentMap } from '@/render/Environment';
-import { stylize } from '@/render/stylize';
+import { stylize, vivid } from '@/render/stylize';
 import { ShipEditorScene } from './ShipEditorScene';
 import { SpaceScene } from './SpaceScene';
 import { LAUNCH_FUEL_TARGET, MODULE_LABELS, RECIPE_BY_ID, type ItemId, type ModuleType, type Recipe } from '@/game/crafting/recipes';
@@ -280,7 +280,7 @@ export class PlanetScene implements GameScene {
     if (saved) this.cycle.totalDays = saved.totalDays;
     this.weather = new WeatherSystem(planet, this.system.seed);
     this.terrain = new TerrainManager(this.scene, this.model, { viewDistance: this.viewDistance });
-    this.assets = new VegetationAssets();
+    this.assets = new VegetationAssets(vivid(new Color(this.model.style.grassTip), 1.1));
     this.flora = new FloraAssets(this.assets);
     this.vegetation = new VegetationManager(this.scene, this.model, planet, this.assets, this.flora, this.system.entries, { density: quality.vegetationDensity });
     this.creatures = new CreatureManager(this.scene, this.system, planet, this.model);

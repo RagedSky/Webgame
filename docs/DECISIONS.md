@@ -302,3 +302,33 @@ Atmosphärenfarben bleiben physikalisch hergeleitet und werden nur in Sättigung
 **Entscheidung:** Gras steht nur in einem Ring von 72 m um die Kamera (kleine Zellen, schneller Aufbau, Ausblendung im
 Shader). Dahinter übernimmt das Terrain denselben Farbton auf bewachsenen Hängen, sodass der Übergang nicht auffällt.
 Die Einstellung „Vegetationsdichte“ skaliert Gras, Blumen und Arten-Pflanzen gemeinsam.
+
+## D-060 · Planetenstil als reines Datenmodul am Terrain-Modell
+**Kontext:** Jeder Planet sah trotz Biomen einfarbig aus (ein Grün, ein Bodenton). Terrain, Gras und Landmarken müssen
+dieselben Farbzonen zeigen, sonst passen Nah- und Fernbereich nicht zusammen.
+**Entscheidung:** `gen/terrain/PlanetStyle.ts` leitet deterministisch aus dem Terrain-Seed Zweitfarben, Zonenfelder,
+Grasspitzenfarbe und Signaturpflanzen ab. Das `TerrainModel` hält den Stil; alle Darstellungsschichten lesen dieselbe Quelle.
+Die Archiv-Paletten bleiben unverändert, der Stil ist reine Darstellung und steht nicht im Spielstand. Sand- und Erdtöne
+werden nur in Richtung Rot verschoben, Gesteinsbänder bleiben farblich benachbart (Komplementärfarben wirkten fleckig).
+
+## D-061 · Signaturpflanzen sind Kulisse, keine Arten
+**Kontext:** Größere, prägende Pflanzen waren gewünscht. Als Archiv-Arten hätten sie Budget, Seltenheit, Hinweise und die
+Spielzeit-Schätzung verschoben.
+**Entscheidung:** Signaturpflanzen entstehen aus synthetischen Genomen mit demselben `buildFloraGeometry`, zählen aber nicht
+zum Archiv und sind nicht fotografierbar als Eintrag. Sie stehen in den fernen Zellen (bis 620 m sichtbar) und ignorieren
+die Vegetationsdichte, damit die Silhouette eines Planeten auf jeder Qualitätsstufe gleich bleibt.
+
+## D-062 · Himmelskörper mit eigenem Shader und vormultipliziertem Alpha
+**Kontext:** Monde und Gasriese hingen am Szenenlicht: nachts fast schwarz, tagsüber ohne Dunst wie aufgeklebt, Wolken
+zogen hinter ihnen vorbei.
+**Entscheidung:** Ein kleiner Shader beleuchtet die Körper aus der Sonnenrichtung. Vormultipliziertes Alpha blendet sie über
+die Kuppel: tagsüber addiert sich der Dunst (dunkle Seiten verschwinden fast im Himmel), nachts decken sie voll. Wolken-
+verdeckung ist eine Näherung über die Bewölkung des Wetters, nicht pro Pixel. Sternenband, Wolken und Sonne bleiben im
+Kuppel-Shader (ein Draw-Call), nur Sternstaub und helle Sterne sind zusätzliche Punktwolken.
+
+## D-063 · Technik teilt die Grundformen der Natur
+**Kontext:** Schiffsteile, Basis-Module und Charakter bestanden noch aus Quadern und Zylindern und fielen gegen die neue
+Flora und Fauna ab.
+**Entscheidung:** Auch Technik entsteht aus `lathe`, `tube`, `arc`, `blob` und dem neuen `prism`. Harte Kanten kommen aus
+flachen Normalen und Fasen, nicht aus Box-Geometrien. Ein gemeinsames Hüllenmaterial (Panelfugen, Klarlack, Kantenlicht) und
+orange Lackbänder verbinden Lander, Module und Anzug. Sockelpositionen, Kollisionsradien und alle APIs bleiben gleich.

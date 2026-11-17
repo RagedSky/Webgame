@@ -10,6 +10,7 @@ import { SimplexNoise } from '@/math/Noise';
 import { clamp, clamp01, lerp, smoothstep } from '@/math/utils';
 import { Random } from '@/math/Random';
 import type { Biome, BiomeKind, Planet } from '../universe/types';
+import { planetStyle, type PlanetStyle } from './PlanetStyle';
 
 export interface TerrainSample {
   height: number;
@@ -48,6 +49,8 @@ export class TerrainModel {
   readonly seaLevel: number;
   readonly hasWater: boolean;
   readonly biomes: Biome[];
+  /** Farbstil des Planeten (Zonen, Zweitfarben, Signaturpflanzen). */
+  readonly style: PlanetStyle;
   private readonly noise: SimplexNoise;
   private readonly thresholds: number[];
   private readonly bands: Array<[number, number]>;
@@ -58,6 +61,7 @@ export class TerrainModel {
     this.size = options.size ?? terrainSizeFor(planet);
     this.maxHeight = options.maxHeight ?? clamp(380 + planet.radiusKm / 25, 400, 760);
     this.biomes = planet.biomes;
+    this.style = planetStyle(planet);
     this.hasWater = planet.type !== 'gas_giant' && planet.biomes.some((b) => b.hasWater);
     this.seaLevel = this.hasWater ? this.maxHeight * SEA_LEVEL_FRACTION : Number.NEGATIVE_INFINITY;
     this.noise = new SimplexNoise(`terrain:${planet.terrainSeed}`);

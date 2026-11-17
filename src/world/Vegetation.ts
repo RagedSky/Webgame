@@ -9,6 +9,7 @@ import type { ArchiveEntry, FloraForm, FloraGenome } from '@/gen/archive/types';
 import { RARITY_SPAWN_WEIGHT, matchesPlacement } from '@/gen/archive/conditions';
 import type { PlantType, TreeStyle, VegetationAssets } from './VegetationAssets';
 import type { FloraAssets } from './flora/FloraAssets';
+import { buildFloraGeometry } from './flora/FloraBuilder';
 
 export interface SpeciesPlacement {
   entry: ArchiveEntry;
@@ -104,6 +105,10 @@ export class VegetationManager {
   private readonly grassRadius: number;
   private readonly grassCell: number;
   private readonly palettes: Color[];
+  /** Zweite Bewuchsfarbe je Biom (Zonen des Planetenstils). */
+  private readonly palettes2: Color[];
+  /** Geometrien der Signaturpflanzen (eine je Sorte, riesig, prägen die Silhouette). */
+  private readonly landmarkGeos: BufferGeometry[];
   private readonly groundPalettes: Color[];
   private readonly profiles: VegetationProfile[];
   private readonly maxDensity: Record<'grass' | 'shrub' | 'tree' | 'rock', number>;
@@ -134,6 +139,8 @@ export class VegetationManager {
     stylize.grassFar.value = this.grassRadius;
     // Dieselbe Stilisierung wie das Terrain, damit Gras und Boden farblich zusammenpassen
     this.palettes = planet.biomes.map((b) => vivid(new Color(b.palette.vegetation), 1.25));
+    this.palettes2 = model.style.biomes.map((b) => vivid(new Color(b.vegetation2), 1.25));
+    this.landmarkGeos = model.style.landmarks.map((l, i) => buildFloraGeometry(l.genome, `landmark:${planet.terrainSeed}:${i}`));
     this.groundPalettes = planet.biomes.map((b) => vivid(new Color(b.palette.ground), 1.35));
     this.profiles = planet.biomes.map((b) => VEGETATION_PROFILES[b.kind]);
     const maxOf = (t: 'grass' | 'shrub' | 'tree' | 'rock'): number => this.profiles.reduce((m, p) => Math.max(m, p[t]), 0);
@@ -157,6 +164,61 @@ export class VegetationManager {
     const a = (this.profiles[s.biome] as VegetationProfile)[type];
     const b = (this.profiles[s.biome2] as VegetationProfile)[type];
     return lerp(a, b, s.blend);
+  }
+
+  /** Bewuchsfarbe an einer Stelle: Biom-Mischung und Zonenwechsel zur zweiten Farbe (wie im Terrain). */
+  private vegColor(s: TerrainSample, x: number, z: number, out: Color): Color {
+    const vz = this.model.style.vegZone(x, z);
+    out.copy(this.palettes[s.biome] as Color).lerp(this.palettes2[s.biome] as Color, vz);
+    if (s.blend > 0) out.lerp(tmpColor2.copy(this.palettes[s.biome2] as Color).lerp(this.palettes2[s.biome2] as Color, vz), s.blend);
+    return out;
+  }
+
+  /** Signaturpflanzen: wenige riesige Gewächse in Hainen (ferne Zellen), unabhängig von der Vegetationsdichte. */
+  private placeLandmarks(rng: Random, x0: number, z0: number, size: number): InstancedMesh[] {
+    const out: InstancedMesh[] = [];
+    const style = this.model.style;
+    const area = (size / 256) ** 2;
+    const sea = this.model.seaLevel;
+    style.landmarks.forEach((landmark, li) => {
+      const matrices: Matrix4[] = [];
+      const base = landmark.perCell * area;
+      const candidates = Math.floor(base) + (rng.next() < base - Math.floor(base) ? 1 : 0);
+      for (let c = 0; c < candidates; c++) {
+        const x = x0 + rng.next() * size;
+        const z = z0 + rng.next() * size;
+        const scale = rng.float(0.7, 1.25);
+        const yaw = rng.float(0, Math.PI * 2);
+        const keep = rng.next();
+        if (keep > style.groveZone(x, z) * 0.88 + 0.1) continue;
+        const s = this.model.sample(x, z, tmpSample);
+        if (this.model.hasWater && s.height < sea + 0.6) continue;
+        const slope = this.model.slopeAt(x, z, 3);
+        if (slope > 0.75) continue;
+        // am Hang tiefer einsinken, damit der Stammfuß nicht in der Luft hängt
+        tmpPos.set(x, s.height - (0.25 + slope * 1.6) * scale, z);
+        tmpQuat.setFromAxisAngle(Y_AXIS, yaw);
+        tmpScale.set(scale, scale * rng.float(0.9, 1.15), scale);
+        matrices.push(new Matrix4().compose(tmpPos, tmpQuat, tmpScale));
+      }
+      if (matrices.length === 0) return;
+      const g = landmark.genome;
+      const material = g.glow > 0.5 || g.form === 'crystal_plant' ? this.flora.glowMaterial : this.flora.material;
+      const mesh = new InstancedMesh(this.landmarkGeos[li] as BufferGeometry, material, matrices.length);
+      mesh.instanceMatrix.setUsage(StaticDrawUsage);
+      for (let i = 0; i < matrices.length; i++) {
+        mesh.setMatrixAt(i, matrices[i] as Matrix4);
+        const l = 0.9 + ((i * 7) % 5) * 0.045;
+        mesh.setColorAt(i, tmpColor.setRGB(l, l, l));
+      }
+      mesh.instanceMatrix.needsUpdate = true;
+      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      mesh.computeBoundingSphere();
+      out.push(mesh);
+    });
+    return out;
   }
 
   /** Generische Platzhalter (Gras, Steine; Bäume nur, wenn der Planet keine Baum-Arten hat). */
@@ -196,8 +258,7 @@ export class VegetationManager {
         batch.matrices.push(new Matrix4().compose(tmpPos, tmpQuat, tmpScale));
         if (type === 'rock') tmpColor.copy(this.groundPalettes[biome] as Color).multiplyScalar(0.75).lerp(tmpColor2.set(0.45, 0.44, 0.42), 0.4);
         else {
-          tmpColor.copy(this.palettes[s.biome] as Color);
-          if (s.blend > 0) tmpColor.lerp(this.palettes[s.biome2] as Color, s.blend);
+          this.vegColor(s, x, z, tmpColor);
           tmpColor.offsetHSL(rng.float(-0.025, 0.025), rng.float(-0.08, 0.08), rng.float(-0.08, 0.08));
         }
         batch.colors.push(tmpColor.clone());
@@ -244,8 +305,7 @@ export class VegetationManager {
       tmpQuat.setFromAxisAngle(Y_AXIS, rng.float(0, Math.PI * 2));
       tmpScale.set(scale * rng.float(0.9, 1.3), scale * rng.float(0.8, 1.35), scale * rng.float(0.9, 1.3));
       batch.matrices.push(new Matrix4().compose(tmpPos, tmpQuat, tmpScale));
-      tmpColor.copy(this.palettes[s.biome] as Color);
-      if (s.blend > 0) tmpColor.lerp(this.palettes[s.biome2] as Color, s.blend);
+      this.vegColor(s, x, z, tmpColor);
       tmpColor.offsetHSL(rng.float(-0.03, 0.03), rng.float(-0.06, 0.08), rng.float(-0.06, 0.08));
       batch.colors.push(tmpColor.clone());
     }
@@ -364,6 +424,12 @@ export class VegetationManager {
     // Ferne Zellen liegen außerhalb des Schattenbereichs: kein Schattenwurf (spart den zweiten Zeichendurchgang)
     for (const mesh of this.buildSpeciesMeshes(species, !far)) meshes.push(mesh);
     total += species.length;
+    if (far) {
+      for (const mesh of this.placeLandmarks(rng.fork('landmarks'), x0, z0, size)) {
+        meshes.push(mesh);
+        total += mesh.count;
+      }
+    }
 
     for (const m of meshes) this.group.add(m);
     return { id, meshes, instances: total, species: species.map((i) => ({ entry: i.entry, x: i.x, y: i.y, z: i.z, height: i.height })) };
@@ -468,6 +534,7 @@ export class VegetationManager {
 
   dispose(): void {
     for (const cell of Array.from(this.cells.values())) this.removeCell(cell);
+    for (const g of this.landmarkGeos) g.dispose();
     this.group.removeFromParent();
   }
 }
