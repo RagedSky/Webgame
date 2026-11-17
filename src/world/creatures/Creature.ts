@@ -190,7 +190,8 @@ export class Creature {
       this.vy = (this.y - prev) / Math.max(dt, 1e-3);
     }
     pos.y = this.y;
-    this.root.rotation.y = this.yaw;
+    // Das Modell schaut nach +z, die Bewegung geht nach (−sin yaw, −cos yaw): um 180° drehen, sonst läuft es rückwärts
+    this.root.rotation.y = this.yaw + Math.PI;
 
     this.animate(dt, anim);
   }

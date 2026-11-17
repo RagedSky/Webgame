@@ -1,5 +1,6 @@
 import { Color } from 'three';
 import { clamp, clamp01 } from '@/math/utils';
+import { vivid } from '@/render/stylize';
 import type { Planet, Star } from '@/gen/universe/types';
 
 export interface AtmosphereLook {
@@ -29,6 +30,11 @@ export function atmosphereLook(planet: Planet, star: Star): AtmosphereLook {
   const starLight = new Color(star.lightColor);
   sky.multiply(starLight);
   horizon.multiply(starLight);
+  // Stilisierung: gesättigter Zenit, farbiger Dunst am Horizont
+  vivid(sky, 1.35, 0.9);
+  const hz = { h: 0, s: 0, l: 0 };
+  horizon.getHSL(hz);
+  horizon.setHSL(hz.h, Math.max(Math.min(1, hz.s * 1.7), 0.5), Math.min(hz.l, 0.76));
   const density = clamp(planet.atmosphere.density, 0, 1.4);
   const sun = new Color(star.lightColor);
   return { sky, horizon, density, sun };

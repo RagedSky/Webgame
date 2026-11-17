@@ -169,7 +169,7 @@ const KINDS: Record<TextureKind, KindDef> = {
       const coarse = 1 - Math.abs(n.fbm(u, v, 3, 4, 23) * 2 - 1);
       const grain = n.fbm(u, v, 24, 3, 24);
       const pebble = Math.max(0, 0.16 - n.cell(u, v, 14, 25)[0]) * 3;
-      return clamp(0.25 + coarse * 0.45 + grain * 0.2 + pebble * 0.35, 0, 1);
+      return clamp(0.3 + coarse * 0.45 + grain * 0.25 + pebble * 0.1, 0, 1);
     },
     strength: 1.1,
     rough: [0.9, 0.1],

@@ -1,5 +1,5 @@
 import { BufferAttribute, BufferGeometry, Color, Mesh, type Material } from 'three';
-import { clamp01, smoothstep } from '@/math/utils';
+import { clamp01, lerp, smoothstep } from '@/math/utils';
 import type { TerrainModel, TerrainSample } from '@/gen/terrain/TerrainModel';
 
 /** Segmente pro Chunk-Kante (konstant → alle Geometrien gleich groß → Pooling möglich). */
@@ -89,6 +89,8 @@ const B = S + 3; // Rand von 1 Vertex für Normalen
 const heights = new Float32Array(B * B);
 const samples: TerrainSample[] = Array.from({ length: (S + 1) * (S + 1) }, () => ({ height: 0, biome: 0, biome2: 0, blend: 0, detail: 0, altitude: 0 }));
 const cRock = new Color(0x6a655f);
+const cRockTint = new Color();
+const cVeg = new Color();
 const cSnow = new Color(0xeef4fa);
 const cSand = new Color(0xd6c48c);
 const cTmp = new Color();
@@ -99,6 +101,8 @@ export interface ChunkBuildContext {
   palettes: BiomePalette[];
   waterTint: Color;
   snowLine: number; // normierte Höhe ab der Schnee liegt (>1 = nie)
+  /** Grasbedeckung je Biom 0..1 (färbt flache Hänge in der Vegetationsfarbe, damit Bewuchs auch in der Ferne wirkt). */
+  grass: number[];
 }
 
 /** Füllt die Geometrie eines Chunks aus dem Terrain-Modell. */
@@ -166,7 +170,19 @@ export function buildChunkGeometry(geo: BufferGeometry, key: ChunkKey, ctx: Chun
         cTmp.lerp(cTmp2, s.blend);
       }
       const slope = 1 - ny;
-      if (slope > 0.3) cTmp.lerp(cRock, smoothstep(0.3, 0.55, slope) * 0.85);
+      // Fels behält den Farbton des Bodens (farbige Klippen statt neutralem Grau)
+      cRockTint.copy(cTmp).multiplyScalar(0.5).lerp(cRock, 0.35);
+      // Bewuchs: flache Hänge tragen die Vegetationsfarbe
+      let grass = lerp(ctx.grass[s.biome] as number, ctx.grass[s.biome2] as number, s.blend) * (1 - smoothstep(0.3, 0.62, slope));
+      if (hasWater) grass *= clamp01((s.height - sea - 0.2) / 1.5);
+      // Erdflecken: großflächiges Rauschen lässt den Boden durchscheinen (Abwechslung statt Einheitsgrün)
+      grass *= clamp01(0.62 + s.detail * 0.9);
+      if (grass > 0.01) {
+        cVeg.copy(p1.vegetation);
+        if (s.blend > 0) cVeg.lerp(p2.vegetation, s.blend);
+        cTmp.lerp(cVeg.multiplyScalar(0.62 + 0.26 * t), grass);
+      }
+      if (slope > 0.48) cTmp.lerp(cRockTint, smoothstep(0.48, 0.78, slope) * 0.85);
       if (s.altitude > ctx.snowLine && slope < 0.5) cTmp.lerp(cSnow, smoothstep(ctx.snowLine, ctx.snowLine + 0.08, s.altitude) * (1 - slope));
       if (hasWater) {
         const d = s.height - sea;

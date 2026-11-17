@@ -38,6 +38,7 @@ Konsole: `__stellar.scenes.active.setTimeOfDay(0.5)` / `.forceWeather('rain', tr
 - Keine Allokationen im Render-Loop; Vektoren/Arrays vorab anlegen und wiederverwenden.
 - UI-Texte Deutsch, zentral in `src/ui/strings.ts`. Spielwerte physikalisch (Kelvin, AU, km, g).
 - Entscheidungen mit Tragweite in `docs/DECISIONS.md` eintragen (D-xxx). Balancing-Annahmen in `docs/BALANCING.md`.
+- Neue Formen aus `world/organic.ts` und `geometry.ts` (`blade`, `gradientColor`) bauen, nicht aus rohen Kugeln/Zylindern; Shader-Erweiterungen nur über `addShaderPatch`.
 - Vollflächige UI-Overlays ohne Klickfläche in die `#ui-root > …`-Liste in `styles.css` eintragen (sonst blockieren sie Canvas-Klicks).
 - Commits: aussagekräftig, eine Phase/ein Feature pro Commit. Vor jedem Commit `npm run check` und `npm run build`.
 
@@ -83,5 +84,6 @@ Konsole: `__stellar.scenes.active.setTimeOfDay(0.5)` / `.forceWeather('rain', tr
 - `src/gen/archive/pacing.ts` – Spielzeit-Schätzung (Balancing-Test), `docs/BALANCING.md`
 - `src/game/progress/ArchiveProgress.ts` – Fortschritt (rein), `src/game/photo/PhotoScoring.ts` – Bewertung (rein)
 - `src/world/photo/PhotoMode.ts` – Foto-Modus, `src/ui/ArchiveUi.ts` – Enzyklopädie, `src/save/Db.ts` – IndexedDB
-- `src/render/{ProceduralTextures,Environment}.ts` – Detailtexturen-Bank, PMREM-Umgebungslicht (siehe ARCHITECTURE 4.13)
+- `src/render/{ProceduralTextures,Environment,stylize}.ts` – Detailtexturen-Bank, PMREM-Umgebungslicht, Stil (Kantenlicht, Paletten, Shader-Patches)
+- `src/world/organic.ts` – organische Grundformen (Röhre, Klumpen, Rotationskörper, Kristall) für Flora, Kreaturen, Knoten (ARCHITECTURE 4.13/4.14)
 - `src/core/GameLoop.ts`, `src/core/SceneManager.ts`, `src/core/Input.ts`

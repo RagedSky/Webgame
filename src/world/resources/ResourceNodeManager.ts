@@ -1,9 +1,11 @@
-import { Color, ConeGeometry, CylinderGeometry, DodecahedronGeometry, Group, InstancedMesh, Matrix4, MeshStandardMaterial, OctahedronGeometry, Quaternion, Raycaster, SphereGeometry, Vector3, type BufferGeometry, type Scene } from 'three';
+import { Color, CylinderGeometry, Group, InstancedMesh, Matrix4, MeshStandardMaterial, Quaternion, Raycaster, SphereGeometry, Vector3, type BufferGeometry, type Scene } from 'three';
 import type { TerrainModel } from '@/gen/terrain/TerrainModel';
 import { NODE_CELL, generateResourceNodes, type ResourceNode } from '@/gen/terrain/ResourceNodes';
 import { RESOURCES } from '@/gen/universe/catalog';
 import type { Planet, ResourceId } from '@/gen/universe/types';
-import { colorize, jitter, mergeParts, taperedQuad } from '../geometry';
+import { blade, colorize, gradientColor, mergeParts } from '../geometry';
+import { arc, blob, crystal, lathe, tube } from '../organic';
+import { addRim, vivid } from '@/render/stylize';
 
 export const RESOURCE_COLORS: Record<ResourceId, string> = {
   ferrite: '#8a4a2a', cuprite: '#2a8a7a', titanite: '#b8c0c8', cobaltite: '#3a5ab8', aurum: '#e0b020',
@@ -47,32 +49,37 @@ function buildTemplateGeometry(id: ResourceId): { geometry: BufferGeometry; mate
   let radius = 0.7;
   let centerY = 0.4;
   let glow = false;
+  const vividCol = vivid(col.clone(), 1.25);
+  const bright = vividCol.clone().offsetHSL(0.04, 0, 0.18);
   switch (def.kind) {
     case 'metal': {
-      const rock = new DodecahedronGeometry(0.55, 0);
-      rock.scale(1, 0.75, 1);
-      rock.translate(0, 0.35, 0);
-      parts.push(colorize(jitter(rock, 0.06, `node:${id}`), ROCK.clone().lerp(col, 0.25), 0.3));
+      // Erzbrocken: weicher Fels mit eingewachsenen, glänzenden Erzkristallen
+      const rock = blob(0.55, `node:${id}`, 0.24, 1.6, 0.72, 10, 8);
+      rock.translate(0, 0.32, 0);
+      parts.push(gradientColor(rock, ROCK.clone().multiplyScalar(0.6).lerp(col, 0.2), ROCK.clone().lerp(vividCol, 0.35), 0.8));
       for (let i = 0; i < 5; i++) {
-        const o = new OctahedronGeometry(0.14, 0);
+        const c = crystal(0.09, 0.3 + (i % 3) * 0.08, 0.4);
         const a = (i / 5) * Math.PI * 2;
-        o.translate(Math.cos(a) * 0.38, 0.45 + (i % 2) * 0.15, Math.sin(a) * 0.38);
-        parts.push(colorize(o, col));
+        c.rotateX(0.5 + (i % 2) * 0.3);
+        c.rotateY(a);
+        c.translate(Math.sin(a) * 0.3, 0.42 + (i % 2) * 0.1, Math.cos(a) * 0.3);
+        parts.push(gradientColor(c, vividCol, bright));
       }
       break;
     }
     case 'crystal': {
+      // Kristalldruse: sechseckige Säulen auf einem Sockel
       for (let i = 0; i < 6; i++) {
-        const o = new OctahedronGeometry(0.16, 0);
-        o.scale(1, 2.6 + (i % 3) * 0.6, 1);
-        o.rotateX((i % 2) * 0.3 - 0.15);
-        o.rotateZ(((i % 3) - 1) * 0.3);
-        o.rotateY((i / 6) * Math.PI * 2);
-        o.translate(Math.cos(i) * 0.25, 0.35, Math.sin(i) * 0.25);
-        parts.push(colorize(o, col, 0.3));
+        const c = crystal(0.11 + (i % 2) * 0.03, 0.7 + (i % 3) * 0.28, 0.3);
+        if (i > 0) {
+          c.rotateX(0.45 * (i % 2 ? 1 : 0.6));
+          c.rotateY((i / 5) * Math.PI * 2);
+        }
+        c.translate(i === 0 ? 0 : Math.sin((i / 5) * Math.PI * 2) * 0.16, 0.05, i === 0 ? 0 : Math.cos((i / 5) * Math.PI * 2) * 0.16);
+        parts.push(gradientColor(c, vividCol.clone().multiplyScalar(0.7), bright, 0.9));
       }
-      const base = new DodecahedronGeometry(0.4, 0);
-      base.scale(1, 0.4, 1);
+      const base = blob(0.4, `base:${id}`, 0.2, 1.5, 0.4, 8, 6);
+      base.translate(0, 0.06, 0);
       parts.push(colorize(base, ROCK));
       glow = id === 'lumite';
       centerY = 0.5;
@@ -80,35 +87,47 @@ function buildTemplateGeometry(id: ResourceId): { geometry: BufferGeometry; mate
     }
     case 'mineral': {
       if (id === 'silica') {
-        const pile = new ConeGeometry(0.8, 0.5, 10);
-        pile.translate(0, 0.25, 0);
-        parts.push(colorize(jitter(pile, 0.03, 'silica'), col, 0.2));
+        const pile = lathe(
+          [
+            [0.85, 0],
+            [0.7, 0.14],
+            [0.42, 0.34],
+            [0.14, 0.46],
+            [0, 0.48],
+          ],
+          12,
+        );
+        parts.push(gradientColor(pile, col.clone().multiplyScalar(0.75), bright));
         centerY = 0.25;
       } else {
-        const n = new SphereGeometry(0.5, 10, 7);
-        n.scale(1.2, 0.7, 1);
-        n.translate(0, 0.3, 0);
-        parts.push(colorize(jitter(n, 0.06, `node:${id}`), col.clone().lerp(ROCK, 0.3), 0.3));
+        const n = blob(0.5, `node:${id}`, 0.2, 1.5, 0.62, 10, 8);
+        n.scale(1.2, 1, 1);
+        n.translate(0, 0.28, 0);
+        parts.push(gradientColor(n, col.clone().lerp(ROCK, 0.5).multiplyScalar(0.7), vividCol.clone().lerp(ROCK, 0.15), 0.8));
         for (let i = 0; i < 4; i++) {
-          const b = new SphereGeometry(0.16, 6, 5);
-          b.translate(Math.cos(i * 1.6) * 0.45, 0.35, Math.sin(i * 1.6) * 0.4);
-          parts.push(colorize(b, col));
+          const b = blob(0.17, `nub:${id}:${i}`, 0.15, 1.4, 0.9, 7, 5);
+          b.translate(Math.cos(i * 1.6) * 0.45, 0.34, Math.sin(i * 1.6) * 0.4);
+          parts.push(gradientColor(b, vividCol, bright));
         }
       }
       glow = id === 'uranite' || id === 'lumite';
       break;
     }
     case 'gas': {
-      const crater = new ConeGeometry(0.9, 0.5, 12, 1, true);
-      crater.scale(1, -1, 1);
-      crater.translate(0, 0.25, 0);
-      parts.push(colorize(crater, ROCK.clone().multiplyScalar(0.8)));
-      const rim = new CylinderGeometry(0.95, 1.05, 0.25, 12, 1, true);
-      rim.translate(0, 0.12, 0);
-      parts.push(colorize(rim, ROCK));
+      const vent = lathe(
+        [
+          [1.05, 0],
+          [0.95, 0.22],
+          [0.72, 0.3],
+          [0.5, 0.18],
+          [0.3, 0.04],
+        ],
+        12,
+      );
+      parts.push(gradientColor(vent, ROCK.clone().multiplyScalar(0.6), ROCK));
       const column = new CylinderGeometry(0.25, 0.45, 1.6, 8, 1, true);
       column.translate(0, 1.0, 0);
-      parts.push(colorize(column, col, 0.6));
+      parts.push(colorize(column, vividCol, 0.6));
       radius = 1;
       centerY = 0.6;
       glow = true;
@@ -116,26 +135,34 @@ function buildTemplateGeometry(id: ResourceId): { geometry: BufferGeometry; mate
     }
     case 'organic': {
       if (id === 'fiber') {
-        for (let i = 0; i < 9; i++) {
-          const b = taperedQuad(0.12, 0.9 + (i % 3) * 0.2, 0.01);
-          b.rotateX(-0.25 + (i % 2) * 0.1);
-          b.rotateY((i / 9) * Math.PI * 2);
-          parts.push(colorize(b, col, 0.5));
+        // Faserbüschel: hohe, überhängende Halme
+        for (let i = 0; i < 11; i++) {
+          const b = blade(0.11, 0.85 + (i % 3) * 0.22, 0.35 + (i % 4) * 0.12, 3, 0.01, 0.4);
+          b.rotateX(0.12 + (i % 2) * 0.12);
+          b.rotateY((i / 11) * Math.PI * 2);
+          parts.push(gradientColor(b, col.clone().multiplyScalar(0.55), bright, 0.8));
         }
         centerY = 0.5;
       } else if (id === 'resin') {
-        const stump = new CylinderGeometry(0.3, 0.38, 0.6, 8);
-        stump.translate(0, 0.3, 0);
-        parts.push(colorize(stump, new Color(0.35, 0.22, 0.12)));
-        const blob = new SphereGeometry(0.22, 8, 6);
-        blob.translate(0.2, 0.62, 0);
-        parts.push(colorize(blob, col));
+        const stump = tube(arc([0, 0, 0], [0.05, 0.62, 0], [0.04, 0, 0], 0.34, 0.26, 4, 0.5), 8);
+        parts.push(gradientColor(stump, new Color(0.22, 0.14, 0.08), new Color(0.42, 0.28, 0.16)));
+        for (const [x, y, z, r] of [[0.2, 0.6, 0.02, 0.2], [-0.12, 0.42, 0.2, 0.12], [0.05, 0.3, -0.24, 0.1]] as Array<[number, number, number, number]>) {
+          const drop = blob(r, `resin:${x}`, 0.12, 1.3, 1.15, 7, 5);
+          drop.translate(x, y, z);
+          parts.push(gradientColor(drop, vividCol.clone().multiplyScalar(0.8), bright));
+        }
         centerY = 0.45;
       } else {
-        const puff = new SphereGeometry(0.4, 10, 7);
-        puff.scale(1, 0.8, 1);
-        puff.translate(0, 0.35, 0);
-        parts.push(colorize(jitter(puff, 0.03, 'spores'), col, 0.3));
+        // Sporenpilz: Knolle mit kleinen Fruchtkörpern
+        const puff = blob(0.4, 'spores', 0.14, 1.4, 0.8, 10, 7);
+        puff.translate(0, 0.32, 0);
+        parts.push(gradientColor(puff, vividCol.clone().multiplyScalar(0.6), bright, 0.8));
+        for (let i = 0; i < 5; i++) {
+          const a = i * 1.3;
+          const nub = new SphereGeometry(0.06, 6, 4);
+          nub.translate(Math.cos(a) * 0.26, 0.56 + (i % 2) * 0.06, Math.sin(a) * 0.26);
+          parts.push(colorize(nub, bright));
+        }
       }
       break;
     }
@@ -152,6 +179,7 @@ function buildTemplateGeometry(id: ResourceId): { geometry: BufferGeometry; mate
     transparent: def.kind === 'gas',
     opacity: def.kind === 'gas' ? 0.55 : 1,
   });
+  addRim(material, def.kind === 'crystal' ? 1.2 : 0.7);
   return { geometry, material, radius, centerY };
 }
 

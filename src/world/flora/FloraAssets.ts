@@ -1,5 +1,6 @@
 import { Color, MeshStandardMaterial, Vector2, type BufferGeometry } from 'three';
 import { textures } from '@/render/ProceduralTextures';
+import { addRim } from '@/render/stylize';
 import type { ArchiveEntry, FloraGenome } from '@/gen/archive/types';
 import { buildFloraGeometry } from './FloraBuilder';
 import type { VegetationAssets } from '../VegetationAssets';
@@ -17,6 +18,8 @@ export class FloraAssets {
     this.glowMaterial = new MeshStandardMaterial({ vertexColors: true, roughness: 0.35, metalness: 0, emissive: new Color(0.6, 0.55, 0.8), emissiveIntensity: 0.35, normalMap: crystal.normalMap, normalScale: new Vector2(0.5, 0.5) });
     assets.patchWind(this.material, 0.35);
     assets.patchWind(this.glowMaterial, 0.2);
+    addRim(this.material, 0.8);
+    addRim(this.glowMaterial, 1.2);
   }
 
   get(entry: ArchiveEntry): BufferGeometry {

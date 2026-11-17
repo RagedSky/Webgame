@@ -288,3 +288,17 @@ eine Asset-Pipeline bringen.
 Albedo-Variation) je Oberflächenart, physikalische Materialeigenschaften je Genom (Sheen, Clearcoat, Iridescence) und
 Umgebungslicht aus dem eigenen Himmel (PMREM). Vertexfarben bleiben die Farbquelle, Texturen modulieren nur. Ein späterer
 Asset-Pfad kann dieselben Material-Parameter übernehmen.
+
+## D-058 · Stilisierte, organische Optik statt Primitiven-Baukasten
+**Kontext:** Kugeln, Zylinder und Kegel wirkten trotz Texturen roh; gewünscht ist eine farbkräftige Sci-Fi-Optik mit weichen
+Formen, üppigem Bewuchs und Dunst.
+**Entscheidung:** Körper entstehen als Lofts und Röhren mit überblendeten Knochengewichten, Pflanzen aus wenigen organischen
+Grundformen mit Farbverläufen, Gelände und Gras teilen eine gesättigte Vegetationspalette. Stil-Effekte (Kantenlicht,
+Grading, Dunst) liegen zentral in `render/stylize.ts` und in der Planetenszene, nicht in den einzelnen Buildern. Die
+Atmosphärenfarben bleiben physikalisch hergeleitet und werden nur in Sättigung und Helligkeit stilisiert.
+
+## D-059 · Gras als eigener Nahring, Terrain trägt die Ferne
+**Kontext:** Flächendeckendes Gras bis zum Horizont ist im Browser zu teuer; ohne Gras wirkt jeder Planet kahl.
+**Entscheidung:** Gras steht nur in einem Ring von 72 m um die Kamera (kleine Zellen, schneller Aufbau, Ausblendung im
+Shader). Dahinter übernimmt das Terrain denselben Farbton auf bewachsenen Hängen, sodass der Übergang nicht auffällt.
+Die Einstellung „Vegetationsdichte“ skaliert Gras, Blumen und Arten-Pflanzen gemeinsam.

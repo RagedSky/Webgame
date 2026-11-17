@@ -1,5 +1,8 @@
 import { Color, Group, MeshStandardMaterial, Vector2, type Scene, type Vector3 } from 'three';
 import { textures } from '@/render/ProceduralTextures';
+import { addRim, addShaderPatch, vivid } from '@/render/stylize';
+import { VEGETATION_PROFILES } from '@/gen/terrain/VegetationProfiles';
+import { clamp01 } from '@/math/utils';
 import type { TerrainModel } from '@/gen/terrain/TerrainModel';
 import { ChunkGeometryPool, TerrainChunk, buildChunkGeometry, chunkId, type BiomePalette, type ChunkBuildContext, type ChunkKey } from './TerrainChunk';
 
@@ -46,20 +49,23 @@ export class TerrainManager {
     this.splitFactor = options.splitFactor ?? 1.7;
     this.buildBudgetMs = options.buildBudgetMs ?? 7;
     const ground = textures.get('ground');
-    this.material = new MeshStandardMaterial({ vertexColors: true, roughness: 0.96, metalness: 0, normalMap: ground.normalMap, normalScale: new Vector2(0.4, 0.4) });
+    this.material = new MeshStandardMaterial({ vertexColors: true, roughness: 0.96, metalness: 0, normalMap: ground.normalMap, normalScale: new Vector2(0.28, 0.28) });
     // Die Chunks haben keine UVs: die Normalmap wird in Weltkoordinaten gekachelt (einheitliche Dichte über alle LOD-Stufen)
-    this.material.onBeforeCompile = (shader) => {
-      shader.vertexShader = shader.vertexShader.replace('#include <uv_vertex>', '#include <uv_vertex>\n{ vec4 twp = modelMatrix * vec4( position, 1.0 ); vNormalMapUv = twp.xz * 0.23; }');
-    };
+    addShaderPatch(this.material, 'world-uv', (shader) => {
+      shader.vertexShader = shader.vertexShader.replace('#include <uv_vertex>', '#include <uv_vertex>\n{ vec4 twp = modelMatrix * vec4( position, 1.0 ); vec2 flatUv = twp.xz * 0.23; vec2 steepUv = vec2( twp.x + twp.z, twp.y ) * 0.23; vNormalMapUv = mix( steepUv, flatUv, smoothstep( 0.55, 0.8, normal.y ) ); }');
+    });
+    addRim(this.material, 0.35);
     const planet = model.planet;
     const palettes: BiomePalette[] = planet.biomes.map((b) => ({
-      ground: new Color(b.palette.ground),
-      accent: new Color(b.palette.accent),
-      vegetation: new Color(b.palette.vegetation),
+      ground: vivid(new Color(b.palette.ground), 1.35),
+      accent: vivid(new Color(b.palette.accent), 1.35),
+      vegetation: vivid(new Color(b.palette.vegetation), 1.25),
     }));
+    const bio = Math.min(1, 0.45 + planet.biodiversity);
+    const grass = planet.biomes.map((b) => clamp01(VEGETATION_PROFILES[b.kind].grass / 150) * bio);
     const waterBiome = planet.biomes.find((b) => b.hasWater);
     const snowLine = planet.temperature.mean < 262 ? 0.25 : planet.temperature.mean < 285 ? 0.72 : planet.temperature.mean < 300 ? 0.9 : 2;
-    this.ctx = { model, palettes, waterTint: new Color(waterBiome?.palette.ground ?? '#2f6f9a'), snowLine };
+    this.ctx = { model, palettes, waterTint: new Color(waterBiome?.palette.ground ?? '#2f6f9a'), snowLine, grass };
     scene.add(this.group);
   }
 

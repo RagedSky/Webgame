@@ -1,24 +1,40 @@
 import type { BufferGeometry} from 'three';
-import { Color, ConeGeometry, CylinderGeometry, DodecahedronGeometry, DoubleSide, IcosahedronGeometry, MeshStandardMaterial, OctahedronGeometry, SphereGeometry, Vector2, type Material } from 'three';
+import { Color, ConeGeometry, CylinderGeometry, DoubleSide, IcosahedronGeometry, MeshStandardMaterial, OctahedronGeometry, SphereGeometry, Vector2, type Material } from 'three';
 import { textures } from '@/render/ProceduralTextures';
 import type { VegetationProfile } from '@/gen/terrain/VegetationProfiles';
-import { colorize, jitter, mergeParts, taperedQuad } from './geometry';
+import { blade, colorize, gradientColor, jitter, mergeParts, taperedQuad } from './geometry';
+import { addRim, addShaderPatch, stylize } from '@/render/stylize';
+import { blob } from './organic';
 
-export type PlantType = 'grass' | 'shrub' | 'tree' | 'rock';
+export type PlantType = 'grass' | 'shrub' | 'tree' | 'rock' | 'flower';
 export type TreeStyle = VegetationProfile['treeStyle'];
 
 const WHITE = new Color(1, 1, 1);
 const TRUNK = new Color(0.42, 0.28, 0.16);
 const STEM = new Color(0.85, 0.8, 0.72);
 
+/** Grasbüschel: fünf breite, nach außen gebogene Halme; dunkler Fuß, helle warme Spitzen (Instanzfarbe multipliziert). */
 function grassGeometry(): BufferGeometry {
   const blades: BufferGeometry[] = [];
-  for (let i = 0; i < 3; i++) {
-    const q = taperedQuad(0.22, 0.55, 0.02);
-    q.rotateY((i * Math.PI) / 3);
-    blades.push(q);
+  // [Winkel, Höhe, Biegung, Breite, Abstand von der Mitte] – ein lockerer Fleck statt eines Stachelbüschels
+  const spec: Array<[number, number, number, number, number]> = [
+    [0.0, 0.44, 0.45, 0.075, 0.03],
+    [0.9, 0.34, 0.7, 0.07, 0.2],
+    [1.7, 0.4, 0.55, 0.08, 0.12],
+    [2.5, 0.3, 0.8, 0.065, 0.27],
+    [3.2, 0.46, 0.4, 0.075, 0.16],
+    [4.0, 0.33, 0.75, 0.07, 0.25],
+    [4.7, 0.38, 0.6, 0.075, 0.09],
+    [5.4, 0.28, 0.85, 0.06, 0.3],
+    [6.0, 0.36, 0.65, 0.07, 0.21],
+  ];
+  for (const [angle, h, bend, w, off] of spec) {
+    const b = blade(w, h, bend, 2, 0.012, 0.8, false);
+    b.rotateY(angle * 1.7);
+    b.translate(Math.cos(angle) * off, 0, Math.sin(angle) * off);
+    blades.push(b);
   }
-  return colorize(mergeParts(blades, 'grass'), WHITE, 0.55);
+  return gradientColor(mergeParts(blades, 'grass'), new Color(0.5, 0.52, 0.45), new Color(1.12, 1.12, 0.94), 0.8);
 }
 
 function shrubGeometry(): BufferGeometry {
@@ -95,12 +111,31 @@ function treeGeometry(style: TreeStyle): BufferGeometry {
   return mergeParts(parts, `tree ${style}`);
 }
 
+/** Wiesenblume: gebogener Stiel mit Blütenkopf und zwei Blättchen; die Instanzfarbe bestimmt die Blütenfarbe. */
+function flowerGeometry(): BufferGeometry {
+  const parts: BufferGeometry[] = [];
+  const stem = blade(0.035, 0.5, 0.25, 2, 0.02, 0.6);
+  parts.push(colorize(stem, new Color(0.16, 0.3, 0.14)));
+  for (const a of [0.8, 3.6]) {
+    const leaf = blade(0.09, 0.2, 0.9, 2, 0.01, 0.6);
+    leaf.rotateY(a);
+    parts.push(colorize(leaf, new Color(0.2, 0.36, 0.16)));
+  }
+  const head = new SphereGeometry(0.075, 7, 5);
+  head.scale(1, 0.8, 1);
+  head.translate(0, 0.5, 0.12);
+  parts.push(gradientColor(head, new Color(0.8, 0.8, 0.8), new Color(1.25, 1.25, 1.25)));
+  const core = new SphereGeometry(0.035, 5, 4);
+  core.translate(0, 0.545, 0.12);
+  parts.push(colorize(core, new Color(1.4, 1.3, 0.8)));
+  return mergeParts(parts, 'flower');
+}
+
+/** Findling: weich verformter Klumpen mit dunkler Unterseite. */
 function rockGeometry(): BufferGeometry {
-  const g = new DodecahedronGeometry(0.7, 0);
-  g.scale(1, 0.75, 1);
-  jitter(g, 0.12, 'rock');
+  const g = blob(0.7, 'rock', 0.28, 1.5, 0.72, 10, 8);
   g.translate(0, 0.25, 0);
-  return colorize(g, WHITE, 0.2);
+  return gradientColor(g, new Color(0.55, 0.55, 0.55), new Color(1.08, 1.08, 1.08), 0.8);
 }
 
 /**
@@ -113,6 +148,7 @@ export class VegetationAssets {
   readonly grass: BufferGeometry;
   readonly shrub: BufferGeometry;
   readonly rock: BufferGeometry;
+  readonly flower: BufferGeometry;
   readonly trees: Record<TreeStyle, BufferGeometry>;
   readonly grassMaterial: MeshStandardMaterial;
   readonly plantMaterial: MeshStandardMaterial;
@@ -123,6 +159,7 @@ export class VegetationAssets {
     this.grass = grassGeometry();
     this.shrub = shrubGeometry();
     this.rock = rockGeometry();
+    this.flower = flowerGeometry();
     this.trees = { conifer: treeGeometry('conifer'), broadleaf: treeGeometry('broadleaf'), palm: treeGeometry('palm'), fungus: treeGeometry('fungus'), crystal: treeGeometry('crystal') };
     const leaf = textures.get('leaf');
     const bark = textures.get('bark');
@@ -132,17 +169,26 @@ export class VegetationAssets {
     this.plantMaterial = new MeshStandardMaterial({ vertexColors: true, roughness: 0.85, metalness: 0, map: bark.map, normalMap: bark.normalMap, normalScale: new Vector2(0.6, 0.6), roughnessMap: bark.roughnessMap });
     this.crystalMaterial = new MeshStandardMaterial({ vertexColors: true, roughness: 0.2, metalness: 0.1, emissive: new Color(0.25, 0.2, 0.5), emissiveIntensity: 0.6, transparent: true, opacity: 0.9, normalMap: crystal.normalMap, normalScale: new Vector2(0.5, 0.5) });
     this.rockMaterial = new MeshStandardMaterial({ vertexColors: true, roughness: 1, metalness: 0, map: rock.map, normalMap: rock.normalMap, normalScale: new Vector2(0.9, 0.9), roughnessMap: rock.roughnessMap });
-    this.patchWind(this.grassMaterial, 1.0);
+    this.patchWind(this.grassMaterial, 1.0, true);
+    // Gras ist einlagig und doppelseitig: die Rückseite behält die (nach oben zeigende) Normale statt gespiegelt dunkel zu werden
+    addShaderPatch(this.grassMaterial, 'unflip', (shader) => {
+      shader.fragmentShader = shader.fragmentShader.replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\n#ifdef DOUBLE_SIDED\n  normal *= faceDirection;\n#endif');
+    });
     this.patchWind(this.plantMaterial, 0.35);
+    addRim(this.plantMaterial, 0.8);
+    addRim(this.rockMaterial, 0.6);
+    addRim(this.crystalMaterial, 1.2);
   }
 
   /** Wind-Schwingen im Vertex-Shader für Instanzen (InstancedMesh) und Batches (BatchedMesh); Stärke wächst mit der Höhe. */
-  patchWind(material: MeshStandardMaterial, strength: number): void {
-    material.onBeforeCompile = (shader) => {
+  patchWind(material: MeshStandardMaterial, strength: number, distanceFade = false): void {
+    addShaderPatch(material, `wind-${strength}-${distanceFade ? 'fade' : 'nofade'}`, (shader) => {
       shader.uniforms.uTime = this.time;
       shader.uniforms.uWind = this.wind;
+      shader.uniforms.uCamPos = stylize.camPos;
+      shader.uniforms.uGrassFar = stylize.grassFar;
       shader.vertexShader = shader.vertexShader
-        .replace('#include <common>', `#include <common>\nuniform float uTime;\nuniform float uWind;`)
+        .replace('#include <common>', `#include <common>\nuniform float uTime;\nuniform float uWind;\nuniform vec3 uCamPos;\nuniform float uGrassFar;`)
         .replace(
           '#include <begin_vertex>',
           `#include <begin_vertex>
@@ -161,11 +207,11 @@ export class VegetationAssets {
     float sway2 = cos(uTime * 2.3 + wpos.x * 0.17 - wpos.z * 0.29) * uWind * ${strength.toFixed(2)} * 0.06 * hgt;
     transformed.x += sway;
     transformed.z += sway2;
+    ${distanceFade ? 'transformed *= 1.0 - smoothstep(uGrassFar * 0.6, uGrassFar, distance(wpos.xz, uCamPos.xz));' : ''}
   }
 }`,
         );
-    };
-    material.customProgramCacheKey = () => `wind-${strength}`;
+    });
   }
 
   materialFor(type: PlantType, style?: TreeStyle): Material {
@@ -179,6 +225,7 @@ export class VegetationAssets {
     this.grass.dispose();
     this.shrub.dispose();
     this.rock.dispose();
+    this.flower.dispose();
     for (const g of Object.values(this.trees)) g.dispose();
     this.grassMaterial.dispose();
     this.plantMaterial.dispose();

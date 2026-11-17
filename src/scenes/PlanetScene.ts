@@ -1,5 +1,5 @@
 import { Color, FogExp2, Mesh, MeshStandardMaterial, PCFShadowMap, PerspectiveCamera, Scene, SphereGeometry, Vector3 } from 'three';
-import { BloomEffect, EffectPass, type EffectComposer } from 'postprocessing';
+import { BloomEffect, BrightnessContrastEffect, EffectPass, HueSaturationEffect, VignetteEffect, type EffectComposer } from 'postprocessing';
 import type { GameContext } from '@/core/GameContext';
 import type { GameScene } from '@/core/Scene';
 import { Disposer } from '@/core/Disposer';
@@ -55,6 +55,7 @@ import { ambientMixFor, footSurfaceFor } from '@/audio/ambientMix';
 import type { CompassMarker } from '@/ui/Hud';
 import { startGame } from './startGame';
 import { EnvironmentMap } from '@/render/Environment';
+import { stylize } from '@/render/stylize';
 import { ShipEditorScene } from './ShipEditorScene';
 import { SpaceScene } from './SpaceScene';
 import { LAUNCH_FUEL_TARGET, MODULE_LABELS, RECIPE_BY_ID, type ItemId, type ModuleType, type Recipe } from '@/game/crafting/recipes';
@@ -339,14 +340,21 @@ export class PlanetScene implements GameScene {
       this.player.spawn(s.x, s.y, s.z, 0);
     }
     this.player.applyCamera(1);
-    this.baseFog = (0.95 / this.viewDistance) * Math.max(0.12, Math.min(1, this.sky.look.density));
+    this.baseFog = (1.45 / this.viewDistance) * Math.max(0.12, Math.min(1, this.sky.look.density));
     this.waterFog.set(this.planet.biomes.find((b) => b.hasWater)?.palette.ground ?? '#2f6f9a').multiplyScalar(0.5);
 
     this.env = new EnvironmentMap(gl);
     this.envGround.set(planet.biomes[0]?.palette.ground ?? '#555').multiplyScalar(0.35);
     this.scene.environmentIntensity = 0.5;
     this.composer = ctx.renderer.createComposer(this.scene, this.camera);
-    this.bloomPass = new EffectPass(this.camera, new BloomEffect({ luminanceThreshold: 1.0, luminanceSmoothing: 0.3, intensity: 0.45, mipmapBlur: true }));
+    // Bloom plus Farbgrading (kräftige Sättigung, etwas Kontrast, leichte Vignette)
+    this.bloomPass = new EffectPass(
+      this.camera,
+      new BloomEffect({ luminanceThreshold: 0.82, luminanceSmoothing: 0.35, intensity: 0.7, mipmapBlur: true }),
+      new HueSaturationEffect({ saturation: 0.2 }),
+      new BrightnessContrastEffect({ contrast: 0.08 }),
+      new VignetteEffect({ darkness: 0.32, offset: 0.35 }),
+    );
     this.bloomPass.enabled = quality.postprocessing;
     this.composer.addPass(this.bloomPass);
     this.unsubSettings = ctx.settings.onChange((s) => this.applySettings(s));
@@ -490,7 +498,7 @@ export class PlanetScene implements GameScene {
     if (s.viewDistance !== this.viewDistance) {
       this.viewDistance = s.viewDistance;
       this.terrain?.setViewDistance(s.viewDistance);
-      this.baseFog = (0.95 / this.viewDistance) * Math.max(0.12, Math.min(1, this.sky.look.density));
+      this.baseFog = (1.45 / this.viewDistance) * Math.max(0.12, Math.min(1, this.sky.look.density));
       this.camera.far = Math.max(4200, this.viewDistance * 2.5);
       this.camera.updateProjectionMatrix();
     }
@@ -2294,6 +2302,8 @@ export class PlanetScene implements GameScene {
     const params = this.weather.params;
     const slow = this.photo.active ? PHOTO_SLOWMO : 1;
     this.sky.update(this.cycle, params, this.weather.lightningFlash, this.camera, this.paused ? 0 : frameDt * slow, this.player.position);
+    stylize.camPos.value.copy(this.camera.position);
+    stylize.rimColor.value.copy(this.sky.fogColor).lerp(this.sky.zenithColor, 0.35);
     const underwater = this.model.hasWater && this.camera.position.y < this.model.seaLevel;
     if (underwater) {
       this.fog.color.copy(this.waterFog).multiplyScalar(0.25 + 0.75 * this.cycle.daylight);

@@ -1,6 +1,7 @@
 import type { BufferGeometry} from 'three';
 import { BoxGeometry, Color, ConeGeometry, CylinderGeometry, DodecahedronGeometry, IcosahedronGeometry, MeshPhysicalMaterial, OctahedronGeometry, SphereGeometry, TorusGeometry, Vector2 } from 'three';
 import { textures } from '@/render/ProceduralTextures';
+import { addRim } from '@/render/stylize';
 import { Random } from '@/math/Random';
 import { clamp } from '@/math/utils';
 import type { ArchiveEntry, FossilGenome, MineralGenome } from '@/gen/archive/types';
@@ -323,6 +324,7 @@ export function buildPropTemplate(entry: ArchiveEntry): PropTemplate {
       emissive: glow ? hsl(g.hue, 0.8, 0.5) : new Color(0, 0, 0),
       emissiveIntensity: glow ? 0.5 : 0,
     });
+    addRim(material, 0.8);
     return { geometry: geo, material, radius, centerY };
   }
   const g = entry.genome as FossilGenome;
@@ -344,5 +346,6 @@ export function buildPropTemplate(entry: ArchiveEntry): PropTemplate {
     transparent: g.fossilKind === 'amber',
     opacity: g.fossilKind === 'amber' ? 0.85 : 1,
   });
+  addRim(material, 0.6);
   return { geometry: geo, material, radius, centerY };
 }

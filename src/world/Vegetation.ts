@@ -1,6 +1,7 @@
 import { BatchedMesh, Color, Group, InstancedMesh, Matrix4, Quaternion, StaticDrawUsage, Vector3, type BufferGeometry, type Scene } from 'three';
 import { Random } from '@/math/Random';
-import { lerp } from '@/math/utils';
+import { clamp, lerp } from '@/math/utils';
+import { stylize, vivid } from '@/render/stylize';
 import type { TerrainModel, TerrainSample } from '@/gen/terrain/TerrainModel';
 import { VEGETATION_PROFILES, type VegetationProfile } from '@/gen/terrain/VegetationProfiles';
 import type { Planet } from '@/gen/universe/types';
@@ -50,7 +51,17 @@ export interface VegetationOptions {
   farCell?: number;
   /** Globale Dichte (Einstellung „Vegetationsdichte“). */
   density?: number;
+  /** Radius und Zellgröße des dichten Grasrings um die Kamera. */
+  grassRadius?: number;
+  grassCell?: number;
 }
+
+type CellKind = 'n' | 'f' | 'g';
+/** Grasbüschel je m² bei voller Bedeckung, Dichte 1. */
+const GRASS_PER_M2 = 1.6;
+/** Bezugsdichten der Biom-Profile: bei diesem Wert stehen Arten-Pflanzen in Normaldichte. */
+const SPECIES_REF = { tree: 8, shrub: 16, grass: 140 } as const;
+const SPECIES_MAX_FACTOR = 2.5;
 
 /** Arten-Dichte je Wuchsform (Instanzen pro 64 m × 64 m bei „häufig“, Biodiversität 1). */
 const SPECIES_DENSITY: Record<FloraForm, number> = {
@@ -89,11 +100,15 @@ export class VegetationManager {
   private readonly farCell: number;
   private density: number;
   private accum = 1;
-  private queue: Array<{ id: string; ix: number; iz: number; far: boolean; d: number }> = [];
+  private queue: Array<{ id: string; ix: number; iz: number; kind: CellKind; d: number }> = [];
+  private readonly grassRadius: number;
+  private readonly grassCell: number;
   private readonly palettes: Color[];
   private readonly groundPalettes: Color[];
   private readonly profiles: VegetationProfile[];
-  private readonly maxDensity: Record<PlantType, number>;
+  private readonly maxDensity: Record<'grass' | 'shrub' | 'tree' | 'rock', number>;
+  /** Drei Blütenfarben des Planeten (aus dem Terrain-Seed, komplementär zum Bewuchs). */
+  private readonly flowerColors: Color[];
   private readonly bioFactor: number;
   private readonly nearSpecies: ArchiveEntry[];
   private readonly farSpecies: ArchiveEntry[];
@@ -114,10 +129,18 @@ export class VegetationManager {
     this.nearCell = options.nearCell ?? 64;
     this.farCell = options.farCell ?? 256;
     this.density = options.density ?? 1;
-    this.palettes = planet.biomes.map((b) => new Color(b.palette.vegetation));
-    this.groundPalettes = planet.biomes.map((b) => new Color(b.palette.ground));
+    this.grassRadius = options.grassRadius ?? 72;
+    this.grassCell = options.grassCell ?? 24;
+    stylize.grassFar.value = this.grassRadius;
+    // Dieselbe Stilisierung wie das Terrain, damit Gras und Boden farblich zusammenpassen
+    this.palettes = planet.biomes.map((b) => vivid(new Color(b.palette.vegetation), 1.25));
+    this.groundPalettes = planet.biomes.map((b) => vivid(new Color(b.palette.ground), 1.35));
     this.profiles = planet.biomes.map((b) => VEGETATION_PROFILES[b.kind]);
-    const maxOf = (t: PlantType): number => this.profiles.reduce((m, p) => Math.max(m, p[t]), 0);
+    const maxOf = (t: 'grass' | 'shrub' | 'tree' | 'rock'): number => this.profiles.reduce((m, p) => Math.max(m, p[t]), 0);
+    const frng = new Random(`flowers:${planet.terrainSeed}`);
+    const vegHue = { h: 0, s: 0, l: 0 };
+    (this.palettes[0] ?? new Color(0.3, 0.6, 0.3)).getHSL(vegHue);
+    this.flowerColors = [0.5, 0.36, 0.64].map((off) => new Color().setHSL((vegHue.h + off + frng.float(-0.06, 0.06) + 1) % 1, frng.float(0.75, 0.95), frng.float(0.55, 0.68)));
     this.maxDensity = { grass: maxOf('grass'), shrub: maxOf('shrub'), tree: maxOf('tree'), rock: maxOf('rock') };
     this.bioFactor = 0.35 + planet.biodiversity;
     const floraEntries = species.filter((e) => e.planetId === planet.id && (e.genome as FloraGenome).kind === 'flora');
@@ -130,14 +153,14 @@ export class VegetationManager {
     scene.add(this.group);
   }
 
-  private densityAt(s: TerrainSample, type: PlantType): number {
+  private densityAt(s: TerrainSample, type: 'grass' | 'shrub' | 'tree' | 'rock'): number {
     const a = (this.profiles[s.biome] as VegetationProfile)[type];
     const b = (this.profiles[s.biome2] as VegetationProfile)[type];
     return lerp(a, b, s.blend);
   }
 
   /** Generische Platzhalter (Gras, Steine; Bäume nur, wenn der Planet keine Baum-Arten hat). */
-  private placeGeneric(rng: Random, x0: number, z0: number, size: number, types: PlantType[]): GenericBatch[] {
+  private placeGeneric(rng: Random, x0: number, z0: number, size: number, types: Array<'grass' | 'shrub' | 'tree' | 'rock'>): GenericBatch[] {
     const area = (size / 64) ** 2;
     const sea = this.model.seaLevel;
     const batches = new Map<string, GenericBatch>();
@@ -183,6 +206,52 @@ export class VegetationManager {
     return Array.from(batches.values());
   }
 
+  /** Dichter Grasring: Büschel nach Biom-Bedeckung, Farbe aus der Vegetationspalette (passt zum Graston des Terrains). */
+  private placeGrass(rng: Random, x0: number, z0: number, size: number): GenericBatch[] {
+    const maxG = this.maxDensity.grass;
+    if (maxG <= 0) return [];
+    const perM2 = GRASS_PER_M2 * Math.min(1, maxG / 150) * Math.min(1.15, this.bioFactor) * this.density;
+    const candidates = Math.round(size * size * perM2);
+    const sea = this.model.seaLevel;
+    const batch: GenericBatch = { geometry: this.assets.grass, type: 'grass', matrices: [], colors: [] };
+    const flowers: GenericBatch = { geometry: this.assets.flower, type: 'flower', matrices: [], colors: [] };
+    for (let c = 0; c < candidates; c++) {
+      const x = x0 + rng.next() * size;
+      const z = z0 + rng.next() * size;
+      const s = this.model.sample(x, z, tmpSample);
+      const d = Math.min(1, this.densityAt(s, 'grass') / 150);
+      if (d <= 0 || rng.next() > d) continue;
+      if (this.model.hasWater && s.height < sea + 0.25) continue;
+      // Kein Gras an Steilhängen (dort zeigt auch das Terrain Fels): Steigung aus zwei Nachbarhöhen
+      const h0 = s.height;
+      const gx = (this.model.heightAt(x + 0.9, z) - h0) / 0.9;
+      const gz = (this.model.heightAt(x, z + 0.9) - h0) / 0.9;
+      const steep = 1 - 1 / Math.sqrt(1 + gx * gx + gz * gz);
+      if (steep > 0.4 + rng.next() * 0.2) continue;
+      const biome = s.blend > 0.5 ? s.biome2 : s.biome;
+      const scale = (this.profiles[biome] as VegetationProfile).scale * rng.float(0.75, 1.5);
+      // Farbtupfer: einzelne Blumen, in Flecken gehäuft (Geländerauschen), in einer der Planetenfarben
+      if (rng.next() < 0.035 + 0.09 * Math.max(0, s.detail)) {
+        tmpPos.set(x, h0 - 0.02, z);
+        tmpQuat.setFromAxisAngle(Y_AXIS, rng.float(0, Math.PI * 2));
+        const fs = scale * rng.float(0.8, 1.5);
+        tmpScale.set(fs, fs * rng.float(0.8, 1.3), fs);
+        flowers.matrices.push(new Matrix4().compose(tmpPos, tmpQuat, tmpScale));
+        flowers.colors.push((this.flowerColors[Math.floor(rng.next() * this.flowerColors.length)] as Color).clone().offsetHSL(rng.float(-0.02, 0.02), 0, rng.float(-0.05, 0.05)));
+        continue;
+      }
+      tmpPos.set(x, h0 - 0.03, z);
+      tmpQuat.setFromAxisAngle(Y_AXIS, rng.float(0, Math.PI * 2));
+      tmpScale.set(scale * rng.float(0.9, 1.3), scale * rng.float(0.8, 1.35), scale * rng.float(0.9, 1.3));
+      batch.matrices.push(new Matrix4().compose(tmpPos, tmpQuat, tmpScale));
+      tmpColor.copy(this.palettes[s.biome] as Color);
+      if (s.blend > 0) tmpColor.lerp(this.palettes[s.biome2] as Color, s.blend);
+      tmpColor.offsetHSL(rng.float(-0.03, 0.03), rng.float(-0.06, 0.08), rng.float(-0.06, 0.08));
+      batch.colors.push(tmpColor.clone());
+    }
+    return [batch, flowers].filter((b) => b.matrices.length > 0);
+  }
+
   /** Arten-Pflanzen aus dem Archiv: Biom, Höhenband, Wasserregel, Seltenheit. */
   private placeSpecies(rng: Random, x0: number, z0: number, size: number, species: ArchiveEntry[]): SpeciesInstance[] {
     const out: SpeciesInstance[] = [];
@@ -193,12 +262,16 @@ export class VegetationManager {
       const genome = entry.genome as FloraGenome;
       // Gesamtdichte je Wuchsform ist konstant; Arten teilen sie nach Seltenheit (viele Arten → jede seltener)
       const share = RARITY_SPAWN_WEIGHT[entry.rarity] / Math.max(0.5, this.formWeight.get(genome.form) ?? 1);
-      const base = SPECIES_DENSITY[genome.form] * 2.2 * share * this.bioFactor * this.density * area;
+      // Kandidaten für die höchste Biomdichte würfeln; das Biom-Profil dünnt danach aus (üppiger Dschungel, karge Wüste)
+      const base = SPECIES_DENSITY[genome.form] * 2.2 * share * this.bioFactor * this.density * area * SPECIES_MAX_FACTOR;
       const candidates = Math.floor(base) + (rng.next() < base - Math.floor(base) ? 1 : 0);
+      const profileType = genome.form === 'tree' ? 'tree' : genome.form === 'grass' || genome.form === 'lichen' ? 'grass' : 'shrub';
       for (let c = 0; c < candidates; c++) {
         const x = x0 + rng.next() * size;
         const z = z0 + rng.next() * size;
         const s = this.model.sample(x, z, tmpSample);
+        const factor = clamp(this.densityAt(s, profileType) / SPECIES_REF[profileType], 0.35, SPECIES_MAX_FACTOR);
+        if (rng.next() > factor / SPECIES_MAX_FACTOR) continue;
         const biome = biomes[s.blend > 0.5 ? s.biome2 : s.biome]!;
         const underwater = this.model.hasWater && s.height < sea - 0.4;
         if (!matchesPlacement(entry, biome, s.altitude, underwater)) continue;
@@ -256,17 +329,20 @@ export class VegetationManager {
     return meshes;
   }
 
-  private buildCell(ix: number, iz: number, far: boolean): Cell {
-    const size = far ? this.farCell : this.nearCell;
+  private buildCell(ix: number, iz: number, kind: CellKind): Cell {
+    const far = kind === 'f';
+    const size = kind === 'g' ? this.grassCell : far ? this.farCell : this.nearCell;
     const x0 = ix * size;
     const z0 = iz * size;
-    const id = `${far ? 'f' : 'n'}:${ix}:${iz}`;
-    const rng = new Random(`veg:${this.planet.terrainSeed}:${size}:${ix}:${iz}`);
+    const id = `${kind}:${ix}:${iz}`;
+    const rng = new Random(`veg:${this.planet.terrainSeed}:${kind}:${size}:${ix}:${iz}`);
     const meshes: Array<InstancedMesh | BatchedMesh> = [];
     let total = 0;
 
-    const genericTypes: PlantType[] = far ? (this.farSpecies.length === 0 ? ['tree'] : []) : ['grass', 'rock'];
-    for (const batch of this.placeGeneric(rng.fork('generic'), x0, z0, size, genericTypes)) {
+    const genericTypes: Array<'grass' | 'shrub' | 'tree' | 'rock'> = kind === 'g' ? [] : far ? (this.farSpecies.length === 0 ? ['tree'] : []) : ['rock'];
+    const batches = this.placeGeneric(rng.fork('generic'), x0, z0, size, genericTypes);
+    if (kind === 'g') batches.push(...this.placeGrass(rng.fork('grass'), x0, z0, size));
+    for (const batch of batches) {
       const n = batch.matrices.length;
       if (n === 0) continue;
       const mesh = new InstancedMesh(batch.geometry, this.assets.materialFor(batch.type, batch.style), n);
@@ -277,15 +353,16 @@ export class VegetationManager {
       }
       mesh.instanceMatrix.needsUpdate = true;
       if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
-      mesh.castShadow = batch.type !== 'grass';
-      mesh.receiveShadow = batch.type !== 'grass';
+      mesh.castShadow = batch.type !== 'grass' && batch.type !== 'flower';
+      mesh.receiveShadow = true;
       mesh.computeBoundingSphere();
       meshes.push(mesh);
       total += n;
     }
 
-    const species = this.placeSpecies(rng.fork('species'), x0, z0, size, far ? this.farSpecies : this.nearSpecies);
-    for (const mesh of this.buildSpeciesMeshes(species, true)) meshes.push(mesh);
+    const species = kind === 'g' ? [] : this.placeSpecies(rng.fork('species'), x0, z0, size, far ? this.farSpecies : this.nearSpecies);
+    // Ferne Zellen liegen außerhalb des Schattenbereichs: kein Schattenwurf (spart den zweiten Zeichendurchgang)
+    for (const mesh of this.buildSpeciesMeshes(species, !far)) meshes.push(mesh);
     total += species.length;
 
     for (const m of meshes) this.group.add(m);
@@ -303,7 +380,7 @@ export class VegetationManager {
   private refresh(cx: number, cz: number): void {
     const wanted = new Set<string>();
     this.queue = [];
-    const scan = (radius: number, size: number, far: boolean): void => {
+    const scan = (radius: number, size: number, kind: CellKind): void => {
       const i0 = Math.floor((cx - radius) / size);
       const i1 = Math.floor((cx + radius) / size);
       const j0 = Math.floor((cz - radius) / size);
@@ -314,14 +391,15 @@ export class VegetationManager {
           const mz = (iz + 0.5) * size;
           const d = Math.hypot(mx - cx, mz - cz);
           if (d > radius + size * 0.5) continue;
-          const id = `${far ? 'f' : 'n'}:${ix}:${iz}`;
+          const id = `${kind}:${ix}:${iz}`;
           wanted.add(id);
-          if (!this.cells.has(id)) this.queue.push({ id, ix, iz, far, d });
+          if (!this.cells.has(id)) this.queue.push({ id, ix, iz, kind, d });
         }
       }
     };
-    scan(this.nearRadius, this.nearCell, false);
-    scan(this.farRadius, this.farCell, true);
+    scan(this.grassRadius, this.grassCell, 'g');
+    scan(this.nearRadius, this.nearCell, 'n');
+    scan(this.farRadius, this.farCell, 'f');
     this.queue.sort((a, b) => a.d - b.d);
     for (const cell of Array.from(this.cells.values())) if (!wanted.has(cell.id)) this.removeCell(cell);
   }
@@ -336,7 +414,7 @@ export class VegetationManager {
   private buildQueued(): void {
     const item = this.queue.shift();
     if (!item || this.cells.has(item.id)) return;
-    const cell = this.buildCell(item.ix, item.iz, item.far);
+    const cell = this.buildCell(item.ix, item.iz, item.kind);
     this.cells.set(cell.id, cell);
   }
 
@@ -361,7 +439,7 @@ export class VegetationManager {
     this.assets.time.value = time;
     this.assets.wind.value = wind;
     this.accum += dt;
-    if (this.accum >= 0.5) {
+    if (this.accum >= 0.35) {
       this.accum = 0;
       this.refresh(cameraPos.x, cameraPos.z);
     }

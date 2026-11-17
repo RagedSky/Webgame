@@ -74,7 +74,8 @@ Sternsystem, baust ein Raumschiff, synthetisierst Treibstoff und füllst ein Arc
     │                          Kreaturenrufe, Schritte, Auslöser, UI, Grollen, Musik-Platzhalter; ambientMix.ts (Pegel aus Biom,
     │                          Tageszeit, Wetter – rein)
     ├── render/                Renderer-Wrapper (DPR, Render-Skalierung), Composer-Fabrik, Starfield, PlanetTexture (prozedural),
-    │                          ProceduralTextures (Detailtexturen-Bank), Environment (PMREM-Umgebungslicht)
+    │                          ProceduralTextures (Detailtexturen-Bank), Environment (PMREM-Umgebungslicht),
+    │                          stylize (Paletten-Sättigung, Kantenlicht, zusammensetzbare Shader-Patches)
     ├── scenes/                MainMenuScene, SystemViewScene (Debug), PlanetScene, ShipEditorScene (Werft), SpaceScene (Orbit/Flug),
     │                          CharacterScene (Charaktererstellung mit Studio-Bühne), startGame.ts (Spiel starten/fortsetzen)
     ├── ui/                    DOM-Overlays: DebugOverlay, Toast, SystemPanel, Hud, PauseMenu, PhotoUi (Sucher + Ergebnis),
@@ -105,6 +106,7 @@ Sternsystem, baust ein Raumschiff, synthetisierst Treibstoff und füllst ein Arc
     │   ├── probes/Rover.ts    Ferngesteuerter Rover: Fahrphysik auf dem Terrain (Nick/Roll), Wasser-/Grenzsperre, Augpunkt
     │   ├── probes/Buoys.ts    Bojen der Tiefseesonden (wippen auf dem Wasser)
     │   ├── character/CharacterBuilder.ts  Konfiguration → Avatar aus Primitiven (Gelenke, Gesicht, Frisur, Anzug, Helm, Animation)
+    │   ├── organic.ts         Organische Grundformen: Röhre, Bogen, Klumpen, Rotationskörper, Kristall
     │   └── HintSystem.ts      Spuren/Kot/Nester als Objekte, Geräusche/Gerüche als Meldung, Gerüchte über seltene Verwandte
     │   └── Player.ts          Ego-/Schulter-Controller, Terrain-Kollision, Schwimmen, Gravitation
     ├── assets/                AssetRegistry: Platzhalter-Geometrien/Materialien, später austauschbar
@@ -411,6 +413,33 @@ deterministischen, flachen Landeplatz. `VegetationProfiles.ts` definiert Dichten
   oder alle 45 s aus Zenit-, Nebel- und Sonnenfarbe des `Sky`; Charakter-Editor und Werft nutzen ein festes Studio.
 - **Charakter-Details**: Ohren, Lider, Pupillen, Lippen, Nasenspitze, Schulterkappen, Ellbogen- und Knieschoner, Handschuhe,
   Stiefelsohlen, Gürtelschnalle, Brustlampe, Rucksack mit Tanks und Leuchtstreifen.
+
+### 4.14 Stil: leuchtende Sci-Fi-Welt (organische Formen, Farbe, Dunst)
+
+Ziel ist eine stilisierte, farbkräftige Optik mit weichen Formen statt aneinandergesetzter Primitiven.
+
+- **Organische Grundformen** (`world/organic.ts`): `tube` (gebogene, verjüngte Röhre mit fortgeschriebenem Rahmen), `arc`
+  (Bogen als Punktfolge), `blob` (verrauschte Kugel mit verschweißten Normalen), `lathe` (Rotationskörper), `crystal`
+  (facettierte Säule). `geometry.ts` ergänzt `blade` (gebogenes Band, optional zweiseitig, Normalen nach oben gemischt) und
+  `gradientColor` (Vertexfarb-Verlauf). `jitter` verschiebt Eckpunkte gleicher Position gleich (keine aufgerissenen Flächen).
+- **Kreaturen** (`CreatureBuilder`): Schwanz, Rumpf, Hals und Kopf sind ein durchgehender Loft entlang der Körperachse
+  (elliptische Querschnitte, flacherer Bauch, Schädelprofil je Kopftyp). Jeder Ring trägt zwei Knochen mit weichem Übergang
+  (Rumpf→Schwanz, Rumpf→Hals→Kopf, Segmentkette bei Schlangenkörpern); Beine sind verjüngte Röhren mit überblendetem Knie.
+  Muster laufen weich aus, der Bauch hellt auf, Gliedmaßen dunkeln zum Fuß ab. Das Modell schaut nach +z, die Wurzel dreht um
+  180°, damit der Kopf in Laufrichtung zeigt.
+- **Flora** (`FloraBuilder`): gebogene Stämme mit Wurzelansatz, Kronen je Blattform (weiche Klumpen, hängende Nadelschürzen,
+  Palmwedel, Schirmhut, versetzte Scheiben, Äste mit Knollen oder Leuchtkörpern), Pilze mit Hut und Punkten, Knollen- und
+  Rosetten-Sukkulenten, Ranken mit Blättern, Kristallsäulen. Verläufe von dunkler Basis zu hellen, farbverschobenen Spitzen.
+- **Rohstoffknoten, Findlinge, Lander**: Knoten aus `blob`/`crystal`/`lathe`, Findlinge als weiche Klumpen, Lander-Rumpf als
+  Rotationskörper mit Panelfugen, Klarlack und Lackstreifen.
+- **Bewuchs** (`Vegetation`): dichter Grasring (Zellen 24 m, Radius 72 m, ~1,6 Büschel/m², einlagige doppelseitige Halme mit
+  Aufwärts-Normalen, im Shader zur Ringgrenze ausgeblendet), eingestreute Blumen in drei planetenspezifischen Farben, Arten-
+  Pflanzen nach Biom-Profil ausgedünnt oder verdichtet (0,35×–2,5×). Ferne Baumzellen werfen keinen Schatten.
+- **Terrain**: flache bis mittelsteile Hänge tragen die Vegetationsfarbe (mit Erdflecken aus dem Geländerauschen), Fels behält
+  den Bodenton und erscheint erst an Klippen. Die Boden-Normalmap wird an Steilhängen seitlich projiziert.
+- **Atmosphäre und Bild** (`render/stylize.ts`, `Atmosphere`, `PlanetScene`): gesättigter Zenit und farbiger Horizont,
+  dichterer Dunst, Kantenlicht in Himmelsfarbe auf allen Weltmaterialien (zusammensetzbare Shader-Patches), Bloom mit
+  niedrigerer Schwelle, Sättigung, Kontrast und leichte Vignette.
 
 ## 5. Laufzeit-Architektur
 

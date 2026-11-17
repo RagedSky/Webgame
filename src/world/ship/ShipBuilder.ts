@@ -1,5 +1,7 @@
 import type { Object3D} from 'three';
-import { AdditiveBlending, BoxGeometry, Color, ConeGeometry, CylinderGeometry, Group, Mesh, MeshBasicMaterial, MeshStandardMaterial, Quaternion, SphereGeometry, TorusGeometry, Vector3, type BufferGeometry } from 'three';
+import { AdditiveBlending, BoxGeometry, Color, ConeGeometry, CylinderGeometry, Group, LatheGeometry, Mesh, MeshBasicMaterial, MeshPhysicalMaterial, MeshStandardMaterial, Quaternion, SphereGeometry, TorusGeometry, Vector2, Vector3, type BufferGeometry, type Texture } from 'three';
+import { textures } from '@/render/ProceduralTextures';
+import { addRim } from '@/render/stylize';
 import { partDef, type SocketDef, type SocketKind } from '@/game/ship/parts';
 import { hullOf, socketsOf, type ShipDesign } from '@/game/ship/ShipDesign';
 
@@ -30,7 +32,11 @@ const TIER_COLORS = [new Color(0x8c96a3), new Color(0x7fb2d9), new Color(0xd9a86
 
 /** Gemeinsame Materialien (einmal je Besitzer anlegen, in dispose() freigeben). */
 export class ShipMaterials {
-  readonly hull = new MeshStandardMaterial({ color: 0xb8c0c8, roughness: 0.45, metalness: 0.6 });
+  private readonly panelNormal: Texture;
+  /** Rumpf: warmweißer Lack mit Panelfugen und Klarlack. */
+  readonly hull: MeshPhysicalMaterial;
+  /** Farbiger Lackstreifen (kräftiges Orange). */
+  readonly paint = new MeshPhysicalMaterial({ color: 0xff6a2a, roughness: 0.35, metalness: 0.2, clearcoat: 0.8, clearcoatRoughness: 0.15 });
   readonly dark = new MeshStandardMaterial({ color: 0x2c3138, roughness: 0.7, metalness: 0.4 });
   readonly glass = new MeshStandardMaterial({ color: 0x5ec8ff, roughness: 0.1, metalness: 0.2, transparent: true, opacity: 0.75, emissive: 0x1b4a66, emissiveIntensity: 0.4 });
   readonly tiers = TIER_COLORS.map((c) => new MeshStandardMaterial({ color: c, roughness: 0.5, metalness: 0.5 }));
@@ -41,7 +47,18 @@ export class ShipMaterials {
   readonly socketHover = new MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.95 });
   readonly ghost = new MeshStandardMaterial({ color: 0x5ee39a, transparent: true, opacity: 0.4, depthWrite: false });
 
+  constructor() {
+    this.panelNormal = textures.get('suit').normalMap.clone();
+    this.panelNormal.repeat.set(3, 2);
+    this.hull = new MeshPhysicalMaterial({ color: 0xe9e4d8, roughness: 0.42, metalness: 0.35, clearcoat: 0.6, clearcoatRoughness: 0.2, normalMap: this.panelNormal, normalScale: new Vector2(0.6, 0.6) });
+    addRim(this.hull, 0.7);
+    addRim(this.paint, 0.7);
+    for (const t of this.tiers) addRim(t, 0.6);
+  }
+
   dispose(): void {
+    this.panelNormal.dispose();
+    this.paint.dispose();
     for (const m of [this.hull, this.dark, this.glass, ...this.tiers, this.flame, this.flameCore, this.socketFree, this.socketOther, this.socketHover, this.ghost]) m.dispose();
   }
 }
@@ -80,10 +97,26 @@ export function buildShip(design: ShipDesign, mats: ShipMaterials, options: { wi
   group.add(base);
 
   // Rumpf
-  const hullGeo = new CylinderGeometry(R * 0.92, R, H, 20);
+  // Rumpf als Rotationskörper: eingezogener Sockel, gerade Flanke (Sockel sitzen auf Radius R), abgerundete Schulter
+  const hullGeo = new LatheGeometry(
+    [
+      [R * 0.8, 0],
+      [R * 0.97, H * 0.05],
+      [R, H * 0.13],
+      [R, H * 0.84],
+      [R * 0.97, H * 0.93],
+      [R * 0.92, H],
+    ].map(([r, y]) => new Vector2(r, y)),
+    28,
+  );
   geos.push(hullGeo);
   const hullMesh = new Mesh(hullGeo, mats.hull);
-  hullMesh.position.y = H / 2;
+  // Lackstreifen um die Rumpfmitte
+  const stripeGeo = new CylinderGeometry(R * 1.004, R * 1.004, H * 0.16, 28, 1, true);
+  geos.push(stripeGeo);
+  const stripe = new Mesh(stripeGeo, mats.paint);
+  stripe.position.y = H * 0.5;
+  base.add(stripe);
   hullMesh.castShadow = true;
   hullMesh.receiveShadow = true;
   hullMesh.userData.placedId = 'hull';
