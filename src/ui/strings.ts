@@ -47,6 +47,10 @@ export const STR = {
     behaviorBonus: 'Verhaltens-Bonus',
     exportPng: 'PNG exportieren',
     continue: 'Weiter',
+    toArchive: 'Im Archiv ansehen',
+    resultTitle: 'Aufnahme',
+    resultHint: 'Leertaste oder E: weiter fotografieren · Q: Foto-Modus verlassen',
+    points: 'Punkte',
     enter: 'Foto-Modus',
   },
   archive: {
@@ -419,7 +423,7 @@ export const STR = {
   tutorial: {
     title: 'Tutorial',
     skip: 'F1: Tutorial überspringen',
-    done: 'Tutorial abgeschlossen – das Archiv wartet. Ziele stehen oben in der Mitte.',
+    done: 'Tutorial abgeschlossen – das Archiv wartet. Ziele stehen oben rechts.',
     stepOf: 'Schritt',
     steps: {
       look: { title: 'Umsehen', text: 'Bewege die Maus, um dich umzusehen. Klick ins Bild übernimmt die Maus, Esc gibt sie frei.' },
@@ -479,6 +483,16 @@ export const STR = {
   },
   hud: {
     compass: ['N', 'NO', 'O', 'SO', 'S', 'SW', 'W', 'NW'],
+    archive: 'Archiv',
+    oxygen: 'O₂',
+    energy: 'Energie',
+    altitude: 'Höhe',
+    position: 'Position',
+    sighting: 'Sichtung',
+    swimming: 'Schwimmen',
+    fly: 'Flugmodus',
+    edge: 'Kartenrand',
+    timeScale: 'Zeit',
   },
   systemView: {
     overview: 'Übersicht',

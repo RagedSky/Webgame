@@ -42,7 +42,7 @@ import { deepSeaTargets, probeHintText } from '@/game/map/hotspots';
 import { ensureProgress } from '@/game/progressStore';
 import { NODE_CELL, generateResourceNodes, type ResourceNode } from '@/gen/terrain/ResourceNodes';
 import { ROVER_RANGE, ROVER_REVEAL, Rover } from '@/world/probes/Rover';
-import { bonusesFor, type BackgroundBonus, NEUTRAL_BONUS } from '@/game/character/backgrounds';
+import { BACKGROUNDS, bonusesFor, type BackgroundBonus, NEUTRAL_BONUS } from '@/game/character/backgrounds';
 import { effectiveCost } from '@/ui/InventoryUi';
 import { SettingsUi } from '@/ui/SettingsUi';
 import { SHADOW_MAP_SIZES, type GraphicsSettings } from '@/game/settings/Settings';
@@ -160,6 +160,8 @@ export class PlanetScene implements GameScene {
   private microscope: MicroscopeView | null = null;
   private captureRequested = false;
   private lastPng: Blob | null = null;
+  /** Offene Foto-Auswertung (Objekt-URL des Vorschaubilds) oder null. Solange sie offen ist, ist die Steuerung eingefroren. */
+  private photoReview: string | null = null;
   private photoCounter = 0;
   private sampleCounter = 0;
   private readonly sampledProps = new Set<string>();
@@ -394,6 +396,7 @@ export class PlanetScene implements GameScene {
     loading.dispose();
 
     this.hud = new Hud(ctx.uiRoot);
+    this.hud.setIdentity(this.state.character?.name ?? STR.character.title, BACKGROUNDS.find((b) => b.id === this.state.character?.background)?.name ?? '', this.state.character?.suit.accent ?? '#41b8ff');
     this.hud.setHint(STR.planet.clickToStart);
     this.photoUi = new PhotoUi(ctx.uiRoot);
     this.archiveUi = new ArchiveUi(
@@ -789,7 +792,7 @@ export class PlanetScene implements GameScene {
   }
 
   private get uiOpen(): boolean {
-    return this.archiveUi.isOpen || this.inventoryUi.isOpen || this.labUi.isOpen || this.shipUi.isOpen || this.mapUi.isOpen || this.saveUi.isOpen;
+    return this.archiveUi.isOpen || this.inventoryUi.isOpen || this.labUi.isOpen || this.shipUi.isOpen || this.mapUi.isOpen || this.saveUi.isOpen || this.photoReview !== null;
   }
 
   get roverActor(): Rover | null {
@@ -891,6 +894,7 @@ export class PlanetScene implements GameScene {
 
   private exitPhoto(): void {
     if (!this.photo.active) return;
+    this.closePhotoReview(false);
     this.photo.exit();
     this.player.frozen = this.roverMode || this.cinematic !== null;
     this.player.selfie = false;
@@ -902,10 +906,6 @@ export class PlanetScene implements GameScene {
   private updatePhotoInput(): void {
     const input = this.ctx.input;
     const p = this.photo;
-    if (this.photoUi.resultOpen) {
-      if (input.wasPressed('shutter') || input.mouseButtonPressed(0) || input.wasPressed('interact')) this.photoUi.hideResult();
-      return;
-    }
     if (input.wheelDelta !== 0) p.zoom(-input.wheelDelta * 4);
     if (input.isDown('photo_focus_near')) p.focus(-1 / 12);
     if (input.isDown('photo_focus_far')) p.focus(1 / 12);
@@ -966,11 +966,13 @@ export class PlanetScene implements GameScene {
     if (subjects.length === 0) this.progress.photosTaken++;
     this.tut('photo_taken');
     let maxStars = 0;
+    // Gerüchte zu neuen Entdeckungen stehen in der Auswertungskarte (eine Einblendung würde sie verdecken)
+    const rumors: string[] = [];
     for (const r of results) {
       maxStars = Math.max(maxStars, r.result.stars);
       if (r.result.newDiscovery) {
         const rumor = this.hints.rumorFor(r.subject.entry, (id) => this.planet.biomes.find((b) => b.id === id)?.name ?? id);
-        if (rumor) showToast(`✦ ${rumor.text}`, 6000);
+        if (rumor) rumors.push(rumor.text);
       }
     }
     if (maxStars > 0) setTimeout(() => audio.success(maxStars), 150);
@@ -992,18 +994,48 @@ export class PlanetScene implements GameScene {
       blob: jpeg,
       thumb,
     });
+    // Das Speichern läuft asynchron: wurde der Foto-Modus inzwischen verlassen, gibt es keine Auswertung mehr zu zeigen
+    if (!this.photo.active || this.paused || this.switching || this.cinematic) {
+      showToast(rumors[0] ? `✦ ${rumors[0]}` : primary ? `${results[0]!.name} ${'★'.repeat(results[0]!.result.stars)}` : STR.photo.noSubject, rumors[0] ? 6000 : 2600);
+      return;
+    }
     const thumbUrl = URL.createObjectURL(thumb);
+    this.openPhotoReview(thumbUrl);
     this.photoUi.showResult({
       thumbUrl,
       subjects: results,
+      rumors,
       onExportPng: () => {
         if (this.lastPng) downloadBlob(this.lastPng, `stellar-${photoId}.png`);
       },
-      onClose: () => {
-        this.photoUi.hideResult();
-        URL.revokeObjectURL(thumbUrl);
+      onArchive: () => {
+        this.closePhotoReview(false);
+        this.openCatalog();
       },
+      onClose: () => this.closePhotoReview(true),
     });
+  }
+
+  /**
+   * Auswertung nach dem Auslösen: Steuerung einfrieren und den Mauszeiger freigeben, damit sich die Karte bedienen lässt.
+   * Die Auswertung zählt als offene Oberfläche (`uiOpen`): die Welt steht, ein Klick aufs Bild fängt die Maus nicht ein.
+   */
+  private openPhotoReview(thumbUrl: string): void {
+    if (this.photoReview) URL.revokeObjectURL(this.photoReview);
+    this.photoReview = thumbUrl;
+    this.captureRequested = false;
+    this.ctx.input.exitPointerLock();
+    this.ctx.input.reset();
+  }
+
+  /** Auswertung schließen; `resume` fängt die Maus wieder ein und kehrt in den Sucher zurück. */
+  private closePhotoReview(resume: boolean): void {
+    if (!this.photoReview) return;
+    URL.revokeObjectURL(this.photoReview);
+    this.photoReview = null;
+    this.photoUi.hideResult();
+    this.ctx.input.reset();
+    if (resume) this.ctx.input.requestPointerLock();
   }
 
   private async exportPhoto(photoId: string): Promise<void> {
@@ -2121,6 +2153,7 @@ export class PlanetScene implements GameScene {
       else if (this.mapUi.isOpen) this.closeMap();
       else if (this.labUi.isOpen) this.closeLab();
       else if (this.archiveUi.isOpen) this.closeCatalog();
+      else if (this.photoReview) this.closePhotoReview(true);
       else if (this.buildMode) this.exitBuild();
       else if (this.photo.active) this.exitPhoto();
       else if (this.roverMode) this.exitRover();
@@ -2147,6 +2180,14 @@ export class PlanetScene implements GameScene {
     if (input.wasPressed('inventory') && !this.archiveUi.isOpen && !this.labUi.isOpen && !this.mapUi.isOpen && !this.buildMode) {
       if (this.inventoryUi.isOpen) this.closeInventory();
       else this.openInventory('hand');
+    }
+    // Auswertung nach dem Foto: Leertaste, Enter oder E schließen sie, Q verlässt gleich den Foto-Modus
+    if (this.photoReview) {
+      if (input.wasPressed('shutter') || input.wasPressed('interact')) this.closePhotoReview(true);
+      else if (input.wasPressed('camera')) {
+        this.closePhotoReview(true);
+        this.exitPhoto();
+      }
     }
     if (this.uiOpen) {
       this.saveTick(dt);
@@ -2248,6 +2289,7 @@ export class PlanetScene implements GameScene {
       biome: biome.name,
       clock: this.cycle.clock,
       timeOfDay: TIME_LABELS[this.cycle.timeOfDay],
+      timeKind: this.cycle.timeOfDay,
       weather: this.weather.label,
       temperatureC: kelvinToCelsius(temp),
       altitude: p.y,
@@ -2265,8 +2307,9 @@ export class PlanetScene implements GameScene {
       const c = seen.creature;
       const known = this.progress.isDiscovered(c.entry.id);
       const beh = c.ai.behavior && c.ai.state !== 'flee' ? (BEHAVIOR_LABELS[c.ai.behavior] ?? c.ai.behavior) : STATE_LABELS[c.ai.state];
-      this.hud.setSighting(`Sichtung: ${known ? this.progress.displayName(c.entry) : `${STR.archive.unknown}`}${known || this.progress.isHinted(c.entry.id) ? ` · ${RARITY_LABELS[c.entry.rarity]}` : ''} · ${beh} · ${seen.distance.toFixed(0)} m`);
-    } else this.hud.setSighting('');
+      const showRarity = known || this.progress.isHinted(c.entry.id);
+      this.hud.setSighting({ name: known ? this.progress.displayName(c.entry) : STR.archive.unknown, rarity: showRarity ? c.entry.rarity : '', rarityLabel: showRarity ? RARITY_LABELS[c.entry.rarity] : '', behavior: beh, distance: seen.distance, known });
+    } else this.hud.setSighting(null);
     if (this.roverMode && this.rover) {
       const dist = Math.hypot(this.rover.position.x - p.x, this.rover.position.z - p.z);
       const it = this.roverInteraction();
@@ -2290,6 +2333,7 @@ export class PlanetScene implements GameScene {
     d.set('Kreaturen', `${this.creatures.stats.count} (${this.creatures.stats.templates} Arten, ${this.creatures.stats.spawned} gespawnt)`);
     d.set('Props', `${this.props.stats.props} · Hinweise ${this.hints.stats.active}`);
     const c = this.progress.completion();
+    this.hud.setArchive(c.discovered, c.total);
     d.set('Archiv', `${c.discovered}/${c.total} (${(c.fraction * 100).toFixed(1)} %) · Fotos ${this.progress.photosTaken}`);
     d.set('Basis', `${this.state.modulesOn(this.planet.id).length} Module · Knoten ${this.nodes.stats.nodes} · O₂ ${sv.oxygen.toFixed(0)} · ⚡ ${sv.energy.toFixed(0)} · Treibstoff ${this.state.inventory.getItem('fuel')}`);
     d.set('Charakter', this.state.character ? `${this.state.character.name} · ${this.state.character.background}` : '–');

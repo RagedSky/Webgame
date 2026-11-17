@@ -1,4 +1,5 @@
 import './ui/styles.css';
+import './ui/hud.css';
 import { GameLoop } from './core/GameLoop';
 import { Input } from './core/Input';
 import { SceneManager } from './core/SceneManager';

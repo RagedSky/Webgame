@@ -1,0 +1,1257 @@
+/*
+ * HUD der Planetenoberfläche, Foto-Modus und Benachrichtigungen.
+ * Gestaltung: freie Bildmitte, Informationen in vier Ecken, dünne Linien und nach innen auslaufende Glasflächen,
+ * Versalien mit Sperrung, Tastenkappen für Eingaben. Die Akzentfarbe (--hud-accent) setzt das HUD aus dem
+ * Anzug des Charakters.
+ */
+:root {
+  --hud-accent: #41b8ff;
+  --hud-ink: rgba(255, 255, 255, 0.96);
+  --hud-dim: rgba(255, 255, 255, 0.7);
+  --hud-line: rgba(255, 255, 255, 0.28);
+  --hud-glass: rgba(6, 10, 18, 0.5);
+  --hud-warn: #ff5a4d;
+  --hud-font: 'Bahnschrift', 'DIN Alternate', 'Rajdhani', 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+.hud {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  font-family: var(--hud-font);
+  font-size: 13px;
+  color: var(--hud-ink);
+  letter-spacing: 0.04em;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.65);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Sanfte Abdunklung an Ober- und Unterkante: Text bleibt auf hellem Sand und Schnee lesbar */
+.hud-shade {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to bottom, rgba(4, 8, 16, 0.36), rgba(4, 8, 16, 0) 17%),
+    linear-gradient(to top, rgba(4, 8, 16, 0.42), rgba(4, 8, 16, 0) 21%);
+}
+
+.hud-icon {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.hud-block {
+  position: absolute;
+  padding: 9px 22px 9px 13px;
+  border-left: 2px solid var(--hud-accent);
+  background: linear-gradient(90deg, var(--hud-glass), rgba(6, 10, 18, 0));
+}
+
+.hud-block.right {
+  padding: 9px 13px 9px 22px;
+  border-left: 0;
+  border-right: 2px solid var(--hud-accent);
+  background: linear-gradient(270deg, var(--hud-glass), rgba(6, 10, 18, 0));
+  text-align: right;
+}
+
+.thin-bar {
+  height: 2px;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.thin-bar > div {
+  height: 100%;
+  background: var(--hud-accent);
+  transition: width 0.4s ease;
+}
+
+.keycap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* ---------- oben links: Ort und Umwelt ---------- */
+.hud-location {
+  top: 20px;
+  left: 22px;
+  min-width: 250px;
+}
+
+.hud-location .loc-planet {
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  line-height: 1.15;
+}
+
+.hud-location .loc-biome {
+  margin-top: 2px;
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--hud-accent);
+}
+
+.hud-chips {
+  display: flex;
+  gap: 16px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--hud-dim);
+  white-space: nowrap;
+}
+
+.hud-chips .chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hud-chips .chip-icon {
+  display: inline-flex;
+}
+
+.hud-location .loc-phenomena {
+  margin-top: 7px;
+  padding-top: 6px;
+  border-top: 1px solid var(--hud-line);
+  font-size: 12px;
+  color: #ffd98a;
+  max-width: 340px;
+}
+
+/* ---------- oben Mitte: Kompass ---------- */
+.hud-compass {
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  width: 420px;
+  height: 52px;
+  margin-left: -210px;
+}
+
+.hud-compass .window {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 30px;
+  overflow: hidden;
+  border-bottom: 1px solid var(--hud-line);
+  mask-image: linear-gradient(90deg, transparent, #000 16%, #000 84%, transparent);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 16%, #000 84%, transparent);
+}
+
+.hud-compass .tape {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 30px;
+  will-change: transform;
+}
+
+.hud-compass .tape span {
+  position: absolute;
+  top: 2px;
+  width: 40px;
+  margin-left: -20px;
+  text-align: center;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--hud-dim);
+}
+
+.hud-compass .tape span::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -14px;
+  width: 1px;
+  height: 5px;
+  background: var(--hud-line);
+}
+
+.hud-compass .tape span.major::after {
+  height: 8px;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.hud-compass .tape span.cardinal {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--hud-ink);
+}
+
+.hud-compass .needle {
+  position: absolute;
+  top: 30px;
+  left: 50%;
+  margin-left: -5px;
+  border: 5px solid transparent;
+  border-top: 0;
+  border-bottom: 7px solid var(--hud-accent);
+}
+
+.hud-compass .heading {
+  position: absolute;
+  top: 39px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: var(--hud-dim);
+}
+
+.hud-compass .marker {
+  position: absolute;
+  top: 12px;
+  width: 20px;
+  margin-left: -10px;
+  text-align: center;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--hud-accent);
+  transition: opacity 0.2s;
+}
+
+.hud-compass .marker.ship {
+  color: #ffd98a;
+}
+
+.hud-compass .marker.shelter {
+  color: #8fe3a8;
+}
+
+.hud-compass .marker.rover {
+  color: #9fd4ff;
+}
+
+.hud-compass .marker.edge {
+  opacity: 0.5;
+}
+
+/* ---------- oben rechts: Archiv, Ziel, Tutorial ---------- */
+.hud-top-right {
+  position: absolute;
+  top: 20px;
+  right: 22px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  width: 320px;
+}
+
+.hud-top-right .hud-block {
+  position: relative;
+  max-width: 100%;
+}
+
+.hud-archive {
+  min-width: 190px;
+}
+
+.hud-archive .head {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.hud-archive .label {
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--hud-dim);
+}
+
+.hud-archive .count {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+.hud-goal {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--hud-dim);
+}
+
+.hud-tutorial {
+  width: 100%;
+  text-align: left !important;
+  border-right-color: var(--accent-2) !important;
+  background: linear-gradient(270deg, rgba(6, 10, 18, 0.74), rgba(6, 10, 18, 0.34)) !important;
+}
+
+.hud-tutorial.done {
+  border-right-color: var(--ok) !important;
+}
+
+.hud-tutorial .tut-head {
+  font-size: 10.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent-2);
+}
+
+.hud-tutorial.done .tut-head {
+  color: var(--ok);
+}
+
+.hud-tutorial .tut-title {
+  margin: 3px 0 4px;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+.hud-tutorial .tut-text {
+  font-size: 12.5px;
+  line-height: 1.5;
+  letter-spacing: 0.02em;
+}
+
+.hud-tutorial .tut-skip {
+  margin-top: 6px;
+  font-size: 10.5px;
+  color: var(--hud-dim);
+}
+
+/* ---------- unten links: Name und Lebenserhaltung ---------- */
+.hud-survival {
+  left: 22px;
+  bottom: 22px;
+  min-width: 270px;
+}
+
+.hud-survival .identity {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  white-space: nowrap;
+}
+
+.diamond {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  flex: none;
+  background: var(--hud-accent);
+  transform: rotate(45deg);
+  box-shadow: 0 0 6px var(--hud-accent);
+}
+
+.hud-survival .identity .name {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.hud-survival .identity .role {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--hud-dim);
+}
+
+.hud-survival .vital {
+  display: grid;
+  grid-template-columns: 14px 54px 1fr 26px;
+  align-items: center;
+  gap: 8px;
+  height: 20px;
+}
+
+.hud-survival .vital .label {
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--hud-dim);
+}
+
+.hud-survival .vital .value {
+  font-size: 12px;
+  text-align: right;
+}
+
+/* Segmentierter Balken: zehn Felder, die Füllung läuft dahinter */
+.seg-bar {
+  position: relative;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.seg-bar > div {
+  height: 100%;
+  background: var(--hud-ink);
+  transition: width 0.3s ease, background-color 0.3s;
+}
+
+.seg-bar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(90deg, transparent 0 calc(10% - 2px), rgba(6, 10, 18, 0.9) calc(10% - 2px) 10%);
+}
+
+.hud-survival .vital.en .seg-bar > div {
+  background: var(--hud-accent);
+}
+
+.hud-survival.low-o2 .vital.o2,
+.hud-survival.low-en .vital.en {
+  color: var(--hud-warn);
+  animation: hud-blink 0.9s steps(2, jump-none) infinite;
+}
+
+.hud-survival.low-o2 .vital.o2 .seg-bar > div,
+.hud-survival.low-en .vital.en .seg-bar > div {
+  background: var(--hud-warn);
+}
+
+.hud-survival.warn {
+  border-left-color: var(--hud-warn);
+}
+
+.hud-survival .hazards {
+  margin-top: 4px;
+  min-height: 15px;
+  font-size: 11.5px;
+  color: #ffd98a;
+}
+
+.hud-survival.warn .hazards {
+  color: var(--hud-warn);
+}
+
+@keyframes hud-blink {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.45;
+  }
+}
+
+/* ---------- unten rechts: Telemetrie ---------- */
+.hud-telemetry {
+  right: 22px;
+  bottom: 22px;
+  min-width: 190px;
+  font-size: 12px;
+}
+
+.hud-telemetry .row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  height: 20px;
+}
+
+.hud-telemetry .k {
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--hud-dim);
+}
+
+.hud-telemetry .v {
+  min-width: 78px;
+  font-size: 13px;
+}
+
+.hud-telemetry .flags {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.hud-telemetry .flags:empty {
+  display: none;
+}
+
+.hud-telemetry .flag {
+  padding: 1px 7px;
+  border: 1px solid var(--hud-line);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.hud-saved {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  height: 0;
+  overflow: hidden;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ok);
+  opacity: 0;
+  transition: opacity 0.3s, height 0.3s;
+}
+
+.hud-saved.show {
+  height: 20px;
+  opacity: 1;
+}
+
+/* ---------- Bildmitte: Fadenkreuz, Sammelring, Sichtung ---------- */
+.crosshair {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 40px;
+  height: 40px;
+  margin: -20px;
+  display: none;
+}
+
+.crosshair .dot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  margin: -2px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 3px rgba(0, 0, 0, 0.9);
+}
+
+.crosshair .ring {
+  position: absolute;
+  inset: 0;
+  transform: rotate(-90deg) scale(0.7);
+  opacity: 0;
+  transition: opacity 0.15s, transform 0.15s;
+}
+
+.crosshair.active .ring {
+  opacity: 1;
+  transform: rotate(-90deg) scale(1);
+}
+
+.crosshair .ring circle {
+  fill: none;
+}
+
+.crosshair .ring .track {
+  stroke: rgba(255, 255, 255, 0.45);
+  stroke-width: 1;
+}
+
+.crosshair .ring .fill {
+  stroke: var(--hud-accent);
+  stroke-width: 2.6;
+  stroke-linecap: butt;
+  opacity: 0;
+}
+
+.crosshair.harvest .ring .fill {
+  opacity: 1;
+}
+
+.hud-sighting {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  align-items: center;
+  transform: translate(26px, -50%);
+  white-space: nowrap;
+  --sight: var(--hud-ink);
+}
+
+.hud-sighting .lead {
+  width: 30px;
+  height: 1px;
+  background: var(--sight);
+  opacity: 0.7;
+}
+
+.hud-sighting .card {
+  padding: 5px 16px 6px 10px;
+  border-left: 2px solid var(--sight);
+  background: linear-gradient(90deg, var(--hud-glass), rgba(6, 10, 18, 0));
+}
+
+.hud-sighting .tag {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 9.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--hud-dim);
+}
+
+.hud-sighting .tag .hud-icon {
+  width: 11px;
+  height: 11px;
+}
+
+.hud-sighting .name {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.hud-sighting.unknown .name {
+  color: #ffd98a;
+}
+
+.hud-sighting .meta {
+  font-size: 11.5px;
+  color: var(--hud-dim);
+}
+
+.hud-sighting.rarity-uncommon {
+  --sight: #7be3a0;
+}
+
+.hud-sighting.rarity-rare {
+  --sight: #6cc4ff;
+}
+
+.hud-sighting.rarity-legendary {
+  --sight: #ffc35a;
+}
+
+/* ---------- unten Mitte: Interaktion, Bauleiste, Starthinweis ---------- */
+.hud-hint {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, 54px);
+  padding: 8px 26px;
+  border-top: 1px solid var(--hud-line);
+  border-bottom: 1px solid var(--hud-line);
+  background: linear-gradient(90deg, rgba(6, 10, 18, 0), var(--hud-glass) 25% 75%, rgba(6, 10, 18, 0));
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  animation: hud-breathe 2.4s ease-in-out infinite;
+}
+
+@keyframes hud-breathe {
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.hud-prompt {
+  position: absolute;
+  bottom: 96px;
+  left: 50%;
+  transform: translateX(-50%);
+  align-items: center;
+  gap: 26px;
+  padding: 8px 44px;
+  background: linear-gradient(90deg, rgba(6, 10, 18, 0), var(--hud-glass) 18% 82%, rgba(6, 10, 18, 0));
+  white-space: nowrap;
+}
+
+.hud-prompt .item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.hud-prompt .label {
+  font-size: 13px;
+  letter-spacing: 0.06em;
+}
+
+.hud-palette {
+  position: absolute;
+  bottom: 140px;
+  left: 50%;
+  transform: translateX(-50%);
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+}
+
+.hud-palette .slots {
+  display: flex;
+  gap: 8px;
+}
+
+.hud-palette .pal {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px 7px 8px;
+  border: 1px solid var(--hud-line);
+  background: var(--hud-glass);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.hud-palette .pal.sel {
+  border-color: var(--hud-accent);
+  box-shadow: inset 0 -2px 0 var(--hud-accent);
+}
+
+.hud-palette .pal.missing {
+  opacity: 0.45;
+}
+
+.hud-palette .pal-hint {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--hud-dim);
+}
+
+.hud-fade {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+
+/* Foto-Modus: nur der Sucher bleibt */
+.hud.photo .hud-shade,
+.hud.photo .hud-location,
+.hud.photo .hud-compass,
+.hud.photo .hud-top-right,
+.hud.photo .hud-survival,
+.hud.photo .hud-telemetry,
+.hud.photo .hud-sighting,
+.hud.photo .hud-prompt,
+.hud.photo .hud-palette {
+  display: none !important;
+}
+
+@media (max-width: 1000px) {
+  .hud-telemetry,
+  .hud-goal {
+    display: none !important;
+  }
+
+  .hud-compass {
+    transform: scale(0.8);
+    transform-origin: top center;
+  }
+
+  .hud-location .loc-planet {
+    font-size: 17px;
+  }
+}
+
+/* ---------- Benachrichtigungen ---------- */
+.toast {
+  position: absolute;
+  top: 96px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: min(680px, 86vw);
+  padding: 9px 22px 9px 16px;
+  border-left: 2px solid var(--hud-accent);
+  background: linear-gradient(90deg, rgba(6, 10, 18, 0.88), rgba(6, 10, 18, 0.66));
+  font-family: var(--hud-font);
+  font-size: 13px;
+  letter-spacing: 0.05em;
+  line-height: 1.45;
+  animation: toast-in 0.22s ease-out;
+  z-index: 50;
+}
+
+.toast.action {
+  top: auto;
+  bottom: 150px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  pointer-events: auto;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -8px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+.stars {
+  color: var(--accent-2);
+  letter-spacing: 0.1em;
+}
+
+.stars.big {
+  font-size: 18px;
+}
+
+/* ---------- Foto-Modus ---------- */
+.photo-ui {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  font-family: var(--hud-font);
+  color: var(--hud-ink);
+  letter-spacing: 0.04em;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.65);
+}
+
+.photo-frame {
+  position: absolute;
+  inset: 0;
+  /* Vignette als Verlauf: ein weichgezeichneter Innenschatten über das ganze Bild ist teuer zu zeichnen */
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 58%, rgba(0, 0, 0, 0.34) 100%);
+}
+
+.photo-frame .corner {
+  position: absolute;
+  width: 44px;
+  height: 44px;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+}
+
+.photo-frame .corner.tl {
+  top: 26px;
+  left: 26px;
+  border-right: 0;
+  border-bottom: 0;
+}
+
+.photo-frame .corner.tr {
+  top: 26px;
+  right: 26px;
+  border-left: 0;
+  border-bottom: 0;
+}
+
+.photo-frame .corner.bl {
+  bottom: 26px;
+  left: 26px;
+  border-right: 0;
+  border-top: 0;
+}
+
+.photo-frame .corner.br {
+  bottom: 26px;
+  right: 26px;
+  border-left: 0;
+  border-top: 0;
+}
+
+.photo-frame .reticle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 34px;
+  height: 34px;
+  margin: -17px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 50%;
+}
+
+.photo-frame .reticle::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  margin: -2px;
+  border-radius: 50%;
+  background: var(--hud-accent);
+}
+
+.photo-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.24) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.24) 1px, transparent 1px);
+  background-size: 33.333% 33.333%;
+}
+
+.photo-bar {
+  position: absolute;
+  left: 50%;
+  bottom: 30px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: flex-end;
+  gap: 20px;
+  padding: 9px 46px;
+  background: linear-gradient(90deg, rgba(6, 10, 18, 0), var(--hud-glass) 14% 86%, rgba(6, 10, 18, 0));
+  white-space: nowrap;
+}
+
+.photo-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 58px;
+}
+
+.photo-item .k {
+  min-height: 15px;
+  padding: 0 5px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 3px;
+  font-size: 9.5px;
+  line-height: 13px;
+  letter-spacing: 0.06em;
+}
+
+.photo-item .k:empty {
+  visibility: hidden;
+}
+
+.photo-item .l {
+  font-size: 9.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--hud-dim);
+}
+
+.photo-item .v {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.photo-item.photo-hint {
+  justify-content: center;
+  align-self: center;
+  padding-left: 18px;
+  border-left: 1px solid var(--hud-line);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--hud-dim);
+}
+
+.photo-targets {
+  position: absolute;
+  inset: 0;
+}
+
+.photo-target {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  padding: 3px 10px 3px 8px;
+  border-left: 2px solid var(--hud-ink);
+  background: linear-gradient(90deg, var(--hud-glass), rgba(6, 10, 18, 0.1));
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.photo-target.known {
+  border-left-color: #7be3a0;
+}
+
+.photo-target.unknown {
+  border-left-color: #ffc35a;
+}
+
+.photo-flash {
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  opacity: 0;
+}
+
+.photo-flash.on {
+  animation: flash 0.35s ease-out;
+}
+
+@keyframes flash {
+  from {
+    opacity: 0.85;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* Auswertung: Bild abdunkeln, Sucherdetails ausblenden, Karte bedienbar */
+.photo-ui.review::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(4, 8, 16, 0.68);
+}
+
+.photo-ui.review .photo-bar,
+.photo-ui.review .photo-targets,
+.photo-ui.review .photo-grid,
+.photo-ui.review .reticle {
+  display: none !important;
+}
+
+.photo-result {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(640px, 92vw);
+  max-height: 92vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 18px 14px;
+  border: 1px solid var(--hud-line);
+  border-top: 2px solid var(--hud-accent);
+  background: rgba(8, 12, 22, 0.92);
+  text-shadow: none;
+  pointer-events: auto;
+  cursor: default;
+  z-index: 30;
+  animation: result-in 0.2s ease-out;
+}
+
+@keyframes result-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -48%);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}
+
+.photo-result .title {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 12px;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--hud-dim);
+}
+
+.photo-result .shot {
+  border: 1px solid var(--hud-line);
+  line-height: 0;
+}
+
+.photo-result .shot img {
+  width: 100%;
+  max-height: 38vh;
+  object-fit: cover;
+}
+
+.photo-result .rumors:empty {
+  display: none;
+}
+
+.photo-result .rumors {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.photo-result .rumor {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  padding: 6px 12px;
+  border-left: 2px solid var(--accent-2);
+  background: rgba(255, 181, 71, 0.08);
+  font-size: 12.5px;
+  line-height: 1.45;
+  letter-spacing: 0.02em;
+  color: #ffe2a8;
+}
+
+.photo-result .rumor .diamond {
+  background: var(--accent-2);
+  box-shadow: none;
+}
+
+.photo-subjects {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.photo-empty {
+  margin: 0;
+  color: var(--hud-dim);
+  font-size: 13px;
+}
+
+.photo-subject {
+  --rar: var(--hud-dim);
+  padding: 8px 12px 9px;
+  border-left: 2px solid var(--hud-line);
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.photo-subject.primary {
+  border-left-color: var(--hud-accent);
+}
+
+.photo-subject.rarity-uncommon {
+  --rar: #7be3a0;
+}
+
+.photo-subject.rarity-rare {
+  --rar: #6cc4ff;
+}
+
+.photo-subject.rarity-legendary {
+  --rar: #ffc35a;
+}
+
+.photo-subject .head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.photo-subject .name {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.photo-subject .rarity {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--rar);
+}
+
+.photo-subject .stars {
+  display: inline-flex;
+  gap: 5px;
+  margin-left: auto;
+  align-self: center;
+}
+
+.photo-subject .star {
+  width: 8px;
+  height: 8px;
+  border: 1px solid var(--accent-2);
+  transform: rotate(45deg);
+}
+
+.photo-subject .star.on {
+  background: var(--accent-2);
+  box-shadow: 0 0 6px rgba(255, 181, 71, 0.7);
+}
+
+.photo-subject .total {
+  min-width: 34px;
+  font-size: 19px;
+  font-weight: 600;
+  text-align: right;
+}
+
+.photo-subject .unit {
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--hud-dim);
+}
+
+.photo-subject .parts {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-top: 7px;
+}
+
+.photo-subject .part {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 3px 6px;
+  font-size: 11px;
+}
+
+.photo-subject .part .k {
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--hud-dim);
+}
+
+.photo-subject .part .v {
+  grid-row: 1;
+  grid-column: 2;
+}
+
+.photo-subject .part .thin-bar {
+  grid-column: 1 / 3;
+}
+
+.photo-subject .tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.photo-subject .tag {
+  padding: 1px 8px;
+  border: 1px solid rgba(94, 227, 154, 0.6);
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ok);
+}
+
+.photo-subject .notes {
+  margin-top: 6px;
+  font-size: 11.5px;
+  line-height: 1.45;
+  letter-spacing: 0.02em;
+  color: var(--hud-dim);
+}
+
+.photo-result .actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.photo-result .hint {
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-align: right;
+  color: var(--hud-dim);
+}

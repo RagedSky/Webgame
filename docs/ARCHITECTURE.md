@@ -530,6 +530,23 @@ Unterteilungsflächen: ein grober Käfig mit sauberen Kantenschleifen, der durch
   die Arme. Die Geh-Animation dreht nur Knochen. Starre Anbauteile an Knochen: Ohrkapseln, Helmaufsatz, Rucksack mit
   Schläuchen, Abzeichen. Die Rucksäcke sind selbst unterteilte Quad-Käfige.
 
+### 4.18 HUD und Foto-Auswertung
+
+- **Aufbau** (`ui/Hud.ts`, `ui/hud.css`): freie Bildmitte, Informationen in vier Ecken. Oben links Planet, Biom, Uhrzeit, Wetter
+  und Temperatur; oben Mitte der Kompass mit Gradzahl und Markierungen; oben rechts Archivfortschritt, Ziel und Tutorial;
+  unten links Name, Hintergrund und Lebenserhaltung als segmentierte Balken; unten rechts Höhe, Position und Statusmarken;
+  unten Mitte die Interaktion mit Tastenkappen. Um das Fadenkreuz liegt ein Ring, der sich beim Sammeln füllt; Sichtungen
+  erscheinen als Karte neben dem Fadenkreuz in der Farbe der Seltenheit.
+- **Gestaltung**: dünne Linien, nach innen auslaufende Glasflächen, Versalien mit Sperrung, Linien-Icons als SVG. Die
+  Akzentfarbe kommt vom Anzug des Charakters (`Hud.setIdentity` setzt `--hud-accent`), damit HUD, Foto-Sucher und
+  Benachrichtigungen zur eigenen Figur gehören. Ein leichter Verlauf an Ober- und Unterkante hält Text auf Sand und Schnee
+  lesbar. Texte werden nur geschrieben, wenn sie sich ändern; der Foto-Sucher baut seine Leiste einmal auf.
+- **Foto-Auswertung** (`PlanetScene.openPhotoReview`): Nach dem Auslösen gibt die Szene den Mauszeiger frei und zählt die
+  Auswertung als offene Oberfläche (`uiOpen`). Die Welt steht, die Kamera folgt der Maus nicht, die Knöpfe der Karte sind
+  bedienbar. „Weiter“, Leertaste, E oder Esc kehren in den Sucher zurück und fangen die Maus wieder ein, Q verlässt den
+  Foto-Modus, „Im Archiv ansehen“ öffnet das Archiv. Die Karte zeigt je Motiv Punkte, Sterne und die vier Teilwertungen als
+  Balken sowie ausgelöste Gerüchte.
+
 ## 5. Laufzeit-Architektur
 
 - **GameLoop**: `requestAnimationFrame`, Akkumulator mit festem Update-Schritt (1/60 s, max. 5 Schritte/Frame), Render pro Frame,

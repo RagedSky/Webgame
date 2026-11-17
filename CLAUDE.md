@@ -41,6 +41,7 @@ Konsole: `__stellar.scenes.active.setTimeOfDay(0.5)` / `.forceWeather('rain', tr
 - Gelände: neue Reliefformen als Schicht in `gen/terrain/Landforms.ts` mit Amplitude in Metern und plausiblem Verhältnis von Höhe zu Breite ergänzen und im Rezept des Bioms eintragen, kein Rauschen direkt in `TerrainModel`. Die Tests zu Hangneigung und Höhenband müssen grün bleiben.
 - Charakter: Änderungen am Körper im Käfig (`BodyCage.ts`) über Ringe und Kantenschleifen vornehmen, keine Einzelteile aufsetzen. Das Netz muss geschlossen, einteilig und ein reines Quad-Netz bleiben (Tests in `BodyCage.test.ts`).
 - Neue Formen aus `world/organic.ts` und `geometry.ts` (`blade`, `gradientColor`) bauen, nicht aus rohen Kugeln/Zylindern; Shader-Erweiterungen nur über `addShaderPatch`.
+- HUD: Texte nur bei Änderung schreiben (`setText`), keine DOM-Neuaufbauten pro Frame; Farben über `--hud-accent`. Dialoge, die Klicks brauchen, müssen den Mauszeiger freigeben und in `uiOpen` zählen (siehe Foto-Auswertung).
 - Vollflächige UI-Overlays ohne Klickfläche in die `#ui-root > …`-Liste in `styles.css` eintragen (sonst blockieren sie Canvas-Klicks).
 - Commits: aussagekräftig, eine Phase/ein Feature pro Commit. Vor jedem Commit `npm run check` und `npm run build`.
 
@@ -87,6 +88,7 @@ Konsole: `__stellar.scenes.active.setTimeOfDay(0.5)` / `.forceWeather('rain', tr
 - `src/gen/archive/pacing.ts` – Spielzeit-Schätzung (Balancing-Test), `docs/BALANCING.md`
 - `src/game/progress/ArchiveProgress.ts` – Fortschritt (rein), `src/game/photo/PhotoScoring.ts` – Bewertung (rein)
 - `src/world/photo/PhotoMode.ts` – Foto-Modus, `src/ui/ArchiveUi.ts` – Enzyklopädie, `src/save/Db.ts` – IndexedDB
+- `src/ui/Hud.ts` + `src/ui/hud.css` – HUD (vier Ecken, Akzentfarbe vom Anzug), Foto-Sucher und Auswertungskarte (`PhotoUi.ts`), Benachrichtigungen (ARCHITECTURE 4.18)
 - `src/render/{ProceduralTextures,Environment,stylize}.ts` – Detailtexturen-Bank, PMREM-Umgebungslicht, Stil (Kantenlicht, Paletten, Shader-Patches)
 - `src/world/organic.ts` – organische Grundformen (Röhre, Klumpen, Rotationskörper, Prisma, Kristall) für Flora, Kreaturen, Knoten, Technik (ARCHITECTURE 4.13–4.15)
 - `src/gen/terrain/PlanetStyle.ts` – Farbstil je Planet (Zweitfarben, Zonen, Grasspitzen, Signaturpflanzen; rein), über `model.style` erreichbar

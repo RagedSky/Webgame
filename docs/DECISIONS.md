@@ -375,3 +375,18 @@ Skelett mit Hautgewichten ersetzt die starren Gruppen. Nur Rucksack, Schläuche,
 bleiben eigene Teile. Die Eigenschaften (geschlossen, eine Komponente, Euler 2, Anteil regulärer Punkte) stehen als Tests
 im Projekt, damit spätere Änderungen am Käfig sie nicht unbemerkt brechen.
 
+## D-069 · Foto-Auswertung ist ein eigener Oberflächenzustand
+**Kontext:** Nach dem Auslösen erschien die Auswertungskarte, die Maus blieb aber an die Kamera gebunden. Die Knöpfe
+ließen sich nicht anklicken, und jeder Klick galt als „weiter“.
+**Entscheidung:** Die Auswertung verhält sich wie Archiv oder Inventar: Mauszeiger frei, Eingaben eingefroren, Welt
+angehalten. Sie zählt zu `uiOpen`, damit weder ein Klick ins Bild die Maus einfängt noch der Verlust der Mausbindung das
+Pausenmenü öffnet. Tastatur bleibt als schneller Weg (Leertaste, E, Esc, Q). Wurde der Foto-Modus vor dem Ende des
+Speicherns verlassen, erscheint statt der Karte nur eine kurze Einblendung.
+
+## D-070 · HUD in vier Ecken mit der Akzentfarbe des Charakters
+**Kontext:** Das HUD bestand aus grauen Kästen mit Fließtext an wechselnden Stellen und wirkte austauschbar.
+**Entscheidung:** Feste Ecken je Thema, freie Bildmitte, eine gemeinsame Formensprache (Linie, Glasverlauf, Tastenkappe,
+Raute). Die Akzentfarbe wird aus dem Anzug übernommen, Name und Hintergrund stehen im HUD. Die Stile liegen in einer
+eigenen Datei `ui/hud.css`. Teure Effekte (Weichzeichnen des Hintergrunds, weichgezeichnete Vollbildschatten) werden
+vermieden, damit das HUD auch ohne starke Grafikkarte nichts kostet.
+
