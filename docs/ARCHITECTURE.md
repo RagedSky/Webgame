@@ -547,6 +547,29 @@ Unterteilungsflächen: ein grober Käfig mit sauberen Kantenschleifen, der durch
   Foto-Modus, „Im Archiv ansehen“ öffnet das Archiv. Die Karte zeigt je Motiv Punkte, Sterne und die vier Teilwertungen als
   Balken sowie ausgelöste Gerüchte.
 
+### 4.19 Kollisionen, Schatten, Bau-Rad, Taschenlampe, einheitliche Oberflächen
+
+- **Kollision** (`world/Collision.ts`, rein, getestet): feste Objekte sind stehende Zylinder (Kreis plus Oberkante). Systeme
+  melden sie gruppenweise an und ab: Vegetation je Zelle (Stämme, Pilze, Sukkulenten, Kristalle ab 0,9 m Höhe, größere
+  Findlinge, Signaturpflanzen), Fundstücke je Zelle, Rohstoffknoten je Art (abgebaute geben den Weg frei), Basis-Module,
+  Schiff und Rover. Ein Raster mit 8-m-Zellen hält die Abfrage auf eine Zelle begrenzt. `resolve` schiebt den Läufer aus
+  allen Zylindern heraus, dadurch gleitet er an Hindernissen entlang; wer über der Oberkante ist (Sprung, Flugmodus), wird
+  nicht geschoben. Landtiere nutzen dieselbe Abfrage und drehen leicht ab, der Rover wird aufgehalten. Sträucher, Gras und
+  kleine Steine bleiben begehbar.
+- **Schatten**: Bäume stehen in den fernen Vegetationszellen (256 m), die bisher keinen Schatten warfen. Zellen, deren Rand
+  näher als 100 m an der Kamera liegt, werfen jetzt Schatten; ferne Zellen prüfen je Baum, ob er im Bild oder in der
+  Schattenkarte liegt. Fundstücke, Knoten, Module, Schiff, Rover, Kreaturen und der Charakter warfen bereits Schatten.
+- **Bau-Rad** (`PlanetScene.updateWheel`, `Hud.setWheel`): B halten öffnet ein Ringmenü um das Fadenkreuz, die Maus bewegt
+  einen Zeiger statt der Kamera, das Segment in Zeigerrichtung wird gewählt. Loslassen oder Klick bestätigt und startet die
+  Platzierung; die Mitte bricht ab bzw. beendet den Bau-Modus. Kurzes Antippen lässt das Rad offen (Klick wählt). Die
+  Tasten 1–4 wählen weiterhin direkt. Im Bau-Modus zeigt eine Leiste das Modul mit Vorrat und die Tasten.
+- **Taschenlampe** (Taste L): Kegellicht mit eigenem Schattenwurf, in der Ego-Ansicht leicht neben der Kamera, in der
+  Schulteransicht am Helm. Bei Einbruch der Nacht erscheint einmal ein Hinweis. Die Lampe verbraucht keine Energie.
+- **Einheitliche Oberflächen** (`ui/styles.css`, `ui/theme.ts`): Menüs, Archiv, Inventar, Karte, Schiff, Werft, Labor,
+  Einstellungen, Spielstände und Charakter-Editor nutzen dieselbe Formensprache wie das HUD: Glasfläche mit Akzentlinie,
+  eckige Schaltflächen in Versalien, Marken als Umriss, schmale Balken. Feste Akzentfarben sind durch `--accent` ersetzt;
+  `setUiAccent` übernimmt die Farbe vom Anzug, hebt zu dunkle Töne an und merkt sie für das Hauptmenü.
+
 ## 5. Laufzeit-Architektur
 
 - **GameLoop**: `requestAnimationFrame`, Akkumulator mit festem Update-Schritt (1/60 s, max. 5 Schritte/Frame), Render pro Frame,

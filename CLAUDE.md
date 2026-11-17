@@ -18,7 +18,7 @@ prozedural erzeugten Archiv-Einträgen pro seed-basiertem Sternsystem. Vollstän
 Im Spiel: **F3** Debug-Overlay, **Esc** Pause/zurück. Oberfläche: WASD, Maus, Leertaste, Shift, Strg, **V** Ansicht,
 **Q** Foto-Modus (Rad Zoom, `,`/`.` Fokus, RMT Autofokus, R Blende, 1/2 Belichtung, F Filter, H Raster, C Selfie, Leertaste/Klick auslösen),
 **Tab** Archiv (Logbuch, Proben, Mikroskop), **F** Probe/Scan, **E** halten sammeln / Modul öffnen, **I** Inventar/Fertigung,
-**B** Bau-Modus (1–4 Modul, R drehen, Klick platzieren, X entfernen), **E** am Schiff: Werft / Betanken / Start; im Orbit Planet wählen,
+**B** halten: Bau-Rad (Maus zum Modul ziehen, loslassen wählt; dann R drehen, Klick platzieren, X entfernen), **L** Taschenlampe, **E** am Schiff: Werft / Betanken / Start; im Orbit Planet wählen,
 Fliegen, Landen, Satellit/Atmosphärensonde. **M** Karte (Layer, Marker per Klick). Rover: I aussetzen, **E** steuern (WASD, Q Foto,
 F Probe, E/Esc zurück), **X** einpacken. Tiefseesonde über I am Ufer.
 Einstellungen (Hauptmenü und Pause): Presets Niedrig–Ultra, Auflösung, Render-Skalierung, Schatten, Vegetation, Sichtweite,
@@ -41,6 +41,8 @@ Konsole: `__stellar.scenes.active.setTimeOfDay(0.5)` / `.forceWeather('rain', tr
 - Gelände: neue Reliefformen als Schicht in `gen/terrain/Landforms.ts` mit Amplitude in Metern und plausiblem Verhältnis von Höhe zu Breite ergänzen und im Rezept des Bioms eintragen, kein Rauschen direkt in `TerrainModel`. Die Tests zu Hangneigung und Höhenband müssen grün bleiben.
 - Charakter: Änderungen am Körper im Käfig (`BodyCage.ts`) über Ringe und Kantenschleifen vornehmen, keine Einzelteile aufsetzen. Das Netz muss geschlossen, einteilig und ein reines Quad-Netz bleiben (Tests in `BodyCage.test.ts`).
 - Neue Formen aus `world/organic.ts` und `geometry.ts` (`blade`, `gradientColor`) bauen, nicht aus rohen Kugeln/Zylindern; Shader-Erweiterungen nur über `addShaderPatch`.
+- Feste Objekte, die neu in die Welt kommen, melden einen Zylinder an `CollisionWorld` (Gruppe je Zelle bzw. System) und wieder ab; Objekte ab Kniehöhe werfen Schatten.
+- Oberflächen: gemeinsame Bausteine aus `styles.css` (`.panel`, `button`, `h2`/`h3`, `.badge`, `.progress`) und Farben nur über `--accent`/`--hud-*`, keine festen Akzentfarben oder runden Ecken.
 - HUD: Texte nur bei Änderung schreiben (`setText`), keine DOM-Neuaufbauten pro Frame; Farben über `--hud-accent`. Dialoge, die Klicks brauchen, müssen den Mauszeiger freigeben und in `uiOpen` zählen (siehe Foto-Auswertung).
 - Vollflächige UI-Overlays ohne Klickfläche in die `#ui-root > …`-Liste in `styles.css` eintragen (sonst blockieren sie Canvas-Klicks).
 - Commits: aussagekräftig, eine Phase/ein Feature pro Commit. Vor jedem Commit `npm run check` und `npm run build`.
@@ -88,6 +90,8 @@ Konsole: `__stellar.scenes.active.setTimeOfDay(0.5)` / `.forceWeather('rain', tr
 - `src/gen/archive/pacing.ts` – Spielzeit-Schätzung (Balancing-Test), `docs/BALANCING.md`
 - `src/game/progress/ArchiveProgress.ts` – Fortschritt (rein), `src/game/photo/PhotoScoring.ts` – Bewertung (rein)
 - `src/world/photo/PhotoMode.ts` – Foto-Modus, `src/ui/ArchiveUi.ts` – Enzyklopädie, `src/save/Db.ts` – IndexedDB
+- `src/world/Collision.ts` – Kollisionswelt (Zylinder je Gruppe, Raster; rein): Bäume, Felsen, Knoten, Fundstücke, Module, Schiff, Rover
+- `src/ui/theme.ts` – Akzentfarbe der gesamten Oberfläche (vom Anzug, gemerkt für Menüs)
 - `src/ui/Hud.ts` + `src/ui/hud.css` – HUD (vier Ecken, Akzentfarbe vom Anzug), Foto-Sucher und Auswertungskarte (`PhotoUi.ts`), Benachrichtigungen (ARCHITECTURE 4.18)
 - `src/render/{ProceduralTextures,Environment,stylize}.ts` – Detailtexturen-Bank, PMREM-Umgebungslicht, Stil (Kantenlicht, Paletten, Shader-Patches)
 - `src/world/organic.ts` – organische Grundformen (Röhre, Klumpen, Rotationskörper, Prisma, Kristall) für Flora, Kreaturen, Knoten, Technik (ARCHITECTURE 4.13–4.15)

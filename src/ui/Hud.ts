@@ -1,5 +1,6 @@
 import { el } from './dom';
 import { STR } from './strings';
+import { setUiAccent } from './theme';
 
 export interface CompassMarker {
   /** Peilung in Grad (0 = Norden, 90 = Osten). */
@@ -48,6 +49,8 @@ export interface HudInfo {
   nearEdge: boolean;
   fly: boolean;
   timeScale: number;
+  /** Taschenlampe an. */
+  lamp?: boolean;
   /** Aktive Himmelsphänomene (fotografierbar). */
   phenomena?: string;
 }
@@ -68,7 +71,28 @@ const ICONS = {
   book: 'M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3V4zM5 17a3 3 0 0 1 3-3h11',
   disk: 'M5 3h11l3 3v15H5V3zM8 3v6h7V3M8 21v-7h8v7',
   eye: 'M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z',
+  shelter: 'M2 19h20M4 19a8 8 0 0 1 16 0M10 19v-4h4v4M12 11V7',
+  workbench: 'M3 10h18M5 10v9M19 10v9M5 15h14M8 10V6h8v4',
+  charger: 'M13 2L5 14h6l-1 8 8-12h-6l1-8z',
+  lab: 'M9 3h6M10 3v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3M7.5 15h9',
+  module: 'M4 8l8-4 8 4v8l-8 4-8-4zM4 8l8 4 8-4M12 12v8',
 } as const;
+
+/** Ringsegment als SVG-Pfad (Winkel in Grad, 0 = oben, im Uhrzeigersinn). */
+function sectorPath(a0: number, a1: number, r0: number, r1: number): string {
+  const pt = (deg: number, r: number): string => {
+    const rad = ((deg - 90) * Math.PI) / 180;
+    return `${(Math.cos(rad) * r).toFixed(2)} ${(Math.sin(rad) * r).toFixed(2)}`;
+  };
+  const large = a1 - a0 > 180 ? 1 : 0;
+  return `M${pt(a0, r1)} A${r1} ${r1} 0 ${large} 1 ${pt(a1, r1)} L${pt(a1, r0)} A${r0} ${r0} 0 ${large} 0 ${pt(a0, r0)} Z`;
+}
+
+export interface WheelItem {
+  id: string;
+  label: string;
+  count: number;
+}
 
 function icon(name: keyof typeof ICONS, cls = ''): SVGSVGElement {
   const svg = document.createElementNS(SVG_NS, 'svg');
@@ -124,7 +148,18 @@ export class Hud {
   private readonly o2Value: HTMLElement;
   private readonly enValue: HTMLElement;
   private readonly survivalText: HTMLElement;
-  private readonly palette: HTMLElement;
+  private readonly build: HTMLElement;
+  private readonly buildLabel: HTMLElement;
+  private readonly wheel: HTMLElement;
+  private readonly wheelSvg: SVGSVGElement;
+  private readonly wheelLabels: HTMLElement;
+  private readonly wheelTitle: HTMLElement;
+  private readonly wheelHint: HTMLElement;
+  private readonly wheelCursor: HTMLElement;
+  private wheelSegments: SVGPathElement[] = [];
+  private wheelItems: HTMLElement[] = [];
+  private wheelCounts: HTMLElement[] = [];
+  private wheelKey = '';
   private readonly fade: HTMLElement;
   private readonly goal: HTMLElement;
   private readonly archive: HTMLElement;
@@ -245,10 +280,29 @@ export class Hud {
     // --- unten Mitte: Interaktion, Bauleiste, Starthinweis ---
     this.hint = el('div', { class: 'hud-hint' });
     this.prompt = el('div', { class: 'hud-prompt', style: 'display:none' });
-    this.palette = el('div', { class: 'hud-palette', style: 'display:none' });
+    this.buildLabel = el('span', { class: 'label' });
+    const key = (cap: string, text: string): HTMLElement => el('div', { class: 'item' }, el('span', { class: 'keycap', text: cap }), el('span', { class: 'label', text }));
+    this.build = el(
+      'div',
+      { class: 'hud-build', style: 'display:none' },
+      el('div', { class: 'item module' }, el('span', { class: 'diamond' }), this.buildLabel),
+      key(STR.build.click, STR.build.keyPlace),
+      key('R', STR.build.keyRotate),
+      key('X', STR.build.keyRemove),
+      key('B', STR.build.keyWheel),
+    );
+    // Bau-Rad um die Bildmitte
+    this.wheelSvg = document.createElementNS(SVG_NS, 'svg');
+    this.wheelSvg.setAttribute('viewBox', '-170 -170 340 340');
+    this.wheelLabels = el('div', { class: 'labels' });
+    this.wheelTitle = el('div', { class: 'title' });
+    this.wheelHint = el('div', { class: 'hint' });
+    this.wheelCursor = el('div', { class: 'cursor' });
+    this.wheel = el('div', { class: 'hud-wheel', style: 'display:none' }, this.wheelLabels, el('div', { class: 'centre' }, this.wheelTitle, this.wheelHint), this.wheelCursor);
+    this.wheel.prepend(this.wheelSvg);
     this.fade = el('div', { class: 'hud-fade' });
 
-    this.root = el('div', { class: 'hud' }, el('div', { class: 'hud-shade' }), location, this.compass, topRight, this.survival, telemetry, this.crosshair, this.sighting, this.hint, this.prompt, this.palette, this.fade);
+    this.root = el('div', { class: 'hud' }, el('div', { class: 'hud-shade' }), location, this.compass, topRight, this.survival, telemetry, this.crosshair, this.sighting, this.hint, this.prompt, this.build, this.wheel, this.fade);
     parent.append(this.root);
   }
 
@@ -256,8 +310,8 @@ export class Hud {
   setIdentity(name: string, role: string, accent: string): void {
     setText(this.identityName, name);
     setText(this.identityRole, role);
-    // global setzen: auch Foto-Sucher und Benachrichtigungen liegen außerhalb des HUD-Knotens
-    document.documentElement.style.setProperty('--hud-accent', accent);
+    // global: Foto-Sucher, Benachrichtigungen und alle Menüs übernehmen die Farbe
+    setUiAccent(accent);
   }
 
   /** Archivfortschritt (entdeckt / gesamt). */
@@ -358,14 +412,58 @@ export class Hud {
     this.ring.style.strokeDashoffset = `${RING_LENGTH * (1 - (progress ?? 0))}`;
   }
 
-  /** Bau-Palette: Liste von Beschriftungen, ausgewählter Index. */
-  setPalette(items: Array<{ label: string; affordable: boolean }> | null, selected: number, hint: string): void {
-    this.palette.style.display = items ? 'flex' : 'none';
-    this.palette.textContent = '';
+  /** Leiste des Bau-Modus: gewähltes Modul mit Vorrat und Tastenhinweise (null = aus). */
+  setBuild(info: { label: string; count: number } | null): void {
+    this.build.style.display = info ? 'flex' : 'none';
+    if (!info) return;
+    setText(this.buildLabel, `${info.label} ×${info.count}`);
+    this.build.classList.toggle('missing', info.count <= 0);
+  }
+
+  /**
+   * Bau-Rad: Segmente um das Fadenkreuz, `pick` ist das Segment unter dem Zeiger (−1 = Mitte), `cx`/`cy` die
+   * Zeigerposition relativ zur Bildmitte in Pixeln. `null` schließt das Rad.
+   */
+  setWheel(items: WheelItem[] | null, pick: number, cx: number, cy: number, hint: string): void {
+    this.wheel.style.display = items ? 'block' : 'none';
     if (!items) return;
-    const slots = el('div', { class: 'slots' });
-    items.forEach((it, i) => slots.append(el('div', { class: `pal ${i === selected ? 'sel' : ''} ${it.affordable ? '' : 'missing'}` }, el('span', { class: 'keycap', text: `${i + 1}` }), el('span', { class: 'label', text: it.label }))));
-    this.palette.append(slots, el('div', { class: 'pal-hint', text: hint }));
+    const key = items.map((i) => i.id).join('|');
+    if (key !== this.wheelKey) {
+      // Segmente einmal aufbauen (Anzahl und Reihenfolge ändern sich im Spiel nicht)
+      this.wheelKey = key;
+      this.wheelSvg.textContent = '';
+      this.wheelLabels.textContent = '';
+      this.wheelSegments = [];
+      this.wheelItems = [];
+      this.wheelCounts = [];
+      const span = 360 / items.length;
+      items.forEach((item, i) => {
+        const path = document.createElementNS(SVG_NS, 'path');
+        path.setAttribute('d', sectorPath(i * span - span / 2 + 2.2, i * span + span / 2 - 2.2, 56, 150));
+        this.wheelSvg.append(path);
+        this.wheelSegments.push(path);
+        const count = el('span', { class: 'count' });
+        const node = el('div', { class: 'seg' }, icon((item.id in ICONS ? item.id : 'module') as keyof typeof ICONS), el('span', { class: 'name', text: item.label }), count);
+        const rad = ((i * span - 90) * Math.PI) / 180;
+        node.style.left = `${Math.cos(rad) * 103}px`;
+        node.style.top = `${Math.sin(rad) * 103}px`;
+        this.wheelLabels.append(node);
+        this.wheelItems.push(node);
+        this.wheelCounts.push(count);
+      });
+    }
+    items.forEach((item, i) => {
+      const cls = `${i === pick ? 'sel' : ''}${item.count <= 0 ? ' missing' : ''}`.trim();
+      const seg = this.wheelSegments[i] as SVGPathElement;
+      if (seg.getAttribute('class') !== cls) seg.setAttribute('class', cls);
+      const node = this.wheelItems[i] as HTMLElement;
+      const nodeCls = `seg ${cls}`.trim();
+      if (node.className !== nodeCls) node.className = nodeCls;
+      setText(this.wheelCounts[i] as HTMLElement, `×${item.count}`);
+    });
+    setText(this.wheelTitle, pick >= 0 ? (items[pick] as WheelItem).label : STR.build.wheelTitle);
+    setText(this.wheelHint, hint);
+    this.wheelCursor.style.transform = `translate(${cx.toFixed(1)}px, ${cy.toFixed(1)}px)`;
   }
 
   setGoal(text: string): void {
@@ -401,7 +499,7 @@ export class Hud {
     this.phenomena.style.display = i.phenomena ? 'block' : 'none';
     setText(this.altitude, `${i.altitude.toFixed(0)} m`);
     setText(this.coords, `${i.x.toFixed(0)} / ${i.z.toFixed(0)}`);
-    const flags = [i.swimming ? STR.hud.swimming : '', i.fly ? STR.hud.fly : '', i.nearEdge ? STR.hud.edge : '', i.timeScale > 1 ? `${STR.hud.timeScale} ×${i.timeScale}` : ''].filter(Boolean).join('|');
+    const flags = [i.swimming ? STR.hud.swimming : '', i.fly ? STR.hud.fly : '', i.nearEdge ? STR.hud.edge : '', i.timeScale > 1 ? `${STR.hud.timeScale} ×${i.timeScale}` : '', i.lamp ? STR.hud.lamp : ''].filter(Boolean).join('|');
     if (this.flags.dataset.v !== flags) {
       this.flags.dataset.v = flags;
       this.flags.textContent = '';
@@ -411,7 +509,6 @@ export class Hud {
 
   dispose(): void {
     window.clearTimeout(this.savedTimer);
-    document.documentElement.style.removeProperty('--hud-accent');
     this.root.remove();
   }
 }

@@ -1,4 +1,5 @@
-import { Color, FogExp2, Mesh, MeshStandardMaterial, PCFShadowMap, PerspectiveCamera, Scene, SphereGeometry, Vector3 } from 'three';
+import { CollisionWorld } from '@/world/Collision';
+import { Color, FogExp2, Mesh, MeshStandardMaterial, PCFShadowMap, PerspectiveCamera, Scene, SphereGeometry, SpotLight, Vector3 } from 'three';
 import { BloomEffect, BrightnessContrastEffect, EffectPass, HueSaturationEffect, VignetteEffect, type EffectComposer } from 'postprocessing';
 import type { GameContext } from '@/core/GameContext';
 import type { GameScene } from '@/core/Scene';
@@ -81,6 +82,9 @@ const PHOTO_SLOWMO = 0.1;
 const HARVEST_SECONDS = 1.2;
 const HARVEST_RANGE = 4.5;
 const BUILD_RANGE = 12;
+/** Bau-Rad: Radius des Zeigerbereichs und der toten Zone in der Mitte (Pixel). */
+const WHEEL_RADIUS = 120;
+const WHEEL_DEADZONE = 38;
 const LURE_SECONDS = 60;
 const PLANT_REGROW_SECONDS = 300;
 const BUILD_TYPES: ModuleType[] = ['workbench', 'shelter', 'charger', 'lab'];
@@ -160,6 +164,11 @@ export class PlanetScene implements GameScene {
   private microscope: MicroscopeView | null = null;
   private captureRequested = false;
   private lastPng: Blob | null = null;
+  /** Feste Hindernisse (Bäume, Felsen, Knoten, Module, Schiff, Rover) für Spieler und Landtiere. */
+  private readonly collision = new CollisionWorld();
+  /** Letzte als Hindernis gemeldete Rover-Position (NaN = keine). */
+  private roverColliderX = NaN;
+  private roverColliderZ = NaN;
   /** Offene Foto-Auswertung (Objekt-URL des Vorschaubilds) oder null. Solange sie offen ist, ist die Steuerung eingefroren. */
   private photoReview: string | null = null;
   private photoCounter = 0;
@@ -187,6 +196,19 @@ export class PlanetScene implements GameScene {
   private buildMode = false;
   private buildIndex = 0;
   private buildRot = 0;
+  /** Bau-Rad: offen, Zeiger relativ zur Bildmitte (Pixel), gewähltes Segment (−1 = Mitte), Zeit seit dem Öffnen. */
+  private wheelOpen = false;
+  private wheelX = 0;
+  private wheelY = 0;
+  private wheelPick = -1;
+  private wheelTime = 0;
+  /** Kurzes Antippen statt Halten: das Rad bleibt offen, bis geklickt oder B erneut gedrückt wird. */
+  private wheelSticky = false;
+  /** Taschenlampe (Kegellicht an der Kamera bzw. am Helm). */
+  private readonly lamp = new SpotLight(0xfff0d8, 38, 85, 0.5, 0.6, 1.4);
+  private lampOn = false;
+  private lampHinted = false;
+  private readonly lampDir = new Vector3();
   private readonly buildPos = { x: 0, z: 0, valid: false, reason: '' };
   private readonly lures: Lure[] = [];
   private readonly lurePositions: Vector3[] = [];
@@ -284,13 +306,29 @@ export class PlanetScene implements GameScene {
     this.terrain = new TerrainManager(this.scene, this.model, { viewDistance: this.viewDistance });
     this.assets = new VegetationAssets(vivid(new Color(this.model.style.grassTip), 1.1));
     this.flora = new FloraAssets(this.assets);
-    this.vegetation = new VegetationManager(this.scene, this.model, planet, this.assets, this.flora, this.system.entries, { density: quality.vegetationDensity });
+    this.vegetation = new VegetationManager(this.scene, this.model, planet, this.assets, this.flora, this.system.entries, { density: quality.vegetationDensity, collision: this.collision });
     this.creatures = new CreatureManager(this.scene, this.system, planet, this.model);
+    this.creatures.setCollision(this.collision);
     this.props = new PropManager(this.scene, this.model, planet, this.system.entries);
+    this.props.collision = this.collision;
     if (this.model.hasWater) this.water = new Water(this.scene, planet, this.model.seaLevel);
     this.precipitation = new Precipitation(2400, `precip:${planet.id}`);
     this.scene.add(this.precipitation.points);
     this.player = new Player(this.model, planet, ctx.input, this.camera);
+    this.player.collision = this.collision;
+    this.lamp.visible = false;
+    this.lamp.castShadow = SHADOW_MAP_SIZES[quality.shadows] > 0;
+    this.lamp.shadow.mapSize.set(1024, 1024);
+    this.lamp.shadow.camera.near = 0.4;
+    this.lamp.shadow.camera.far = 85;
+    this.lamp.shadow.bias = -0.002;
+    this.lamp.shadow.normalBias = 0.08;
+    this.scene.add(this.lamp, this.lamp.target);
+    this.disposer.addFn(() => {
+      this.lamp.dispose();
+      this.lamp.removeFromParent();
+      this.lamp.target.removeFromParent();
+    });
     this.scene.add(this.player.body);
 
     // Spielerzustand (Inventar, Überleben, Basis, Schiff) laden – vor dem Spawn, damit Respawn-Punkt und Schiff zählen
@@ -304,7 +342,10 @@ export class PlanetScene implements GameScene {
     if (!ctx.settings.current.tutorial && this.tutorial.active && this.tutorial.stepIndex === 0) this.tutorial.skip();
     this.sfxRng = new Random(`sfx:${this.system.seed}:${planet.id}`);
     this.nodes = new ResourceNodeManager(this.scene, this.model, planet);
+    this.nodes.collision = this.collision;
     this.base = new BaseManager(this.scene, this.model, planet, this.state);
+    this.base.collision = this.collision;
+    this.base.sync();
     this.grid = this.state.mapGrid(planet.id, this.model.size);
     this.bonus = bonusesFor(this.state.character?.background);
     if (this.state.character) {
@@ -329,6 +370,7 @@ export class PlanetScene implements GameScene {
       this.state.sites[planet.id] = site;
       this.state.ship.location = { kind: 'surface', planetId: planet.id, x: site.x, z: site.z, rot: site.rot };
       this.ship = new ShipActor(this.scene, this.model, this.state.ship.design, site.x, site.z, site.rot);
+      this.collision.set('ship', [{ x: site.x, z: site.z, r: Math.max(1.2, this.ship.radius - 0.9), top: this.ship.position.y + 7 }]);
       this.playerDirty = true;
     }
     this.pendingLanding = gameState.arrival === 'landing' && this.ship !== null;
@@ -1429,31 +1471,152 @@ export class PlanetScene implements GameScene {
   // ---------------------------------------------------------------------------
   // Bau-Modus (B)
   private enterBuild(): void {
-    if (this.buildMode) return;
     this.exitPhoto();
-    this.buildMode = true;
-    this.harvestTarget = null;
-    this.hud.setHarvest(null);
-    this.hud.setPrompt('');
+    if (!this.buildMode) {
+      this.buildMode = true;
+      this.harvestTarget = null;
+      this.hud.setHarvest(null);
+      this.hud.setPrompt('');
+    }
     this.base.setGhost(BUILD_TYPES[this.buildIndex] as ModuleType);
     this.refreshPalette();
-    showToast(`${STR.build.enter}: ${STR.build.hint}`, 3500);
   }
 
   private exitBuild(): void {
+    this.closeWheel();
     if (!this.buildMode) return;
     this.buildMode = false;
     this.base.setGhost(null);
-    this.hud.setPalette(null, 0, '');
+    this.hud.setBuild(null);
   }
 
+  /** Leiste des Bau-Modus: gewähltes Modul mit Vorrat. */
   private refreshPalette(): void {
+    if (!this.buildMode) return;
+    const type = BUILD_TYPES[this.buildIndex] as ModuleType;
+    this.hud.setBuild({ label: MODULE_LABELS[type], count: this.state.inventory.getItem(type) });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Bau-Rad: B halten, Maus zum Modul ziehen, loslassen wählt aus
+  private openWheel(): void {
+    if (this.wheelOpen) return;
+    this.exitPhoto();
+    this.wheelOpen = true;
+    this.wheelX = 0;
+    this.wheelY = 0;
+    this.wheelPick = -1;
+    this.wheelTime = 0;
+    this.wheelSticky = false;
+    this.harvestTarget = null;
+    this.hud.setHarvest(null);
+    this.hud.setPrompt('');
+    this.hud.setCrosshair(false);
+    this.showWheel();
+    audio.blip();
+  }
+
+  private closeWheel(): void {
+    if (!this.wheelOpen) return;
+    this.wheelOpen = false;
+    this.hud.setWheel(null, -1, 0, 0, '');
+    this.hud.setCrosshair(this.ctx.input.pointerLocked && !this.photo.active);
+  }
+
+  private showWheel(): void {
     const inv = this.state.inventory;
-    this.hud.setPalette(
-      BUILD_TYPES.map((t) => ({ label: `${MODULE_LABELS[t]} ×${inv.getItem(t)}`, affordable: inv.getItem(t) > 0 })),
-      this.buildIndex,
-      STR.build.hint,
+    this.hud.setWheel(
+      BUILD_TYPES.map((t) => ({ id: t, label: MODULE_LABELS[t], count: inv.getItem(t) })),
+      this.wheelPick,
+      this.wheelX,
+      this.wheelY,
+      this.wheelPick >= 0 ? STR.build.wheelPick : this.buildMode ? STR.build.wheelExit : STR.build.wheelCancel,
     );
+  }
+
+  private updateWheel(dt: number): void {
+    const input = this.ctx.input;
+    this.wheelTime += dt;
+    // Zeiger folgt der Maus und bleibt im Rad
+    this.wheelX += input.mouseDelta.x * 0.85;
+    this.wheelY += input.mouseDelta.y * 0.85;
+    const len = Math.hypot(this.wheelX, this.wheelY);
+    if (len > WHEEL_RADIUS) {
+      this.wheelX *= WHEEL_RADIUS / len;
+      this.wheelY *= WHEEL_RADIUS / len;
+    }
+    const n = BUILD_TYPES.length;
+    let pick = -1;
+    if (len > WHEEL_DEADZONE) {
+      // 0 = oben, im Uhrzeigersinn; Segment 0 liegt oben
+      const angle = (Math.atan2(this.wheelX, -this.wheelY) + Math.PI * 2) % (Math.PI * 2);
+      pick = Math.round(angle / ((Math.PI * 2) / n)) % n;
+    }
+    let confirm = input.mouseButtonPressed(0) || input.wasPressed('interact');
+    let cancel = false;
+    const slots: Array<'slot1' | 'slot2' | 'slot3' | 'slot4'> = ['slot1', 'slot2', 'slot3', 'slot4'];
+    slots.forEach((a, i) => {
+      if (input.wasPressed(a) && i < n) {
+        pick = i;
+        confirm = true;
+      }
+    });
+    if (pick !== this.wheelPick) {
+      this.wheelPick = pick;
+      if (pick >= 0) audio.blip();
+    }
+    if (!this.wheelSticky) {
+      if (!input.isDown('build')) {
+        if (pick >= 0) confirm = true;
+        else if (this.wheelTime < 0.28) this.wheelSticky = true;
+        else cancel = true;
+      }
+    } else if (input.wasPressed('build')) {
+      if (pick >= 0) confirm = true;
+      else cancel = true;
+    }
+    if (confirm && pick >= 0) {
+      this.buildIndex = pick;
+      this.closeWheel();
+      this.enterBuild();
+      if (this.state.inventory.getItem(BUILD_TYPES[pick] as ModuleType) <= 0) showToast(STR.build.noItem);
+    } else if (confirm || cancel) {
+      // Mitte: abbrechen bzw. den Bau-Modus verlassen
+      this.exitBuild();
+    } else this.showWheel();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Taschenlampe
+  private toggleLamp(on = !this.lampOn): void {
+    if (on === this.lampOn) return;
+    this.lampOn = on;
+    this.lamp.visible = on;
+    this.lampHinted = true;
+    showToast(on ? STR.hud.lampOn : STR.hud.lampOff, 1400);
+    audio.blip();
+  }
+
+  /** Lampe an der Kamera ausrichten (leicht versetzt, damit Schatten sichtbar sind); in der Schulteransicht am Helm. */
+  private updateLamp(): void {
+    if (!this.lampOn) return;
+    const lamp = this.lamp;
+    if (this.player.thirdPerson || this.player.selfie) {
+      const p = this.player;
+      this.lampDir.set(-Math.sin(p.yaw) * Math.cos(p.pitch), Math.sin(p.pitch), -Math.cos(p.yaw) * Math.cos(p.pitch));
+      lamp.position.copy(p.position);
+      lamp.position.y += p.eyeHeight;
+      lamp.position.addScaledVector(this.lampDir, 0.35);
+    } else {
+      this.camera.getWorldDirection(this.lampDir);
+      lamp.position.copy(this.camera.position);
+      lamp.position.y -= 0.22;
+      // nach rechts versetzt (Rechtsvektor der Kamera in der Ebene)
+      lamp.position.x += -this.lampDir.z * 0.24;
+      lamp.position.z += this.lampDir.x * 0.24;
+    }
+    lamp.target.position.copy(lamp.position).addScaledVector(this.lampDir, 12);
+    lamp.target.updateMatrixWorld();
   }
 
   private updateBuildInput(): void {
@@ -1468,7 +1631,7 @@ export class PlanetScene implements GameScene {
     });
     if (input.wasPressed('rotate')) this.buildRot = (this.buildRot + 1) % 4;
     if (input.wasPressed('build')) {
-      this.exitBuild();
+      this.openWheel();
       return;
     }
     if (input.wasPressed('inventory')) {
@@ -1787,6 +1950,24 @@ export class PlanetScene implements GameScene {
     if (!this.rover) return;
     this.state.rovers[this.planet.id] = { x: this.rover.position.x, z: this.rover.position.z, yaw: this.rover.yaw };
     this.playerDirty = true;
+  }
+
+  /** Rover als bewegliches Hindernis: nur neu eintragen, wenn er sich merklich bewegt hat. */
+  private syncRoverCollider(): void {
+    if (this.rover) this.rover.collision = this.collision;
+    // während der Fernsteuerung ist der Rover selbst kein Hindernis (er prüft die Welt gegen sich)
+    if (!this.rover || this.roverMode) {
+      if (!Number.isNaN(this.roverColliderX)) {
+        this.collision.remove('rover');
+        this.roverColliderX = NaN;
+      }
+      return;
+    }
+    const p = this.rover.position;
+    if (Math.abs(p.x - this.roverColliderX) < 0.15 && Math.abs(p.z - this.roverColliderZ) < 0.15) return;
+    this.roverColliderX = p.x;
+    this.roverColliderZ = p.z;
+    this.collision.set('rover', [{ x: p.x, z: p.z, r: 0.9, top: p.y + 1.4 }]);
   }
 
   private packRover(): void {
@@ -2154,6 +2335,7 @@ export class PlanetScene implements GameScene {
       else if (this.labUi.isOpen) this.closeLab();
       else if (this.archiveUi.isOpen) this.closeCatalog();
       else if (this.photoReview) this.closePhotoReview(true);
+      else if (this.wheelOpen) this.closeWheel();
       else if (this.buildMode) this.exitBuild();
       else if (this.photo.active) this.exitPhoto();
       else if (this.roverMode) this.exitRover();
@@ -2189,6 +2371,7 @@ export class PlanetScene implements GameScene {
         this.exitPhoto();
       }
     }
+    if (this.wheelOpen && (this.uiOpen || this.cinematic)) this.closeWheel();
     if (this.uiOpen) {
       this.saveTick(dt);
       if (this.mapUi.isOpen) {
@@ -2211,7 +2394,10 @@ export class PlanetScene implements GameScene {
       }
     }
     if (this.roverMode && !this.cinematic) this.updateRover(dt);
-    if (this.photo.active) this.updatePhotoInput();
+    this.syncRoverCollider();
+    if (input.wasPressed('flashlight') && !this.collapsing && !this.cinematic) this.toggleLamp();
+    if (this.wheelOpen) this.updateWheel(dt);
+    else if (this.photo.active) this.updatePhotoInput();
     else if (this.buildMode) this.updateBuildInput();
     else if (this.roverMode) {
       /* Eingaben gehören dem Rover */
@@ -2222,7 +2408,7 @@ export class PlanetScene implements GameScene {
         showToast(this.player.fly ? 'Flugmodus an (Debug)' : 'Flugmodus aus');
       }
       if (input.wasPressed('debug_weather')) showToast(`Wetter: ${WEATHER[this.weather.cycle()].name}`);
-      if (input.wasPressed('build')) this.enterBuild();
+      if (input.wasPressed('build')) this.openWheel();
       else {
         if (input.wasPressed('sample')) this.doInteract();
         if (input.wasPressed('remove') && this.harvest.kind === 'rover') this.packRover();
@@ -2234,7 +2420,7 @@ export class PlanetScene implements GameScene {
     const slow = this.photo.active ? PHOTO_SLOWMO : 1;
     this.cycle.advance(dt * slow);
     this.weather.update(dt * this.cycle.timeScale * slow);
-    this.player.update(dt, input.pointerLocked);
+    this.player.update(dt, input.pointerLocked && !this.wheelOpen);
     this.elapsed += dt;
     this.updateFootsteps(dt);
     this.terrain.update(this.camera.position, dt);
@@ -2284,6 +2470,10 @@ export class PlanetScene implements GameScene {
     const biome = this.planet.biomes[s.biome]!;
     const temp = pointTemperature(this.planet, biome, s.altitude, this.cycle.daylight);
     this.refreshSkyPhenomena();
+    if (!this.lampHinted && !this.lampOn && this.cycle.daylight < 0.18) {
+      this.lampHinted = true;
+      showToast(STR.hud.lampHint, 5000);
+    }
     this.hud.update({
       planet: this.planet.name,
       biome: biome.name,
@@ -2297,6 +2487,7 @@ export class PlanetScene implements GameScene {
       z: p.z,
       swimming: this.player.swimming,
       nearEdge: this.player.nearWorldEdge,
+      lamp: this.lampOn,
       fly: this.player.fly,
       timeScale: this.cycle.timeScale,
       ...(this.skyActive.length ? { phenomena: `${STR.interact.phenomenon}: ${this.skyActive.map((e) => (this.progress.isDiscovered(e.id) ? this.progress.displayName(e) : e.name)).join(', ')}` } : {}),
@@ -2346,6 +2537,7 @@ export class PlanetScene implements GameScene {
     this.player.applyCamera(this.paused ? 1 : _alpha);
     if (this.cinematic) this.applyCinematicCamera();
     else if (this.roverMode) this.applyRoverCamera();
+    this.updateLamp();
     if (!this.cinematic) this.updateCompass();
     this.ship?.update(this.elapsed);
     this.buoys?.update(this.elapsed);
@@ -2403,7 +2595,8 @@ export class PlanetScene implements GameScene {
     this.lureGeometry.dispose();
     this.lureMaterial.dispose();
     this.unsubState?.();
-    this.unsubState = null;
+    this.terrain?.dispose();
+    this.collision.clear();
     this.unsubProgress?.();
     this.unsubProgress = null;
     if (this.rover) this.persistRover();

@@ -1,3 +1,4 @@
+import type { CollisionWorld } from '../Collision';
 import { BoxGeometry, CylinderGeometry, Group, Mesh, MeshStandardMaterial, PointLight, Raycaster, SphereGeometry, Vector3, type BufferGeometry, type Scene } from 'three';
 import type { TerrainModel } from '@/gen/terrain/TerrainModel';
 import { clamp, lerp } from '@/math/utils';
@@ -69,6 +70,9 @@ export class Rover {
     scene.add(this.group);
   }
 
+  /** Kollisionswelt (von der Szene gesetzt). */
+  collision: CollisionWorld | null = null;
+
   place(x: number, z: number): void {
     this.position.set(x, this.model.heightAt(x, z), z);
     this.speed = 0;
@@ -89,6 +93,8 @@ export class Rover {
     if (Math.abs(nx) > half || Math.abs(nz) > half) blocked = true;
     const h = this.model.heightAt(nx, nz);
     if (!blocked && this.model.hasWater && h < this.model.seaLevel - 0.5) blocked = true;
+    // feste Objekte (Bäume, Felsen, Module, Schiff) halten den Rover auf
+    if (!blocked && this.collision?.blocked(nx, nz, 0.7)) blocked = true;
     if (!blocked && Math.abs(step) > 1e-4) {
       const grade = (h - this.position.y) / Math.abs(step);
       if (grade > 1.3) blocked = true;

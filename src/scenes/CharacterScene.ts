@@ -14,6 +14,7 @@ import { EnvironmentMap, studioLook } from '@/render/Environment';
 import { CharacterUi } from '@/ui/CharacterUi';
 import { STR } from '@/ui/strings';
 import { showToast } from '@/ui/toast';
+import { setUiAccent } from '@/ui/theme';
 
 export interface CharacterSceneOptions {
   onDone: (cfg: CharacterConfig) => void;
@@ -111,6 +112,8 @@ export class CharacterScene implements GameScene {
     const rot = this.built?.group.rotation.y ?? 0;
     this.built?.dispose();
     this.built = buildCharacter(sanitizeCharacter(cfg));
+    // die Oberfläche übernimmt die Akzentfarbe des Anzugs sofort
+    setUiAccent(cfg.suit.accent);
     this.built.group.rotation.y = rot;
     this.built.group.traverse((o) => {
       o.castShadow = true;

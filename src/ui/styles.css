@@ -1,14 +1,16 @@
 :root {
   --bg: #05070d;
-  --panel: rgba(10, 16, 30, 0.86);
-  --panel-border: rgba(120, 170, 255, 0.25);
-  --text: #dfe8ff;
-  --muted: #8ea2c8;
-  --accent: #41b8ff;
+  /* Gemeinsame Formensprache mit dem HUD (hud.css): Glasflächen, dünne Linien, Akzent vom Anzug des Charakters */
+  --panel: rgba(8, 12, 22, 0.9);
+  --panel-border: rgba(255, 255, 255, 0.2);
+  --line: rgba(255, 255, 255, 0.14);
+  --text: rgba(255, 255, 255, 0.94);
+  --muted: rgba(255, 255, 255, 0.62);
+  --accent: var(--hud-accent);
   --accent-2: #ffb547;
   --danger: #ff6b6b;
   --ok: #5ee39a;
-  --font: 'Segoe UI', system-ui, -apple-system, Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font: var(--hud-font);
   --mono: 'JetBrains Mono', 'Fira Code', Consolas, 'Courier New', monospace;
 }
 
@@ -70,7 +72,7 @@ body {
   padding: 6px 10px;
   background: rgba(0, 0, 0, 0.55);
   border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 6px;
+  border-radius: 2px;
   font-family: var(--mono);
   font-size: 12px;
   line-height: 1.45;
@@ -90,61 +92,100 @@ body {
 .panel {
   background: var(--panel);
   border: 1px solid var(--panel-border);
-  border-radius: 10px;
-  backdrop-filter: blur(8px);
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
+  border-top: 2px solid var(--accent);
+  box-shadow: 0 14px 44px rgba(0, 0, 0, 0.5);
+  letter-spacing: 0.02em;
+}
+
+h1,
+h2,
+h3 {
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+h2 {
+  font-size: 17px;
+  letter-spacing: 0.22em;
+}
+
+h3 {
+  margin: 14px 0 8px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid var(--line);
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  color: var(--muted);
 }
 
 button,
 .btn {
   font: inherit;
+  font-size: 12.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   color: var(--text);
-  background: rgba(65, 184, 255, 0.12);
-  border: 1px solid rgba(65, 184, 255, 0.45);
-  border-radius: 6px;
-  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  border-radius: 2px;
+  padding: 8px 16px;
   cursor: pointer;
   transition:
-    background 0.15s,
-    border-color 0.15s,
-    transform 0.05s;
+    background 0.12s,
+    border-color 0.12s,
+    color 0.12s;
 }
 
 button:hover,
 .btn:hover {
-  background: rgba(65, 184, 255, 0.25);
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
   border-color: var(--accent);
 }
 
 button:active {
-  transform: translateY(1px);
+  background: color-mix(in srgb, var(--accent) 38%, transparent);
+}
+
+button:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 2px;
 }
 
 button:disabled {
-  opacity: 0.45;
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
 button.primary {
-  background: linear-gradient(180deg, rgba(65, 184, 255, 0.55), rgba(65, 184, 255, 0.3));
+  background: var(--accent);
   border-color: var(--accent);
-  font-weight: 600;
+  color: #06101c;
+  font-weight: 700;
+}
+
+button.primary:hover {
+  background: color-mix(in srgb, var(--accent) 82%, #fff);
 }
 
 button.small {
-  padding: 4px 9px;
-  font-size: 12px;
+  padding: 4px 10px;
+  font-size: 11px;
 }
 
 input[type='text'],
 select {
   font: inherit;
   color: var(--text);
-  background: rgba(0, 0, 0, 0.35);
-  border: 1px solid rgba(120, 170, 255, 0.35);
-  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 2px;
   padding: 8px 10px;
   outline: none;
+}
+
+select option {
+  background: #0b1120;
+  color: #fff;
 }
 
 input[type='text']:focus,
@@ -152,8 +193,25 @@ select:focus {
   border-color: var(--accent);
 }
 
-input[type='range'] {
+input[type='range'],
+input[type='checkbox'] {
   accent-color: var(--accent);
+}
+
+input[type='color'] {
+  width: 44px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  border-radius: 2px;
+  background: none;
+  cursor: pointer;
+}
+
+/* Schmale Rollbalken in allen Listen */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.28) transparent;
 }
 
 .muted {
@@ -322,7 +380,7 @@ input[type='range'] {
 
 .system-panel .tabs button.active {
   color: var(--text);
-  background: rgba(65, 184, 255, 0.12);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
   box-shadow: inset 0 -2px 0 var(--accent);
 }
 
@@ -353,7 +411,7 @@ input[type='range'] {
 .system-panel th,
 .system-panel td {
   padding: 3px 6px;
-  border-bottom: 1px solid rgba(120, 170, 255, 0.12);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   text-align: left;
   vertical-align: top;
 }
@@ -376,7 +434,7 @@ input[type='range'] {
   word-break: break-word;
   background: rgba(0, 0, 0, 0.3);
   padding: 8px;
-  border-radius: 6px;
+  border-radius: 2px;
   margin: 0;
 }
 
@@ -402,12 +460,12 @@ input[type='range'] {
   margin-bottom: 4px;
   padding: 6px 10px;
   background: rgba(255, 255, 255, 0.03);
-  border-color: rgba(120, 170, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.14);
 }
 
 .planet-list button.selected {
   border-color: var(--accent);
-  background: rgba(65, 184, 255, 0.16);
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
 }
 
 .planet-list .swatch {
@@ -438,9 +496,9 @@ input[type='range'] {
 
 .entry-item {
   padding: 6px 8px;
-  border-radius: 6px;
+  border-radius: 2px;
   background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(120, 170, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .entry-item .name {
@@ -468,7 +526,7 @@ input[type='range'] {
 .badge {
   display: inline-block;
   padding: 1px 6px;
-  border-radius: 4px;
+  border-radius: 2px;
   font-size: 10.5px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -485,7 +543,7 @@ input[type='range'] {
   color: #8df0b8;
 }
 .badge.rarity-rare {
-  background: rgba(65, 184, 255, 0.2);
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
   color: #8fd5ff;
 }
 .badge.rarity-legendary {
@@ -500,7 +558,7 @@ input[type='range'] {
 .progress {
   height: 6px;
   background: rgba(255, 255, 255, 0.08);
-  border-radius: 3px;
+  border-radius: 2px;
   overflow: hidden;
 }
 
@@ -640,7 +698,7 @@ input[type='range'] {
 
 .archive-panel .tabs button.active {
   color: var(--text);
-  background: rgba(65, 184, 255, 0.12);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
   box-shadow: inset 0 -2px 0 var(--accent);
 }
 
@@ -684,7 +742,7 @@ input[type='range'] {
   padding: 6px 10px;
   background: rgba(255, 181, 71, 0.15);
   border: 1px solid rgba(255, 181, 71, 0.5);
-  border-radius: 6px;
+  border-radius: 2px;
   color: #ffd38a;
   font-size: 12.5px;
 }
@@ -723,15 +781,15 @@ input[type='range'] {
   gap: 10px;
   align-items: center;
   padding: 5px 8px;
-  border-radius: 6px;
-  border: 1px solid rgba(120, 170, 255, 0.12);
+  border-radius: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(255, 255, 255, 0.03);
   cursor: pointer;
 }
 
 .archive-item.selected {
   border-color: var(--accent);
-  background: rgba(65, 184, 255, 0.14);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
 }
 
 .archive-item.unknown .name {
@@ -755,7 +813,7 @@ input[type='range'] {
   width: 64px;
   height: 36px;
   object-fit: cover;
-  border-radius: 4px;
+  border-radius: 2px;
   background: rgba(0, 0, 0, 0.3);
 }
 
@@ -783,7 +841,7 @@ input[type='range'] {
   width: 100%;
   max-height: 300px;
   object-fit: cover;
-  border-radius: 6px;
+  border-radius: 2px;
   margin: 8px 0 4px;
 }
 
@@ -818,7 +876,7 @@ input[type='range'] {
   display: flex;
   gap: 10px;
   padding: 5px 8px;
-  border-bottom: 1px solid rgba(120, 170, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   cursor: pointer;
 }
 
@@ -837,8 +895,8 @@ input[type='range'] {
   align-items: center;
   gap: 10px;
   padding: 6px 10px;
-  border-radius: 6px;
-  border: 1px solid rgba(120, 170, 255, 0.12);
+  border-radius: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(255, 255, 255, 0.03);
   margin-bottom: 4px;
 }
@@ -859,7 +917,7 @@ input[type='range'] {
 .microscope-wrap {
   margin-bottom: 12px;
   padding: 10px;
-  border-radius: 8px;
+  border-radius: 2px;
   background: rgba(0, 0, 0, 0.25);
 }
 
@@ -923,7 +981,7 @@ input[type='range'] {
 
 .goal {
   padding: 6px 10px;
-  border-radius: 6px;
+  border-radius: 2px;
   background: rgba(255, 181, 71, 0.12);
   border: 1px solid rgba(255, 181, 71, 0.35);
   color: #ffd38a;
@@ -941,9 +999,9 @@ input[type='range'] {
   grid-template-columns: 1fr auto;
   gap: 2px 8px;
   padding: 6px 8px;
-  border-radius: 6px;
+  border-radius: 2px;
   background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(120, 170, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   align-items: center;
 }
 
@@ -977,9 +1035,9 @@ input[type='range'] {
   gap: 10px;
   align-items: center;
   padding: 6px 10px;
-  border-radius: 6px;
+  border-radius: 2px;
   background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(120, 170, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .recipe.unaffordable {
@@ -1000,7 +1058,7 @@ input[type='range'] {
 .cost-item {
   font-size: 11px;
   padding: 1px 6px;
-  border-radius: 4px;
+  border-radius: 2px;
   font-family: var(--mono);
 }
 
@@ -1047,7 +1105,7 @@ input[type='range'] {
 .lab-panel th,
 .lab-panel td {
   padding: 3px 6px;
-  border-bottom: 1px solid rgba(120, 170, 255, 0.12);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   text-align: left;
 }
 
@@ -1141,7 +1199,7 @@ input[type='range'] {
   gap: 8px;
   padding: 6px 8px;
   margin-bottom: 4px;
-  border-radius: 6px;
+  border-radius: 2px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(255, 255, 255, 0.03);
   cursor: pointer;
@@ -1153,7 +1211,7 @@ input[type='range'] {
 
 .part-row.sel {
   border-color: var(--accent);
-  background: rgba(65, 184, 255, 0.15);
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
 }
 
 .part-row.locked {
@@ -1168,7 +1226,7 @@ input[type='range'] {
 .tier-badge {
   font-size: 10px;
   padding: 1px 5px;
-  border-radius: 4px;
+  border-radius: 2px;
   background: rgba(255, 255, 255, 0.12);
   margin-left: 4px;
   vertical-align: middle;
@@ -1190,7 +1248,7 @@ input[type='range'] {
   gap: 8px;
   padding: 8px;
   margin-bottom: 6px;
-  border-radius: 6px;
+  border-radius: 2px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(255, 255, 255, 0.03);
   cursor: pointer;
@@ -1233,7 +1291,7 @@ input[type='range'] {
   width: min(640px, 60vh, 58vw);
   height: auto;
   aspect-ratio: 1;
-  border-radius: 8px;
+  border-radius: 2px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   cursor: crosshair;
   flex: 0 0 auto;
@@ -1298,7 +1356,7 @@ input[type='range'] {
   padding: 0;
   border: 1px solid rgba(255, 255, 255, 0.2);
   background: none;
-  border-radius: 4px;
+  border-radius: 2px;
 }
 
 .swatch {
@@ -1350,7 +1408,7 @@ input[type='range'] {
   gap: 12px;
   padding: 8px 12px;
   border: 1px solid var(--panel-border);
-  border-radius: 8px;
+  border-radius: 2px;
   background: rgba(255, 255, 255, 0.03);
 }
 
@@ -1402,4 +1460,78 @@ button.danger {
 .credits-ui p {
   margin: 6px 0;
   line-height: 1.5;
+}
+
+/* ---------- Einheitlicher Stil: Marken, Balken, Titel, Listen ---------- */
+.badge {
+  padding: 1px 7px;
+  background: transparent;
+  border: 1px solid currentColor;
+  letter-spacing: 0.12em;
+}
+
+.badge.rarity-common {
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.badge.rarity-uncommon {
+  background: transparent;
+  color: #7be3a0;
+}
+
+.badge.rarity-rare {
+  background: transparent;
+  color: #6cc4ff;
+}
+
+.badge.rarity-legendary {
+  background: transparent;
+  color: #ffc35a;
+}
+
+.badge.cat {
+  background: transparent;
+  color: var(--muted);
+}
+
+.progress {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 0;
+}
+
+.main-menu h1 {
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: 0.3em;
+  background: none;
+  -webkit-background-clip: border-box;
+  background-clip: border-box;
+  color: var(--text);
+}
+
+.main-menu h1::after {
+  content: '';
+  display: block;
+  width: 56px;
+  height: 2px;
+  margin-top: 12px;
+  background: var(--accent);
+}
+
+.main-menu .subtitle {
+  margin-top: 10px;
+  letter-spacing: 0.06em;
+}
+
+.main-menu .menu-buttons button {
+  padding: 11px 16px;
+  letter-spacing: 0.18em;
+}
+
+.pause-menu .menu-buttons button {
+  padding: 11px 16px;
+  text-align: left;
+  letter-spacing: 0.18em;
 }

@@ -1,3 +1,4 @@
+import type { CollisionWorld } from '../Collision';
 import type { BufferGeometry, Vector3} from 'three';
 import { Color, Group, Mesh, MeshPhysicalMaterial, MeshStandardMaterial, Raycaster, SphereGeometry, TorusGeometry, Vector2, type Scene, type Texture } from 'three';
 import type { TerrainModel } from '@/gen/terrain/TerrainModel';
@@ -317,6 +318,8 @@ export interface PlacementCheck {
  * Gültigkeitsprüfung (Gefälle, Wasser, Abstand), Raycast-Auswahl und Nähe-Abfragen.
  */
 export class BaseManager {
+  /** Kollisionswelt (von der Szene gesetzt, vor dem ersten `sync`). */
+  collision: CollisionWorld | null = null;
   readonly group = new Group();
   private readonly templates = new Map<ModuleType, ModuleTemplate>();
   private readonly meshes = new Map<string, Group>();
@@ -391,6 +394,14 @@ export class BaseManager {
         this.meshes.delete(id);
       }
     }
+    this.collision?.set(
+      'modules',
+      this.state.modulesOn(this.planet.id).map((m) => {
+        const r = this.template(m.type).radius;
+        // Werkbank und Ladestation sind schmaler als ihr Platzbedarf
+        return { x: m.x, z: m.z, r: r * (m.type === 'shelter' || m.type === 'lab' ? 0.9 : 0.6), top: this.model.heightAt(m.x, m.z) + (m.type === 'shelter' ? 3 : 1.6) };
+      }),
+    );
   }
 
   snap(x: number, z: number): { x: number; z: number } {

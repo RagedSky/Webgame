@@ -1,3 +1,4 @@
+import type { Collider, CollisionWorld } from '../Collision';
 import { Color, CylinderGeometry, Group, InstancedMesh, Matrix4, MeshStandardMaterial, Quaternion, Raycaster, SphereGeometry, Vector3, type BufferGeometry, type Scene } from 'three';
 import type { TerrainModel } from '@/gen/terrain/TerrainModel';
 import { NODE_CELL, generateResourceNodes, type ResourceNode } from '@/gen/terrain/ResourceNodes';
@@ -190,6 +191,8 @@ function buildTemplateGeometry(id: ResourceId): { geometry: BufferGeometry; mate
 export class ResourceNodeManager {
   readonly group = new Group();
   readonly stats = { nodes: 0, drawCalls: 0 };
+  /** Kollisionswelt (von der Szene gesetzt). */
+  collision: CollisionWorld | null = null;
   private readonly cells = new Map<string, Cell>();
   private readonly templates = new Map<ResourceId, NodeTemplate>();
   /** Abgebaute Knoten (id → Restmenge/Respawn) über Zellwechsel hinweg. */
@@ -244,6 +247,7 @@ export class ResourceNodeManager {
     const t = this.templates.get(id);
     if (!t) return;
     t.slots.length = 0;
+    const colliders: Collider[] = [];
     let i = 0;
     for (const cell of this.cells.values()) {
       for (const n of cell.nodes) {
@@ -254,11 +258,14 @@ export class ResourceNodeManager {
         this.tmpMatrix.compose(this.tmpPos, this.tmpQuat, ONE);
         t.mesh.setMatrixAt(i, this.tmpMatrix);
         t.slots[i] = n;
+        colliders.push({ x: n.node.x, z: n.node.z, r: t.radius * 0.72, top: n.node.y + t.radius * 1.3 });
         i++;
       }
     }
     t.mesh.count = i;
     t.mesh.instanceMatrix.needsUpdate = true;
+    // Hindernisse der sichtbaren Knoten dieser Art (abgebaute Knoten geben den Weg frei)
+    this.collision?.set(`nodes:${id}`, colliders);
   }
 
   private refresh(cx: number, cz: number): void {

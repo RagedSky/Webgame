@@ -390,3 +390,28 @@ Raute). Die Akzentfarbe wird aus dem Anzug übernommen, Name und Hintergrund ste
 eigenen Datei `ui/hud.css`. Teure Effekte (Weichzeichnen des Hintergrunds, weichgezeichnete Vollbildschatten) werden
 vermieden, damit das HUD auch ohne starke Grafikkarte nichts kostet.
 
+## D-071 · Kollision über Zylinder und Herausschieben statt Physik-Bibliothek
+**Kontext:** Spieler, Tiere und Rover liefen durch Bäume, Felsen und Gebäude.
+**Entscheidung:** Jedes feste Objekt ist ein stehender Zylinder in einer gemeinsamen, reinen Kollisionswelt. Bewegte Körper
+werden nach dem Schritt herausgeschoben. Das genügt für eine Welt aus runden, stehenden Objekten, kostet pro Schritt eine
+Rasterzelle und braucht keine Abhängigkeit. Grenzen: man kann nicht auf Objekten stehen, die Kamera der Schulteransicht
+weicht Objekten nicht aus, Wasserpflanzen und Sträucher haben keine Kollision.
+
+## D-072 · Baumschatten nur in Reichweite der Schattenkarte
+**Kontext:** Schatten für alle fernen Baumzellen kosten einen zweiten Zeichendurchgang über Hunderte Bäume; ohne Schatten
+wirkten Bäume aufgeklebt.
+**Entscheidung:** Nur Zellen innerhalb von 100 m werfen Schatten, mit Sichtprüfung je Baum. Das deckt die Schattenkarte
+(±90 m) ab und begrenzt die Mehrkosten auf ein bis vier Zellen.
+
+## D-073 · Bau-Auswahl als Rad am Fadenkreuz
+**Kontext:** Die Bauleiste mit Zifferntasten lag weit vom Blickpunkt und zwang zum Umgreifen.
+**Entscheidung:** Halten, ziehen, loslassen: das Rad erscheint dort, wo man hinsieht, und die Auswahl kostet eine
+Handbewegung. Die Kamera steht, solange das Rad offen ist. Antippen statt Halten wird ebenfalls unterstützt, die
+Zifferntasten bleiben als Abkürzung.
+
+## D-074 · Eine Formensprache und eine Akzentfarbe für alle Oberflächen
+**Kontext:** Nach dem neuen HUD passten Menüs und Dialoge (runde blaue Kästen) nicht mehr dazu.
+**Entscheidung:** Die Grundbausteine in `styles.css` wurden umgestellt statt jede Oberfläche einzeln zu gestalten; feste
+Farben und Radien sind durch Variablen ersetzt. Die Akzentfarbe kommt vom Anzug, wird auf Lesbarkeit begrenzt und im
+Browser gemerkt, damit auch das Hauptmenü sie zeigt.
+

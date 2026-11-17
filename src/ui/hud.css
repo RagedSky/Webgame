@@ -691,45 +691,171 @@
   letter-spacing: 0.06em;
 }
 
-.hud-palette {
+/* Bau-Modus: gewähltes Modul und Tasten */
+.hud-build {
   position: absolute;
   bottom: 140px;
   left: 50%;
   transform: translateX(-50%);
-  flex-direction: column;
   align-items: center;
-  gap: 7px;
-}
-
-.hud-palette .slots {
-  display: flex;
-  gap: 8px;
-}
-
-.hud-palette .pal {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 7px 12px 7px 8px;
-  border: 1px solid var(--hud-line);
-  background: var(--hud-glass);
-  font-size: 12px;
+  gap: 22px;
+  padding: 8px 44px;
+  background: linear-gradient(90deg, rgba(6, 10, 18, 0), var(--hud-glass) 18% 82%, rgba(6, 10, 18, 0));
   white-space: nowrap;
 }
 
-.hud-palette .pal.sel {
-  border-color: var(--hud-accent);
-  box-shadow: inset 0 -2px 0 var(--hud-accent);
+.hud-build .item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 12.5px;
 }
 
-.hud-palette .pal.missing {
-  opacity: 0.45;
+.hud-build .item.module {
+  padding-right: 22px;
+  border-right: 1px solid var(--hud-line);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
 }
 
-.hud-palette .pal-hint {
+.hud-build.missing .item.module {
+  color: #ffd98a;
+}
+
+/* Bau-Rad um das Fadenkreuz */
+.hud-wheel {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  animation: wheel-in 0.14s ease-out;
+}
+
+@keyframes wheel-in {
+  from {
+    opacity: 0;
+    transform: scale(0.86);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.hud-wheel > svg {
+  position: absolute;
+  top: -170px;
+  left: -170px;
+  width: 340px;
+  height: 340px;
+  overflow: visible;
+}
+
+.hud-wheel > svg path {
+  fill: rgba(6, 10, 18, 0.62);
+  stroke: rgba(255, 255, 255, 0.3);
+  stroke-width: 1;
+  transition: fill 0.1s, stroke 0.1s, transform 0.1s;
+  transform-origin: 0 0;
+}
+
+.hud-wheel > svg path.missing {
+  fill: rgba(6, 10, 18, 0.42);
+  stroke: rgba(255, 255, 255, 0.16);
+}
+
+.hud-wheel > svg path.sel {
+  fill: color-mix(in srgb, var(--hud-accent) 34%, rgba(6, 10, 18, 0.7));
+  stroke: var(--hud-accent);
+  stroke-width: 2;
+  transform: scale(1.045);
+}
+
+.hud-wheel .seg {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  width: 110px;
+  margin: -30px 0 0 -55px;
+  text-align: center;
+}
+
+.hud-wheel .seg .hud-icon {
+  width: 22px;
+  height: 22px;
+}
+
+.hud-wheel .seg .name {
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.hud-wheel .seg .count {
   font-size: 11px;
-  letter-spacing: 0.08em;
   color: var(--hud-dim);
+}
+
+.hud-wheel .seg.missing {
+  opacity: 0.5;
+}
+
+.hud-wheel .seg.sel {
+  opacity: 1;
+}
+
+.hud-wheel .seg.sel .hud-icon {
+  color: var(--hud-accent);
+}
+
+.hud-wheel .centre {
+  position: absolute;
+  top: -46px;
+  left: -46px;
+  width: 92px;
+  height: 92px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  background: rgba(6, 10, 18, 0.7);
+  text-align: center;
+}
+
+.hud-wheel .centre .title {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.hud-wheel .centre .hint {
+  max-width: 78px;
+  font-size: 8.5px;
+  line-height: 1.25;
+  letter-spacing: 0.04em;
+  color: var(--hud-dim);
+}
+
+.hud-wheel .cursor {
+  position: absolute;
+  top: -5px;
+  left: -5px;
+  width: 10px;
+  height: 10px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: var(--hud-accent);
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.7);
 }
 
 .hud-fade {
@@ -749,7 +875,8 @@
 .hud.photo .hud-telemetry,
 .hud.photo .hud-sighting,
 .hud.photo .hud-prompt,
-.hud.photo .hud-palette {
+.hud.photo .hud-build,
+.hud.photo .hud-wheel {
   display: none !important;
 }
 

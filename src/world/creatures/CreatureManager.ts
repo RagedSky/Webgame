@@ -1,3 +1,4 @@
+import type { CollisionWorld } from '../Collision';
 import { Group, Vector3, type Scene } from 'three';
 import { Random } from '@/math/Random';
 import type { TerrainModel, TerrainSample } from '@/gen/terrain/TerrainModel';
@@ -84,6 +85,7 @@ export class CreatureManager {
       }
     }
     this.world = {
+      collision: null,
       heightAt: (x, z) => model.heightAt(x, z),
       slopeAt: (x, z, eps) => model.slopeAt(x, z, eps),
       seaLevel: model.seaLevel,
@@ -247,5 +249,10 @@ export class CreatureManager {
     }
     this.templates.clear();
     this.group.removeFromParent();
+  }
+
+  /** Kollisionswelt setzen: Landtiere weichen festen Objekten aus. */
+  setCollision(collision: CollisionWorld | null): void {
+    this.world.collision = collision;
   }
 }

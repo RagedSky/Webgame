@@ -1,3 +1,4 @@
+import type { CollisionWorld } from './Collision';
 import { CapsuleGeometry, Group, Mesh, MeshStandardMaterial, Vector3, type PerspectiveCamera } from 'three';
 import type { Input } from '@/core/Input';
 import { clamp, lerp } from '@/math/utils';
@@ -7,6 +8,8 @@ import type { CharacterConfig } from '@/game/character/Character';
 import { buildCharacter, type BuiltCharacter } from '@/world/character/CharacterBuilder';
 
 const WALK_SPEED = 5.2;
+/** Körperradius für die Kollision mit festen Objekten. */
+const PLAYER_RADIUS = 0.34;
 const SPRINT_SPEED = 9.5;
 const CROUCH_SPEED = 2.6;
 const SWIM_SPEED = 3.2;
@@ -45,6 +48,8 @@ export class Player {
   private readonly bodyGeometry: CapsuleGeometry;
   private readonly placeholder: Mesh;
   private built: BuiltCharacter | null = null;
+  /** Feste Hindernisse der Welt (von der Szene gesetzt). */
+  collision: CollisionWorld | null = null;
 
   constructor(
     private readonly model: TerrainModel,
@@ -157,6 +162,9 @@ export class Player {
       const hz = this.model.heightAt(this.position.x, nz);
       if (hz - groundNow > stepUp && this.model.slopeAt(this.position.x, nz, 1) > 0.75) this.velocity.z = 0;
       else this.position.z = nz;
+
+      // Feste Objekte: aus Bäumen, Felsen, Modulen und dem Schiff herausschieben (gleitet an ihnen entlang)
+      if (this.collision && !this.frozen) this.collision.resolve(this.position, PLAYER_RADIUS);
 
       // Vertikal + Boden
       this.position.y += this.velocity.y * dt;

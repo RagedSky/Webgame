@@ -1,3 +1,4 @@
+import type { CollisionWorld } from '../Collision';
 import { Bone, Group, Skeleton, SkinnedMesh, Vector3 } from 'three';
 import { Random } from '@/math/Random';
 import { clamp, clamp01, lerp } from '@/math/utils';
@@ -20,6 +21,8 @@ export interface CreatureWorld {
   daylight: number;
   /** Aktive Köder (Positionen). */
   lures: Vector3[];
+  /** Feste Hindernisse (Bäume, Felsen, Module); Landtiere weichen aus. */
+  collision?: CollisionWorld | null;
 }
 
 const tmp = new Vector3();
@@ -170,6 +173,15 @@ export class Creature {
     } else {
       pos.x = nx;
       pos.z = nz;
+      // an Hindernissen entlanggleiten und leicht abdrehen, statt hindurchzulaufen
+      if (loco === 'land' && world.collision) {
+        tmp.set(pos.x, this.y, pos.z);
+        if (world.collision.resolve(tmp, Math.max(0.2, this.template.lengthM * 0.3))) {
+          pos.x = tmp.x;
+          pos.z = tmp.z;
+          this.ai.heading += 0.9 * dt;
+        }
+      }
     }
 
     const ground = world.heightAt(pos.x, pos.z);

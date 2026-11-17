@@ -1,3 +1,4 @@
+import type { CollisionWorld } from '../Collision';
 import { Group, Mesh, Raycaster, Vector3, type Scene } from 'three';
 import { Random } from '@/math/Random';
 import type { TerrainModel, TerrainSample } from '@/gen/terrain/TerrainModel';
@@ -34,6 +35,8 @@ export class PropManager {
   private readonly entries: ArchiveEntry[];
   private accum = 1;
   private readonly raycaster = new Raycaster();
+  /** Kollisionswelt (von der Szene gesetzt): größere Fundstücke sind Hindernisse. */
+  collision: CollisionWorld | null = null;
 
   constructor(
     scene: Scene,
@@ -102,12 +105,17 @@ export class PropManager {
       for (let ix = i0; ix <= i1; ix++) {
         const id = `${ix}:${iz}`;
         wanted.add(id);
-        if (!this.cells.has(id)) this.cells.set(id, this.buildCell(ix, iz));
+        if (!this.cells.has(id)) {
+          const cell = this.buildCell(ix, iz);
+          this.cells.set(id, cell);
+          this.collision?.set(`props:${id}`, cell.props.filter((p) => p.radius >= 0.45).map((p) => ({ x: p.center.x, z: p.center.z, r: p.radius * 0.7, top: p.center.y + p.radius })));
+        }
       }
     }
     for (const [id, cell] of this.cells) {
       if (wanted.has(id)) continue;
       for (const p of cell.props) this.group.remove(p.mesh);
+      this.collision?.remove(`props:${id}`);
       this.cells.delete(id);
     }
     this.stats.cells = this.cells.size;

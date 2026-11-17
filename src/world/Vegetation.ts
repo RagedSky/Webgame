@@ -8,6 +8,7 @@ import type { Planet } from '@/gen/universe/types';
 import type { ArchiveEntry, FloraForm, FloraGenome } from '@/gen/archive/types';
 import { RARITY_SPAWN_WEIGHT, matchesPlacement } from '@/gen/archive/conditions';
 import type { PlantType, TreeStyle, VegetationAssets } from './VegetationAssets';
+import type { Collider, CollisionWorld } from './Collision';
 import type { FloraAssets } from './flora/FloraAssets';
 import { buildFloraGeometry } from './flora/FloraBuilder';
 
@@ -25,6 +26,39 @@ interface Cell {
   meshes: Array<InstancedMesh | BatchedMesh>;
   instances: number;
   species: SpeciesPlacement[];
+  /** Ferne Zelle: Mittelpunkt und halbe Kantenlänge (für den Schattenwurf in Kameranähe). */
+  far: boolean;
+  cx: number;
+  cz: number;
+  half: number;
+}
+
+/** Bis zu dieser Entfernung zum Zellrand werfen Bäume ferner Zellen Schatten (Reichweite der Schattenkarte). */
+const SHADOW_RANGE = 100;
+
+/** Hindernis einer Pflanze: Stamm bzw. Körper als Zylinder; kleine und weiche Gewächse bleiben begehbar. */
+function floraCollider(genome: FloraGenome, height: number, x: number, y: number, z: number): Collider | null {
+  if (height < 0.9) return null;
+  let r: number;
+  let top = y + height * 0.75;
+  switch (genome.form) {
+    case 'tree':
+      r = height * 0.05;
+      break;
+    case 'fungus':
+      r = height * 0.1;
+      break;
+    case 'succulent':
+      r = genome.leafShape === 'pad' || genome.leafShape === 'broad' || genome.leafShape === 'lobed' ? height * 0.27 : height * 0.2;
+      top = y + height * 0.85;
+      break;
+    case 'crystal_plant':
+      r = height * 0.15;
+      break;
+    default:
+      return null;
+  }
+  return { x, z, r: clamp(r, 0.12, 2.2), top };
 }
 
 interface GenericBatch {
@@ -55,6 +89,8 @@ export interface VegetationOptions {
   /** Radius und Zellgröße des dichten Grasrings um die Kamera. */
   grassRadius?: number;
   grassCell?: number;
+  /** Kollisionswelt: Stämme, Felsen und Signaturpflanzen werden als Hindernisse eingetragen. */
+  collision?: CollisionWorld;
 }
 
 type CellKind = 'n' | 'f' | 'g';
@@ -105,6 +141,9 @@ export class VegetationManager {
   private queue: Array<{ id: string; ix: number; iz: number; kind: CellKind; d: number }> = [];
   private readonly grassRadius: number;
   private readonly grassCell: number;
+  private readonly collision: CollisionWorld | null;
+  /** Hindernisse der Zelle, die gerade aufgebaut wird. */
+  private pending: Collider[] = [];
   private readonly palettes: Color[];
   /** Zweite Bewuchsfarbe je Biom (Zonen des Planetenstils). */
   private readonly palettes2: Color[];
@@ -137,6 +176,7 @@ export class VegetationManager {
     this.density = options.density ?? 1;
     this.grassRadius = options.grassRadius ?? 56;
     this.grassCell = options.grassCell ?? 24;
+    this.collision = options.collision ?? null;
     stylize.grassFar.value = this.grassRadius;
     // Dieselbe Stilisierung wie das Terrain, damit Gras und Boden farblich zusammenpassen
     this.palettes = planet.biomes.map((b) => vivid(new Color(b.palette.vegetation), 1.25));
@@ -201,6 +241,8 @@ export class VegetationManager {
         tmpQuat.setFromAxisAngle(Y_AXIS, yaw);
         tmpScale.set(scale, scale * rng.float(0.9, 1.15), scale);
         matrices.push(new Matrix4().compose(tmpPos, tmpQuat, tmpScale));
+        const lc = floraCollider(landmark.genome, landmark.genome.heightM * scale, x, s.height, z);
+        if (lc) this.pending.push(lc);
       }
       if (matrices.length === 0) return;
       const g = landmark.genome;
@@ -257,6 +299,9 @@ export class VegetationManager {
         tmpQuat.setFromAxisAngle(Y_AXIS, rng.float(0, Math.PI * 2));
         tmpScale.set(baseScale * rng.float(0.85, 1.15), baseScale, baseScale * rng.float(0.85, 1.15));
         batch.matrices.push(new Matrix4().compose(tmpPos, tmpQuat, tmpScale));
+        // größere Findlinge und Stämme sind Hindernisse, kleine Steine übersteigt man
+        if (type === 'rock' && baseScale >= 0.85) this.pending.push({ x, z, r: 0.52 * baseScale, top: s.height + 0.5 * baseScale });
+        else if (type === 'tree') this.pending.push({ x, z, r: 0.26 * baseScale, top: s.height + 3 * baseScale });
         if (type === 'rock') tmpColor.copy(this.groundPalettes[biome] as Color).multiplyScalar(0.75).lerp(tmpColor2.set(0.45, 0.44, 0.42), 0.4);
         else {
           this.vegColor(s, x, z, tmpColor);
@@ -382,7 +427,8 @@ export class VegetationManager {
       }
       mesh.castShadow = castShadow;
       mesh.receiveShadow = true;
-      mesh.perObjectFrustumCulled = false;
+      // Ferne Zellen sind groß: je Baum prüfen, ob er im Bild (oder in der Schattenkarte) liegt
+      mesh.perObjectFrustumCulled = !castShadow;
       mesh.sortObjects = false;
       mesh.computeBoundingSphere();
       meshes.push(mesh);
@@ -392,6 +438,7 @@ export class VegetationManager {
 
   private buildCell(ix: number, iz: number, kind: CellKind): Cell {
     const far = kind === 'f';
+    this.pending = [];
     const size = kind === 'g' ? this.grassCell : far ? this.farCell : this.nearCell;
     const x0 = ix * size;
     const z0 = iz * size;
@@ -433,7 +480,15 @@ export class VegetationManager {
     }
 
     for (const m of meshes) this.group.add(m);
-    return { id, meshes, instances: total, species: species.map((i) => ({ entry: i.entry, x: i.x, y: i.y, z: i.z, height: i.height })) };
+    if (this.collision && kind !== 'g') {
+      for (const sp of species) {
+        const c = floraCollider(sp.entry.genome as FloraGenome, sp.height, sp.x, sp.y, sp.z);
+        if (c) this.pending.push(c);
+      }
+      this.collision.set(`veg:${id}`, this.pending);
+    }
+    this.pending = [];
+    return { id, meshes, instances: total, species: species.map((i) => ({ entry: i.entry, x: i.x, y: i.y, z: i.z, height: i.height })), far, cx: x0 + size / 2, cz: z0 + size / 2, half: size / 2 };
   }
 
   private removeCell(cell: Cell): void {
@@ -441,6 +496,7 @@ export class VegetationManager {
       this.group.remove(m);
       m.dispose();
     }
+    this.collision?.remove(`veg:${cell.id}`);
     this.cells.delete(cell.id);
   }
 
@@ -469,6 +525,14 @@ export class VegetationManager {
     scan(this.farRadius, this.farCell, 'f');
     this.queue.sort((a, b) => a.d - b.d);
     for (const cell of Array.from(this.cells.values())) if (!wanted.has(cell.id)) this.removeCell(cell);
+    // Bäume stehen in fernen Zellen: nur die Zellen in Reichweite der Schattenkarte werfen Schatten
+    for (const cell of this.cells.values()) {
+      if (!cell.far) continue;
+      const dx = Math.max(0, Math.abs(cx - cell.cx) - cell.half);
+      const dz = Math.max(0, Math.abs(cz - cell.cz) - cell.half);
+      const cast = dx * dx + dz * dz < SHADOW_RANGE * SHADOW_RANGE;
+      for (const m of cell.meshes) if (m.castShadow !== cast) m.castShadow = cast;
+    }
   }
 
   /** Baut sofort alle Zellen (Ladebildschirm). */

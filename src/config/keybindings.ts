@@ -37,7 +37,8 @@ export type GameAction =
   | 'slot3'
   | 'slot4'
   | 'skip_tutorial'
-  | 'quicksave';
+  | 'quicksave'
+  | 'flashlight';
 
 export const DEFAULT_BINDINGS: Record<GameAction, string[]> = {
   move_forward: ['KeyW', 'ArrowUp'],
@@ -53,6 +54,7 @@ export const DEFAULT_BINDINGS: Record<GameAction, string[]> = {
   map: ['KeyM'],
   inventory: ['KeyI'],
   build: ['KeyB'],
+  flashlight: ['KeyL'],
   pause: ['Escape'],
   debug: ['F3'],
   screenshot: ['F12'],
@@ -94,7 +96,8 @@ export const ACTION_LABELS: Record<GameAction, string> = {
   catalog: 'Katalog',
   map: 'Karte',
   inventory: 'Inventar',
-  build: 'Bau-Modus',
+  build: 'Bau-Rad (halten)',
+  flashlight: 'Taschenlampe',
   pause: 'Pause / Menü',
   debug: 'Debug-Overlay',
   screenshot: 'Screenshot',

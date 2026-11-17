@@ -1,5 +1,6 @@
 import './ui/styles.css';
 import './ui/hud.css';
+import { initUiAccent } from './ui/theme';
 import { GameLoop } from './core/GameLoop';
 import { Input } from './core/Input';
 import { SceneManager } from './core/SceneManager';
@@ -13,6 +14,8 @@ import { PRESET_LABELS } from './game/settings/Settings';
 import { showActionToast } from './ui/toast';
 import { STR } from './ui/strings';
 import { audio } from './audio/AudioManager';
+
+initUiAccent();
 
 function bootstrap(): void {
   const canvas = document.getElementById('game-canvas') as HTMLCanvasElement | null;

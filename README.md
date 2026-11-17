@@ -62,7 +62,7 @@ gibt es den Datei-Export (siehe unten).
 | Bewegung | Klick ins Bild übernimmt die Maus · WASD · Leertaste springen · Shift sprinten · Strg ducken · V Ego/Schulter · Esc Pause |
 | Kamera | Q Foto-Modus · Mausrad Zoom · `,`/`.` Fokus · Rechtsklick Autofokus · R Blende · 1/2 Belichtung · F Filter · H Raster · C Selfie · Leertaste/Klick auslösen |
 | Archiv und Proben | Tab Archiv (Einträge, Logbuch, Proben, Mikroskop) · F Probe nehmen / scannen |
-| Rohstoffe und Basis | E halten sammeln · I Inventar/Fertigung · B Bau-Modus (1–4 Modul, R drehen, Klick platzieren, X entfernen) · E an Modulen öffnen |
+| Rohstoffe und Basis | E halten sammeln · I Inventar/Fertigung · B halten: Bau-Rad (Maus zum Modul ziehen, loslassen wählt; dann R drehen, Klick platzieren, X entfernen) · L Taschenlampe · E an Modulen öffnen |
 | Schiff | E am Schiff: Werft, Betanken, Start · im Orbit Planet wählen, Fliegen, Landen, Satellit/Atmosphärensonde |
 | Karte und Sonden | M Karte (Layer, Marker per Klick) · Rover über Inventar aussetzen, E steuern (WASD, Q Foto, F Probe, E/Esc zurück), X einpacken · Tiefseesonde am Ufer |
 | Spielstände | F5 Schnellspeichern (Slot 1) · Pause → Spielstände · F1 Tutorial überspringen |
