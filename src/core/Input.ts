@@ -1,5 +1,8 @@
 import { DEFAULT_BINDINGS, type GameAction } from '@/config/keybindings';
 
+/** Name einer Maustaste in der Tastenbelegung (`MouseEvent.button` 0–4 → „Mouse0“ … „Mouse4“). */
+export const mouseCode = (button: number): string => `Mouse${button}`;
+
 /**
  * Input-System: Tasten/Maus → benannte Aktionen. Gamepad-Grundlage (Achsen/Buttons) vorbereitet.
  * `wasPressed` gilt für genau einen Simulationsschritt (wird in `endFrame()` zurückgesetzt).
@@ -55,10 +58,31 @@ export class Input {
       (e) => {
         this.mouseDown.add(e.button);
         this.mousePressed.add(e.button);
+        // Maustasten zählen auch als belegbare „Tasten“ (Mouse0 … Mouse4)
+        const code = mouseCode(e.button);
+        if (!this.keysDown.has(code)) this.keysPressed.add(code);
+        this.keysDown.add(code);
+        // Seitentasten würden im Browser eine Seite zurück- oder vorblättern
+        if (e.button >= 3) e.preventDefault();
       },
       sig,
     );
-    window.addEventListener('mouseup', (e) => this.mouseDown.delete(e.button), sig);
+    window.addEventListener(
+      'mouseup',
+      (e) => {
+        this.mouseDown.delete(e.button);
+        const code = mouseCode(e.button);
+        if (this.keysDown.delete(code)) this.keysReleased.add(code);
+        if (e.button >= 3 && (e.target === this.target || this.pointerLocked)) e.preventDefault();
+      },
+      sig,
+    );
+    // mittlere Taste: kein Bildlauf-Kreuz über dem Spiel
+    target.addEventListener(
+      'auxclick',
+      (e) => e.preventDefault(),
+      sig,
+    );
     window.addEventListener(
       'mousemove',
       (e) => {

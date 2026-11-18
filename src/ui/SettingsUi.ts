@@ -7,6 +7,7 @@ import { ACTION_LABELS, DEFAULT_BINDINGS, type GameAction } from '@/config/keybi
 import type { Renderer } from '@/render/Renderer';
 import type { GameLoop } from '@/core/GameLoop';
 import { audio } from '@/audio/AudioManager';
+import { mouseCode } from '@/core/Input';
 
 export interface SettingsUiExtras {
   /** Tutorial im laufenden Spiel neu starten (nur Planetenszene). */
@@ -24,6 +25,7 @@ export class SettingsUi {
   private timer = 0;
   private listening: GameAction | null = null;
   private readonly keyHandler = (e: KeyboardEvent): void => this.onKey(e);
+  private readonly mouseHandler = (e: MouseEvent): void => this.onMouse(e);
 
   constructor(
     parent: HTMLElement,
@@ -196,6 +198,7 @@ export class SettingsUi {
     this.stopListening();
     this.listening = action;
     window.addEventListener('keydown', this.keyHandler, true);
+    window.addEventListener('mousedown', this.mouseHandler, true);
     this.render();
   }
 
@@ -203,6 +206,7 @@ export class SettingsUi {
     if (!this.listening) return;
     this.listening = null;
     window.removeEventListener('keydown', this.keyHandler, true);
+    window.removeEventListener('mousedown', this.mouseHandler, true);
     this.render();
   }
 
@@ -218,13 +222,46 @@ export class SettingsUi {
     if (e.code === 'Delete' || e.code === 'Backspace') {
       this.listening = null;
       window.removeEventListener('keydown', this.keyHandler, true);
+    window.removeEventListener('mousedown', this.mouseHandler, true);
       this.settings.resetBinding(action);
       return;
     }
     if (!e.code || e.code === 'F3' || e.code === 'F12' || e.code === 'F11') return;
     this.listening = null;
     window.removeEventListener('keydown', this.keyHandler, true);
+    window.removeEventListener('mousedown', this.mouseHandler, true);
     this.settings.setBinding(action, e.code);
+    audio.blip();
+  }
+
+  /** Maustaste als Belegung übernehmen (alle fünf Tasten; ein Linksklick auf das lauschende Feld bricht ab). */
+  private onMouse(e: MouseEvent): void {
+    const action = this.listening;
+    if (!action) return;
+    const onButton = e.button === 0 && e.target instanceof HTMLElement && e.target.closest('.key-btn.primary') !== null;
+    e.preventDefault();
+    e.stopPropagation();
+    // der Klick, der zu diesem Tastendruck gehört, darf nichts anderes auslösen
+    const swallow = (c: Event): void => {
+      c.preventDefault();
+      c.stopPropagation();
+    };
+    window.addEventListener('click', swallow, { capture: true, once: true });
+    window.addEventListener('auxclick', swallow, { capture: true, once: true });
+    window.addEventListener('contextmenu', swallow, { capture: true, once: true });
+    window.setTimeout(() => {
+      window.removeEventListener('click', swallow, true);
+      window.removeEventListener('auxclick', swallow, true);
+      window.removeEventListener('contextmenu', swallow, true);
+    }, 400);
+    if (onButton) {
+      this.stopListening();
+      return;
+    }
+    this.listening = null;
+    window.removeEventListener('keydown', this.keyHandler, true);
+    window.removeEventListener('mousedown', this.mouseHandler, true);
+    this.settings.setBinding(action, mouseCode(e.button));
     audio.blip();
   }
 

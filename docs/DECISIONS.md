@@ -479,3 +479,32 @@ im Gehen (26 m statt 30 m bei scheuen Tieren).
 Lärm so, dass scheue Tiere erst bei etwa 5 m fliehen; wer geduckt stillhält, wird nicht bemerkt. Sprinten verrät auch
 geduckt.
 
+## D-085 · Hindernisse aus dem Netz messen statt schätzen
+**Kontext:** Jede Formänderung an Pflanzen oder Ruinen ließ die geschätzten Radien falsch zurück (Bäume zu dünn, Masten
+zu breit).
+**Entscheidung:** Der Querschnitt in Körperhöhe wird aus der Geometrie gemessen und je Geometrie gemerkt. Längliche
+Fundstücke werden mit mehreren Kreisen abgedeckt statt mit einem großen. Es bleibt bei Zylindern, die Kollisionswelt
+ändert sich nicht.
+
+## D-086 · Grundrohstoffe sind garantiert in Reichweite
+**Kontext:** Ferrit und Quarz braucht jeder erste Bau; je nach Biom lagen die nächsten Knoten weit weg.
+**Entscheidung:** Höhere Häufigkeit mit Mindestwert und sieben garantierte Knoten im Umkreis von 48 m um den Landeplatz.
+Die Garantie gilt auf jedem Planeten, der die Vorkommen führt.
+
+## D-087 · Maustasten als gewöhnliche Belegung
+**Kontext:** Belegungen waren auf Tastatur-Codes beschränkt.
+**Entscheidung:** Maustasten bekommen eigene Codes im selben Namensraum, dadurch bleiben Speichern, Konflikthinweise und
+alle Abfragen unverändert. Auch die linke Taste ist belegbar; feste Klickfunktionen (Maus einfangen, Auslöser,
+Platzieren) bleiben daneben bestehen.
+
+## D-088 · Gas als Partikelfahne im Shader
+**Kontext:** Die Gassäule war ein fester Zylinder und las sich nicht als Gas.
+**Entscheidung:** Schwaden als instanzierte Scheiben, deren Bahn der Vertex-Shader aus Zeit und Zufallswerten rechnet.
+Kein Partikelsystem auf der CPU, ein Zeichenaufruf je Gasart. Die Wolke ist nicht greifbar und nicht anklickbar; gezielt
+wird über den Schlot und den Zielkegel.
+
+## D-089 · Springen mit Puffer, Nachlauf und Bodenhaftung
+**Kontext:** Auf Welten mit geringer Schwerkraft hob die Figur beim Rennen bergab ständig kurz ab.
+**Entscheidung:** Bodenhaftung bis 45° Gefälle, Sprungpuffer 0,22 s, Nachlauf 0,16 s. An Steilhängen und Kanten fällt
+man weiterhin.
+

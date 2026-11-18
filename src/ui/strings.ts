@@ -278,7 +278,7 @@ export const STR = {
     apply: 'Änderungen gelten sofort.',
     reset: 'Auf „Hoch“ zurücksetzen',
     keys: 'Tastenbelegung',
-    keysHint: 'Auf eine Taste klicken und die neue Taste drücken · Esc bricht ab · Entf setzt die Aktion zurück. Esc, F3 und F12 sind fest.',
+    keysHint: 'Auf eine Taste klicken und die neue Taste oder Maustaste drücken (auch Seitentasten) · Esc bricht ab · Entf setzt die Aktion zurück. Esc, F3 und F12 sind fest.',
     keysListening: 'Taste drücken …',
     keysReset: 'Alle Tasten zurücksetzen',
     keysConflict: 'auch',

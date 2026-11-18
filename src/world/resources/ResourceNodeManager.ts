@@ -1,13 +1,14 @@
 import type { Collider, CollisionWorld } from '../Collision';
-import { Color, CylinderGeometry, Group, InstancedMesh, Matrix4, MeshStandardMaterial, Quaternion, Raycaster, SphereGeometry, Vector3, type BufferGeometry, type Scene } from 'three';
+import { BufferAttribute, BufferGeometry, Color, DoubleSide, Group, InstancedMesh, Matrix4, MeshStandardMaterial, Quaternion, Raycaster, ShaderMaterial, SphereGeometry, UniformsLib, UniformsUtils, Vector3, type Scene } from 'three';
 import type { TerrainModel } from '@/gen/terrain/TerrainModel';
-import { NODE_CELL, generateResourceNodes, type ResourceNode } from '@/gen/terrain/ResourceNodes';
+import { NODE_CELL, generateResourceNodes, generateStarterNodes, type ResourceNode } from '@/gen/terrain/ResourceNodes';
+import { Random } from '@/math/Random';
 import { RESOURCES } from '@/gen/universe/catalog';
 import type { Planet, ResourceId } from '@/gen/universe/types';
-import { blade, colorize, gradientColor, mergeParts } from '../geometry';
+import { bandFootprint, blade, colorize, gradientColor, mergeParts } from '../geometry';
 import { arc, blob, crystal, lathe, tube } from '../organic';
 import { addRim, vivid } from '@/render/stylize';
-import { addGlow, glowField, glowSource, type GlowSource } from '@/render/glow';
+import { addGlow, glow as glowUniforms, glowField, glowSource, type GlowSource } from '@/render/glow';
 
 export const RESOURCE_COLORS: Record<ResourceId, string> = {
   ferrite: '#8a4a2a', cuprite: '#2a8a7a', titanite: '#b8c0c8', cobaltite: '#3a5ab8', aurum: '#e0b020',
@@ -23,6 +24,10 @@ interface NodeTemplate {
   radius: number;
   centerY: number;
   glowColor: Color | null;
+  /** Radius des Hindernisses (0 = begehbar). */
+  colliderR: number;
+  /** Gaswolke über dem Schlot (nur Gase). */
+  cloud: InstancedMesh | null;
   /** Ein InstancedMesh je Rohstoffart (ein Draw-Call), Instanz-Index → Knoten. */
   mesh: InstancedMesh;
   slots: LiveNode[];
@@ -45,7 +50,106 @@ const CAPACITY = 768;
 const UP = new Vector3(0, 1, 0);
 const ONE = new Vector3(1, 1, 1);
 
-function buildTemplateGeometry(id: ResourceId): { geometry: BufferGeometry; material: MeshStandardMaterial; radius: number; centerY: number; glowColor: Color | null } {
+/** Zahl der Schwaden je Gasquelle. */
+const CLOUD_PUFFS = 44;
+
+const CLOUD_VERT = /* glsl */ `
+attribute vec2 aCorner;
+attribute vec4 aSeed;
+uniform float uTime;
+varying vec2 vUv;
+varying float vAlpha;
+varying float vShade;
+varying float vSpin;
+#include <fog_pars_vertex>
+void main() {
+  // Lebenslauf 0..1 je Schwade: steigt auf, weitet sich, treibt mit dem Wind ab und löst sich auf
+  float t = fract(aSeed.x + uTime * (0.05 + 0.04 * aSeed.w));
+  float ang = aSeed.y * 6.2832 + uTime * 0.3 * (aSeed.w - 0.5) + t * 2.2;
+  // unten eng am Schlot, nach oben fächert die Fahne auf und treibt mit dem Wind ab
+  float rad = (0.08 + 1.25 * t * t) * (0.25 + 0.75 * aSeed.z);
+  vec3 local = vec3(cos(ang) * rad + t * t * 1.1, 0.15 + t * 3.8 * (0.5 + 0.5 * aSeed.z), sin(ang) * rad + t * t * 0.3);
+  #ifdef USE_INSTANCING
+    vec4 world = modelMatrix * instanceMatrix * vec4(local, 1.0);
+  #else
+    vec4 world = modelMatrix * vec4(local, 1.0);
+  #endif
+  vec4 mvPosition = viewMatrix * world;
+  // Schwade als Scheibe zur Kamera gedreht
+  mvPosition.xy += aCorner * (0.22 + 1.15 * t) * (0.6 + 0.8 * aSeed.w);
+  gl_Position = projectionMatrix * mvPosition;
+  vUv = aCorner;
+  vSpin = aSeed.y * 6.2832 + uTime * 0.2 * (aSeed.z - 0.5);
+  // am Schlot dicht, nach oben dünnt die Schwade aus
+  vAlpha = smoothstep(0.0, 0.08, t) * (1.0 - smoothstep(0.38, 1.0, t));
+  vShade = 0.72 + 0.28 * aSeed.z;
+  #include <fog_vertex>
+}
+`;
+
+const CLOUD_FRAG = /* glsl */ `
+uniform vec3 uColor;
+uniform float uNight;
+varying vec2 vUv;
+varying float vAlpha;
+varying float vShade;
+varying float vSpin;
+#include <fog_pars_fragment>
+void main() {
+  float d = dot(vUv, vUv);
+  if (d > 1.0) discard;
+  // unregelmäßiger Rand (drei Lappen, je Schwade anders gedreht): Fetzen statt runder Scheiben
+  float lobes = 0.72 + 0.28 * sin(atan(vUv.y, vUv.x) * 3.0 + vSpin);
+  float soft = clamp(1.0 - d / (lobes * lobes), 0.0, 1.0);
+  soft *= soft;
+  // fast weißer Dampf mit einem Hauch der Gasfarbe: liest sich als Gas statt als farbige Kugel
+  vec3 col = mix(uColor, vec3(1.0), 0.3 + 0.35 * soft) * vShade * (1.0 - 0.72 * uNight);
+  gl_FragColor = vec4(col, soft * vAlpha * 0.36);
+  #include <fog_fragment>
+}
+`;
+
+/** Gaswolke: Schwaden als Scheiben, die im Shader aufsteigen und sich auflösen (keine Arbeit auf der CPU). */
+function gasCloud(id: ResourceId, color: Color): { geometry: BufferGeometry; material: ShaderMaterial } {
+  const rng = new Random(`gas:${id}`);
+  const corners = [-1, -1, 1, -1, 1, 1, -1, 1];
+  const pos = new Float32Array(CLOUD_PUFFS * 4 * 3);
+  const corner = new Float32Array(CLOUD_PUFFS * 4 * 2);
+  const seed = new Float32Array(CLOUD_PUFFS * 4 * 4);
+  const index: number[] = [];
+  for (let p = 0; p < CLOUD_PUFFS; p++) {
+    const s = [rng.next(), rng.next(), rng.next(), rng.next()];
+    for (let v = 0; v < 4; v++) {
+      const o = p * 4 + v;
+      // Lage nur für die Hüllkugel; die echte Position entsteht im Shader
+      pos[o * 3 + 1] = 1.4;
+      corner[o * 2] = corners[v * 2] as number;
+      corner[o * 2 + 1] = corners[v * 2 + 1] as number;
+      seed.set(s, o * 4);
+    }
+    index.push(p * 4, p * 4 + 1, p * 4 + 2, p * 4, p * 4 + 2, p * 4 + 3);
+  }
+  const geometry = new BufferGeometry();
+  geometry.setAttribute('position', new BufferAttribute(pos, 3));
+  geometry.setAttribute('aCorner', new BufferAttribute(corner, 2));
+  geometry.setAttribute('aSeed', new BufferAttribute(seed, 4));
+  geometry.setIndex(index);
+  const material = new ShaderMaterial({
+    vertexShader: CLOUD_VERT,
+    fragmentShader: CLOUD_FRAG,
+    transparent: true,
+    depthWrite: false,
+    side: DoubleSide,
+    fog: true,
+    uniforms: UniformsUtils.merge([UniformsLib.fog, { uColor: { value: color.clone() }, uTime: { value: 0 }, uNight: { value: 0 } }]),
+  });
+  // Zeit und Tageslicht teilt sich die Wolke mit dem Leuchtsystem (von der Szene je Frame gesetzt)
+  material.uniforms.uTime = glowUniforms.time;
+  material.uniforms.uNight = glowUniforms.night;
+  return { geometry, material };
+}
+
+function buildTemplateGeometry(id: ResourceId): { geometry: BufferGeometry; material: MeshStandardMaterial; radius: number; centerY: number; glowColor: Color | null; colliderR: number; gas: Color | null } {
   const def = RESOURCES[id];
   const col = new Color(RESOURCE_COLORS[id]);
   const parts: BufferGeometry[] = [];
@@ -127,13 +231,10 @@ function buildTemplateGeometry(id: ResourceId): { geometry: BufferGeometry; mate
         ],
         12,
       );
-      parts.push(gradientColor(vent, ROCK.clone().multiplyScalar(0.6), ROCK));
-      const column = new CylinderGeometry(0.25, 0.45, 1.6, 8, 1, true);
-      column.translate(0, 1.0, 0);
-      parts.push(colorize(column, vividCol, 0.6));
-      radius = 1;
-      centerY = 0.6;
-      glow = true;
+      // nur der Schlot ist fest; das Gas selbst steigt als Partikelwolke auf (siehe gasCloud)
+      parts.push(gradientColor(vent, ROCK.clone().multiplyScalar(0.45), ROCK));
+      radius = 1.1;
+      centerY = 1.1;
       break;
     }
     case 'organic': {
@@ -183,7 +284,10 @@ function buildTemplateGeometry(id: ResourceId): { geometry: BufferGeometry; mate
   addRim(material, def.kind === 'crystal' ? 1.2 : 0.7);
   // leuchtende Rohstoffe strahlen aus ihren hellen Kristallen, nicht aus dem Fels
   if (glow) addGlow(material, { amount: 0.95, day: 0.3, lo: 0.42, hi: 0.85 });
-  return { geometry, material, radius, centerY, glowColor: glow ? vividCol : null };
+  // Hindernis so breit wie das Netz in Körperhöhe; Gasquellen und weiche Büschel sind begehbar
+  const solid = def.kind !== 'gas' && id !== 'fiber' && id !== 'spores';
+  const colliderR = solid ? (bandFootprint(geometry, 0.25, 1.4)?.radius ?? 0) * 0.95 : 0;
+  return { geometry, material, radius, centerY, glowColor: glow ? vividCol : null, colliderR, gas: def.kind === 'gas' ? vividCol : null };
 }
 
 /**
@@ -204,6 +308,8 @@ export class ResourceNodeManager {
   private readonly tmpQuat = new Quaternion();
   private readonly tmpPos = new Vector3();
   private readonly dirty = new Set<ResourceId>();
+  /** Garantierte Knoten um den Landeplatz. */
+  private readonly starters: ResourceNode[];
   private accum = 1;
   private clock = 0;
 
@@ -214,6 +320,7 @@ export class ResourceNodeManager {
     private readonly radius = 220,
   ) {
     scene.add(this.group);
+    this.starters = generateStarterNodes(model, planet, model.findSpawn());
   }
 
   private template(id: ResourceId): NodeTemplate {
@@ -227,7 +334,18 @@ export class ResourceNodeManager {
       mesh.frustumCulled = false;
       mesh.userData.resourceId = id;
       this.group.add(mesh);
-      t = { ...base, mesh, slots: [] };
+      let cloud: InstancedMesh | null = null;
+      if (base.gas) {
+        const c = gasCloud(id, base.gas);
+        cloud = new InstancedMesh(c.geometry, c.material, CAPACITY);
+        cloud.count = 0;
+        cloud.frustumCulled = false;
+        cloud.renderOrder = 3;
+        // die Wolke ist nicht greifbar: Zielen läuft über den Schlot und den Kegel in pick()
+        cloud.raycast = () => {};
+        this.group.add(cloud);
+      }
+      t = { geometry: base.geometry, material: base.material, radius: base.radius, centerY: base.centerY, glowColor: base.glowColor, colliderR: base.colliderR, cloud, mesh, slots: [] };
       this.templates.set(id, t);
     }
     return t;
@@ -235,7 +353,10 @@ export class ResourceNodeManager {
 
   private buildCell(ix: number, iz: number): Cell {
     const nodes: LiveNode[] = [];
-    for (const node of generateResourceNodes(this.model, this.planet, ix, iz)) {
+    const generated = generateResourceNodes(this.model, this.planet, ix, iz);
+    // garantierte Grundrohstoffe am Landeplatz gehören zur Zelle, in der sie liegen
+    for (const s of this.starters) if (Math.floor(s.x / NODE_CELL) === ix && Math.floor(s.z / NODE_CELL) === iz) generated.push(s);
+    for (const node of generated) {
       this.template(node.resourceId);
       const saved = this.depleted.get(node.id);
       nodes.push({ node, remaining: saved?.remaining ?? node.amount, respawnAt: saved?.respawnAt ?? 0 });
@@ -260,14 +381,19 @@ export class ResourceNodeManager {
         this.tmpPos.set(n.node.x, n.node.y - 0.05, n.node.z);
         this.tmpMatrix.compose(this.tmpPos, this.tmpQuat, ONE);
         t.mesh.setMatrixAt(i, this.tmpMatrix);
+        t.cloud?.setMatrixAt(i, this.tmpMatrix);
         t.slots[i] = n;
-        colliders.push({ x: n.node.x, z: n.node.z, r: t.radius * 0.72, top: n.node.y + t.radius * 1.3 });
+        if (t.colliderR > 0.1) colliders.push({ x: n.node.x, z: n.node.z, r: t.colliderR, top: n.node.y + t.radius * 1.3 });
         if (t.glowColor) lights.push(glowSource(n.node.x, n.node.y + t.centerY + 0.3, n.node.z, 4.5, t.glowColor, 1.3));
         i++;
       }
     }
     t.mesh.count = i;
     t.mesh.instanceMatrix.needsUpdate = true;
+    if (t.cloud) {
+      t.cloud.count = i;
+      t.cloud.instanceMatrix.needsUpdate = true;
+    }
     // Hindernisse der sichtbaren Knoten dieser Art (abgebaute Knoten geben den Weg frei)
     this.collision?.set(`nodes:${id}`, colliders);
     glowField.set(`nodes:${id}`, lights);
@@ -383,6 +509,11 @@ export class ResourceNodeManager {
       t.mesh.dispose();
       t.geometry.dispose();
       t.material.dispose();
+      if (t.cloud) {
+        t.cloud.geometry.dispose();
+        (t.cloud.material as ShaderMaterial).dispose();
+        t.cloud.dispose();
+      }
     }
     this.templates.clear();
     this.group.removeFromParent();

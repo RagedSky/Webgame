@@ -1,5 +1,5 @@
 import { clamp, lerp } from '@/math/utils';
-import type { CollisionWorld } from '../Collision';
+import type { Collider, CollisionWorld } from '../Collision';
 import { Group, Mesh, Raycaster, Vector3, type Scene, Quaternion } from 'three';
 import { Random } from '@/math/Random';
 import type { TerrainModel, TerrainSample } from '@/gen/terrain/TerrainModel';
@@ -10,6 +10,7 @@ import { buildPropTemplate, type PropTemplate } from './PropBuilder';
 import { glowField, glowSource, type GlowSource } from '@/render/glow';
 
 const UP = new Vector3(0, 1, 0);
+const tmpPoint = new Vector3();
 const tmpNormal = new Vector3();
 const tmpTilt = new Quaternion();
 const tmpYaw = new Quaternion();
@@ -63,6 +64,28 @@ export class PropManager {
       this.templates.set(entry.id, t);
     }
     return t;
+  }
+
+  /**
+   * Hindernisse einer Zelle: je Fundstück die Kreise seines Grundrisses (in Körperhöhe am Netz gemessen), mit Lage,
+   * Drehung und Größe des Stücks in die Welt gesetzt. Kleine Stücke und alles unter Kniehöhe bleibt begehbar.
+   */
+  private collidersFor(props: WorldProp[]): Collider[] {
+    const out: Collider[] = [];
+    for (const p of props) {
+      if (p.radius < 0.45) continue;
+      const t = this.templates.get(p.entry.id);
+      if (!t) continue;
+      const scale = p.mesh.scale.x;
+      p.mesh.updateMatrixWorld();
+      for (const c of t.colliders) {
+        const r = c.r * scale;
+        if (r < 0.12) continue;
+        tmpPoint.set(c.x, 1, c.z).applyMatrix4(p.mesh.matrixWorld);
+        out.push({ x: tmpPoint.x, z: tmpPoint.z, r, top: p.mesh.position.y + t.top * scale });
+      }
+    }
+    return out;
   }
 
   private buildCell(ix: number, iz: number): Cell {
@@ -130,7 +153,7 @@ export class PropManager {
         if (!this.cells.has(id)) {
           const cell = this.buildCell(ix, iz);
           this.cells.set(id, cell);
-          this.collision?.set(`props:${id}`, cell.props.filter((p) => p.radius >= 0.45).map((p) => ({ x: p.center.x, z: p.center.z, r: p.radius * 0.7, top: p.center.y + p.radius })));
+          this.collision?.set(`props:${id}`, this.collidersFor(cell.props));
           const lights: GlowSource[] = [];
           for (const p of cell.props) {
             const color = this.templates.get(p.entry.id)?.glowColor;

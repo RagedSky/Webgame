@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_BINDINGS } from '@/config/keybindings';
-import { bindingLabel, conflictsFor, isDefaultBinding, keyName, sanitizeBindings, withBinding, withDefaultBinding } from './Keybindings';
+import { bindingLabel, conflictsFor, isDefaultBinding, isMouseCode, keyName, sanitizeBindings, withBinding, withDefaultBinding } from './Keybindings';
 
 describe('Keybindings', () => {
   it('bereinigt gespeicherte Belegungen und lässt feste Aktionen unverändert', () => {
@@ -30,5 +30,19 @@ describe('Keybindings', () => {
     expect(keyName('Numpad5')).toBe('Num 5');
     expect(keyName('F7')).toBe('F7');
     expect(bindingLabel(['ShiftLeft', 'ShiftRight'])).toBe('Shift / Shift (rechts)');
+  });
+
+  it('erlaubt Maustasten als Belegung', () => {
+    const b = withBinding(sanitizeBindings({}), 'sprint', 'Mouse4');
+    expect(b.sprint[0]).toBe('Mouse4');
+    // gespeicherte Belegung mit Maustaste übersteht das Laden
+    expect(sanitizeBindings({ sprint: ['Mouse4', 'ShiftLeft'] }).sprint).toEqual(['Mouse4', 'ShiftLeft']);
+    expect(keyName('Mouse0')).toBe('Maus links');
+    expect(keyName('Mouse3')).toBe('Maustaste 4');
+    expect(keyName('Mouse4')).toBe('Maustaste 5');
+    expect(bindingLabel(['Mouse4', 'ShiftLeft'])).toBe('Maustaste 5 / Shift');
+    expect(isMouseCode('Mouse4')).toBe(true);
+    expect(isMouseCode('KeyM')).toBe(false);
+    expect(isMouseCode('Mouse9')).toBe(false);
   });
 });

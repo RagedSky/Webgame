@@ -13,6 +13,7 @@ import type { FloraAssets } from './flora/FloraAssets';
 import { buildFloraGeometry } from './flora/FloraBuilder';
 import { glowField, glowSource, type GlowSource } from '@/render/glow';
 import { floraGlowColor } from './flora/FloraAssets';
+import { bandFootprint } from './geometry';
 
 export interface SpeciesPlacement {
   entry: ArchiveEntry;
@@ -41,29 +42,31 @@ const SHADOW_RANGE = 78;
 /** Gras und Blumen werfen bis zu dieser Entfernung zum Zellrand Schatten (dahinter löst die Schattenkarte Halme nicht auf). */
 const GRASS_SHADOW_RANGE = 22;
 
-/** Hindernis einer Pflanze: Stamm bzw. Körper als Zylinder; kleine und weiche Gewächse bleiben begehbar. */
-function floraCollider(genome: FloraGenome, height: number, x: number, y: number, z: number): Collider | null {
-  if (height < 0.9) return null;
-  let r: number;
-  let top = y + height * 0.75;
-  switch (genome.form) {
-    case 'tree':
-      r = height * 0.05;
-      break;
-    case 'fungus':
-      r = height * 0.1;
-      break;
-    case 'succulent':
-      r = genome.leafShape === 'pad' || genome.leafShape === 'broad' || genome.leafShape === 'lobed' ? height * 0.27 : height * 0.2;
-      top = y + height * 0.85;
-      break;
-    case 'crystal_plant':
-      r = height * 0.15;
-      break;
-    default:
-      return null;
+/** Höhenband (Meter über dem Boden), in dem der Körper einer Pflanze für die Kollision gemessen wird: Knie bis Brust. */
+const BODY_BAND: readonly [number, number] = [0.25, 1.3];
+const bodyRadii = new WeakMap<BufferGeometry, number>();
+
+/** Radius des Stamms bzw. Körpers einer Geometrie im Höhenband (gemessen am Netz, je Geometrie gemerkt; 0 = nichts dort). */
+function bodyRadius(geometry: BufferGeometry, y0: number = BODY_BAND[0], y1: number = BODY_BAND[1]): number {
+  let r = bodyRadii.get(geometry);
+  if (r === undefined) {
+    r = bandFootprint(geometry, y0, y1)?.radius ?? 0;
+    bodyRadii.set(geometry, r);
   }
-  return { x, z, r: clamp(r, 0.12, 2.2), top };
+  return r;
+}
+
+/**
+ * Hindernis einer Pflanze: Stamm bzw. Körper als Zylinder, so dick wie das sichtbare Netz in Körperhöhe. Kleine und
+ * weiche Gewächse bleiben begehbar. `scale` ist die Größe der Instanz gegenüber der Geometrie.
+ */
+function floraCollider(genome: FloraGenome, geometry: BufferGeometry, scale: number, height: number, x: number, y: number, z: number): Collider | null {
+  if (height < 0.9) return null;
+  if (genome.form !== 'tree' && genome.form !== 'fungus' && genome.form !== 'succulent' && genome.form !== 'crystal_plant') return null;
+  const r = bodyRadius(geometry) * scale;
+  if (r <= 0) return null;
+  const top = y + height * (genome.form === 'succulent' ? 0.85 : 0.75);
+  return { x, z, r: clamp(r, 0.16, 3), top };
 }
 
 interface GenericBatch {
@@ -248,7 +251,7 @@ export class VegetationManager {
         tmpQuat.setFromAxisAngle(Y_AXIS, yaw);
         tmpScale.set(scale, scale * rng.float(0.9, 1.15), scale);
         matrices.push(new Matrix4().compose(tmpPos, tmpQuat, tmpScale));
-        const lc = floraCollider(landmark.genome, landmark.genome.heightM * scale, x, s.height, z);
+        const lc = floraCollider(landmark.genome, this.landmarkGeos[li] as BufferGeometry, scale, landmark.genome.heightM * scale, x, s.height, z);
         if (lc) this.pending.push(lc);
         const lg = floraGlowColor(landmark.genome);
         if (lg) this.pendingGlow.push(glowSource(x, s.height + landmark.genome.heightM * scale * 0.6, z, clamp(2.2 + landmark.genome.heightM * scale * 1.6, 2.6, 11), lg, 1.05));
@@ -309,8 +312,9 @@ export class VegetationManager {
         tmpScale.set(baseScale * rng.float(0.85, 1.15), baseScale, baseScale * rng.float(0.85, 1.15));
         batch.matrices.push(new Matrix4().compose(tmpPos, tmpQuat, tmpScale));
         // größere Findlinge und Stämme sind Hindernisse, kleine Steine übersteigt man
-        if (type === 'rock' && baseScale >= 0.85) this.pending.push({ x, z, r: 0.52 * baseScale, top: s.height + 0.5 * baseScale });
-        else if (type === 'tree') this.pending.push({ x, z, r: 0.26 * baseScale, top: s.height + 3 * baseScale });
+        // Radius am Netz gemessen (Stamm in Körperhöhe, Stein knapp über dem Boden), nicht geschätzt
+        if (type === 'rock' && baseScale >= 0.85) this.pending.push({ x, z, r: Math.max(0.3, bodyRadius(batch.geometry, 0.12, 0.45) * baseScale * 0.92), top: s.height + 0.5 * baseScale });
+        else if (type === 'tree') this.pending.push({ x, z, r: Math.max(0.2, bodyRadius(batch.geometry, 0.25, 1.1) * baseScale), top: s.height + 3 * baseScale });
         if (type === 'rock') tmpColor.copy(this.groundPalettes[biome] as Color).multiplyScalar(0.75).lerp(tmpColor2.set(0.45, 0.44, 0.42), 0.4);
         else {
           this.vegColor(s, x, z, tmpColor);
@@ -494,7 +498,8 @@ export class VegetationManager {
     for (const m of meshes) this.group.add(m);
     if (this.collision && kind !== 'g') {
       for (const sp of species) {
-        const c = floraCollider(sp.entry.genome as FloraGenome, sp.height, sp.x, sp.y, sp.z);
+        const g = sp.entry.genome as FloraGenome;
+        const c = floraCollider(g, this.flora.get(sp.entry), sp.height / Math.max(0.01, g.heightM), sp.height, sp.x, sp.y, sp.z);
         if (c) this.pending.push(c);
       }
       this.collision.set(`veg:${id}`, this.pending);

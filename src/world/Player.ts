@@ -25,6 +25,12 @@ export interface WaterSurface {
   surfaceAt(x: number, z: number, ground: number): number;
 }
 const JUMP_SPEED = 5.4;
+/** So lange zählt ein Sprungdruck noch, wenn man gerade nicht am Boden ist (Sekunden). */
+const JUMP_BUFFER = 0.22;
+/** So lange nach dem Verlassen des Bodens darf man noch abspringen (Sekunden). */
+const COYOTE_TIME = 0.16;
+/** Bis zu dieser Höhe über dem Boden bleibt man beim Laufen bergab am Boden haften (Meter). */
+const GROUND_SNAP = 0.45;
 const FLY_SPEED = 32;
 
 /**
@@ -50,6 +56,8 @@ export class Player {
   selfie = false;
   /** Bewegung gesperrt (Foto-Modus), Umsehen bleibt möglich. */
   frozen = false;
+  private jumpBuffer = 0;
+  private coyote = 0;
   sensitivity = 0.0022;
   readonly body: Group;
   private readonly gravity: number;
@@ -147,6 +155,10 @@ export class Player {
       this.wading = 0;
       this.submerged = false;
     } else {
+      if (input.wasPressed('jump')) this.jumpBuffer = JUMP_BUFFER;
+      else this.jumpBuffer = Math.max(0, this.jumpBuffer - dt);
+      this.coyote = this.grounded ? COYOTE_TIME : Math.max(0, this.coyote - dt);
+      const wasGrounded = this.grounded;
       this.swimming = waterDepthAtBody > (this.swimming ? SWIM_STOP : SWIM_START);
       // Waten: ab den Knien bremst das Wasser, ab der Hüfte kann man weder sprinten noch schleichen
       this.wading = this.swimming ? 0 : clamp((waterDepthAtBody - 0.25) / 0.75, 0, 1);
@@ -178,9 +190,13 @@ export class Player {
         this.velocity.y = clamp(vy, -9, 4.5);
       } else {
         this.velocity.y -= this.gravity * dt;
-        if (this.grounded && !this.frozen && this.wading < 0.7 && input.wasPressed('jump')) {
+        // Beim Rennen über Bodenwellen ist man oft für Sekundenbruchteile in der Luft. Der Sprungdruck wird deshalb
+        // kurz gemerkt, und kurz nach dem Abheben gilt man noch als abspringbereit.
+        if (this.jumpBuffer > 0 && this.coyote > 0 && !this.frozen && this.wading < 0.7) {
           this.velocity.y = JUMP_SPEED * (1 - 0.4 * this.wading);
           this.grounded = false;
+          this.jumpBuffer = 0;
+          this.coyote = 0;
         }
       }
 
@@ -205,6 +221,12 @@ export class Player {
       if (this.position.y <= ground) {
         this.position.y = ground;
         if (this.velocity.y < 0) this.velocity.y = 0;
+        this.grounded = true;
+      } else if (wasGrounded && !this.swimming && this.velocity.y <= 0 && this.position.y - ground < Math.min(GROUND_SNAP, 0.03 + this.speed * dt)) {
+        // bergab und über Kuppen am Boden bleiben, statt in kleinen Sätzen zu fallen; nur bis 45° Gefälle,
+        // an Steilhängen und Kanten fällt man weiterhin
+        this.position.y = ground;
+        this.velocity.y = 0;
         this.grounded = true;
       } else {
         this.grounded = this.position.y - ground < 0.05;

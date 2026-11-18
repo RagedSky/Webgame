@@ -5,7 +5,7 @@ import { addRim } from '@/render/stylize';
 import { Random } from '@/math/Random';
 import { clamp } from '@/math/utils';
 import type { ArchiveEntry, FossilGenome, MineralGenome } from '@/gen/archive/types';
-import { colorize, gradientColor, hsl, jitter, mergeParts } from '../geometry';
+import { colorize, gradientColor, hsl, jitter, mergeParts, bandFootprint, footprintCircles } from '../geometry';
 import { arc, blob, lathe, prism, tube } from '../organic';
 import { addGlow } from '@/render/glow';
 
@@ -18,6 +18,17 @@ export interface PropTemplate {
   centerY: number;
   /** Farbe des Eigenleuchtens (null = leuchtet nicht). */
   glowColor: Color | null;
+  /** Hindernis-Kreise in lokalen Koordinaten: Grundriss des Netzes in Körperhöhe (leer = übersteigbar). */
+  colliders: Array<{ x: number; z: number; r: number }>;
+  /** Oberkante des Netzes in lokalen Koordinaten. */
+  top: number;
+}
+
+/** Grundriss eines Fundstücks zwischen Knie- und Kopfhöhe als Kreise; ein Mast ergibt einen schmalen, eine Mauer eine Reihe. */
+function propColliders(geo: BufferGeometry): { colliders: Array<{ x: number; z: number; r: number }>; top: number } {
+  const fp = bandFootprint(geo, 0.3, 1.8);
+  geo.computeBoundingBox();
+  return { colliders: fp ? footprintCircles(fp, 12) : [], top: geo.boundingBox?.max.y ?? 0 };
 }
 
 const STONE = new Color(0.45, 0.43, 0.4);
@@ -462,7 +473,7 @@ export function buildPropTemplate(entry: ArchiveEntry): PropTemplate {
     });
     addRim(material, 0.8);
     if (glow) addGlow(material, { amount: 0.9, day: 0.3, lo: 0.4, hi: 0.85 });
-    return { geometry: geo, material, radius, centerY, glowColor: glow ? hsl(g.hue, 0.8, 0.55) : null };
+    return { geometry: geo, material, radius, centerY, glowColor: glow ? hsl(g.hue, 0.8, 0.55) : null, ...propColliders(geo) };
   }
   const g = entry.genome as FossilGenome;
   const { geo, radius, centerY } = fossilGeometry(g, rng, seed);
@@ -485,5 +496,5 @@ export function buildPropTemplate(entry: ArchiveEntry): PropTemplate {
   // nur die Leuchtteile der Ruine strahlen (Augen, Glyphen, Signallicht), der Stein bleibt dunkel
   const ruinGlow = emissive ? hsl(g.hue + 180, 0.8, 0.6) : null;
   if (ruinGlow) addGlow(material, { tint: ruinGlow, amount: 1.15, day: 0.35, floor: 0 });
-  return { geometry: geo, material, radius, centerY, glowColor: ruinGlow };
+  return { geometry: geo, material, radius, centerY, glowColor: ruinGlow, ...propColliders(geo) };
 }

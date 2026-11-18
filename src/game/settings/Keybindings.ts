@@ -1,6 +1,7 @@
 /**
  * Tastenbelegung (rein): Bereinigen gespeicherter Belegungen, lesbare Tastennamen, Konflikte.
- * Belegungen sind je Aktion eine Liste von `KeyboardEvent.code`-Werten (maximal zwei).
+ * Belegungen sind je Aktion eine Liste von `KeyboardEvent.code`-Werten (maximal zwei); Maustasten heißen
+ * „Mouse0“ (links) bis „Mouse4“ (Seitentaste vorn).
  */
 import { DEFAULT_BINDINGS, type GameAction } from '@/config/keybindings';
 
@@ -51,6 +52,11 @@ export function isDefaultBinding(bindings: Bindings, action: GameAction): boolea
 }
 
 const SPECIAL: Record<string, string> = {
+  Mouse0: 'Maus links',
+  Mouse1: 'Mausrad-Taste',
+  Mouse2: 'Maus rechts',
+  Mouse3: 'Maustaste 4',
+  Mouse4: 'Maustaste 5',
   Space: 'Leertaste',
   Tab: 'Tab',
   Escape: 'Esc',
@@ -93,6 +99,11 @@ export function keyName(code: string): string {
   if (code.startsWith('Digit')) return code.slice(5);
   if (code.startsWith('Numpad')) return `Num ${code.slice(6)}`;
   return code;
+}
+
+/** Ist die Belegung eine Maustaste? */
+export function isMouseCode(code: string): boolean {
+  return /^Mouse[0-4]$/.test(code);
 }
 
 export function bindingLabel(codes: readonly string[]): string {

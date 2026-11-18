@@ -632,6 +632,28 @@ Unterteilungsflächen: ein grober Käfig mit sauberen Kantenschleifen, der durch
 - **Schleichen** (`CreatureAI.threat`): Geduckt ist der Spieler schwerer zu sehen und zu hören (Silhouette −70 %,
   Blick −60 %, Schrittlärm 0,1 statt 0,5). Die Karte zeigt „Wachsam“, bevor ein Tier flieht, das HUD zeigt „Schleichen“.
 
+### 4.22 Kollision nach Maß, Startrohstoffe, Maustasten, Gaswolken, Springen
+
+- **Kollision nach Maß** (`world/geometry.ts` `bandFootprint`, `footprintCircles`): Die Hindernisradien waren geschätzt.
+  Bäume waren zu dünn (Stamm mit Wurzelansatz ist in Körperhöhe fast doppelt so dick wie die Schätzung), Leuchtfeuer und
+  Signalmasten zu breit (70 % der Gesamtgröße statt des Masts). Jetzt wird der Querschnitt des Netzes in Körperhöhe
+  gemessen: jede Dreieckskante wird auf das Höhenband beschnitten, daraus folgen Ausdehnung und Radius. Pflanzen und
+  generische Bäume und Felsen nutzen den Radius (je Geometrie gemerkt), Rohstoffknoten ebenso. Fundstücke bekommen Kreise
+  aus ihrem Grundriss: rundliche einen, längliche (Mauern, Wracks) eine Reihe entlang der langen Seite, mit Lage, Drehung
+  und Größe des Stücks in die Welt gesetzt. Gasquellen, Faserbüschel und Sporen sind begehbar.
+- **Startrohstoffe** (`gen/terrain/ResourceNodes.ts`): Ferrit und Quarz sind Grundrohstoffe: Faktor 2,2, Mindesthäufigkeit
+  0,6 und nicht an ihre Stammbiome gebunden (dort voll, sonst halb so oft). `generateStarterNodes` legt zusätzlich vier
+  Ferrit- und drei Quarzknoten in einen Ring von 12 bis 48 m um den Landeplatz, deterministisch aus dem Seed.
+- **Maustasten in der Tastenbelegung** (`core/Input.ts`, `ui/SettingsUi.ts`): Maustasten heißen „Mouse0“ bis „Mouse4“ und
+  laufen durch dieselben Abfragen wie Tasten. Beim Umbelegen wird der nächste Maustastendruck übernommen. Die Seitentasten
+  blättern im Spiel nicht mehr im Browser zurück.
+- **Gaswolken** (`ResourceNodeManager` `gasCloud`): Gasquellen sind ein flacher Schlot, aus dem das Gas als Fahne aus 44
+  Schwaden aufsteigt, auffächert, mit dem Wind abtreibt und sich auflöst. Die Schwaden sind zur Kamera gedrehte Scheiben
+  mit unregelmäßigem Rand; Bewegung und Lebenslauf rechnet der Vertex-Shader, die CPU schreibt nur die Instanzmatrix.
+- **Springen** (`world/Player.ts`): Beim Rennen über Bodenwellen, vor allem bei geringer Schwerkraft, war die Figur oft
+  kurz in der Luft und der Sprungdruck verfiel. Jetzt bleibt sie bergab am Boden haften (bis 45° Gefälle), der Sprungdruck
+  wird 0,22 s gemerkt und bis 0,16 s nach dem Abheben gilt man noch als abspringbereit.
+
 ## 5. Laufzeit-Architektur
 
 - **GameLoop**: `requestAnimationFrame`, Akkumulator mit festem Update-Schritt (1/60 s, max. 5 Schritte/Frame), Render pro Frame,

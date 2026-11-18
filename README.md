@@ -68,7 +68,7 @@ gibt es den Datei-Export (siehe unten).
 | Spielstände | F5 Schnellspeichern (Slot 1) · Pause → Spielstände · F1 Tutorial überspringen |
 | Debug | F3 Overlay · T Zeitraffer (halten) · Y Wetter · G Flugmodus |
 
-Alle Tasten außer Esc, F3 und F12 lassen sich in den Einstellungen umbelegen.
+Alle Tasten außer Esc, F3 und F12 lassen sich in den Einstellungen umbelegen, auch auf Maustasten (zum Beispiel Maustaste 5 zum Sprinten).
 
 ## HUD
 

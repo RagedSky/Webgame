@@ -22,7 +22,7 @@ Im Spiel: **F3** Debug-Overlay, **Esc** Pause/zurück. Oberfläche: WASD, Maus, 
 Fliegen, Landen, Satellit/Atmosphärensonde. **M** Karte (Layer, Marker per Klick). Rover: I aussetzen, **E** steuern (WASD, Q Foto,
 F Probe, E/Esc zurück), **X** einpacken. Tiefseesonde über I am Ufer.
 Einstellungen (Hauptmenü und Pause): Presets Niedrig–Ultra, Auflösung, Render-Skalierung, Schatten, Vegetation, Sichtweite,
-Postprocessing, MSAA, FPS-Limit, Vollbild, adaptive Qualität, Lautstärken, Tutorial, Tastenbelegung (Umbelegung).
+Postprocessing, MSAA, FPS-Limit, Vollbild, adaptive Qualität, Lautstärken, Tutorial, Tastenbelegung (Umbelegung, auch auf Maustasten).
 **F1** Tutorial überspringen, **F5** Schnellspeichern (Slot 1); Spielstände (5 Slots, Export/Import als JSON) im Hauptmenü und in
 der Pause. Kompass im HUD (Schiff ▲, Unterkunft ⌂, Rover ●).
 Debug auf der Oberfläche: **T** Zeitraffer (halten), **Y** Wetter wechseln, **G** Flugmodus.
@@ -44,7 +44,7 @@ Konsole: `__stellar.scenes.active.setTimeOfDay(0.5)` / `.forceWeather('rain', tr
 - Leuchtende Objekte: kein festes `emissive`, sondern `addGlow` aus `render/glow.ts`; wer Licht abgeben soll, meldet eine Quelle an `glowField` (Gruppe je Zelle bzw. System) und wieder ab. Neue Boden- und Pflanzenmaterialien bekommen `addGlowLight`.
 - Wasser: Wellen nur in `world/water/waves.ts` ändern (Shader und Physik lesen dieselben Zahlen); Tiefe am Ufer kommt aus `ShoreMap`.
 - Schatten: `shadow.radius` ist die Gauß-Standardabweichung in Texeln (`render/softShadows.ts`), für die Sonne über `sunShadowRadius`.
-- Feste Objekte, die neu in die Welt kommen, melden einen Zylinder an `CollisionWorld` (Gruppe je Zelle bzw. System) und wieder ab; alles Sichtbare wirft Schatten (Halme über `grassDepthMaterial`, nur nahe der Kamera).
+- Feste Objekte, die neu in die Welt kommen, melden einen Zylinder an `CollisionWorld` (Gruppe je Zelle bzw. System) und wieder ab, Radius aus dem Netz gemessen (`bandFootprint`/`footprintCircles` in `world/geometry.ts`), nicht geschätzt; alles Sichtbare wirft Schatten (Halme über `grassDepthMaterial`, nur nahe der Kamera).
 - Oberflächen: gemeinsame Bausteine aus `styles.css` (`.panel`, `button`, `h2`/`h3`, `.badge`, `.progress`) und Farben nur über `--accent`/`--hud-*`, keine festen Akzentfarben oder runden Ecken.
 - HUD: Texte nur bei Änderung schreiben (`setText`), keine DOM-Neuaufbauten pro Frame; Farben über `--hud-accent`. Dialoge, die Klicks brauchen, müssen den Mauszeiger freigeben und in `uiOpen` zählen (siehe Foto-Auswertung).
 - Vollflächige UI-Overlays ohne Klickfläche in die `#ui-root > …`-Liste in `styles.css` eintragen (sonst blockieren sie Canvas-Klicks).
@@ -79,7 +79,7 @@ Konsole: `__stellar.scenes.active.setTimeOfDay(0.5)` / `.forceWeather('rain', tr
 - `src/gen/archive/conditions.ts` – Spawn-Bedingungen zur Laufzeit (rein)
 - `src/game/PlayerState.ts` – Inventar, Überleben, Module, Labor-Stufe, Respawn (rein, IndexedDB `player:<seed>`)
 - `src/game/crafting/recipes.ts` – Rezepte/Module, `fuel.ts` – Synthese; `src/game/survival/Survival.ts` – Sauerstoff/Energie
-- `src/world/resources/ResourceNodeManager.ts` – Rohstoffknoten, `src/world/base/BaseModules.ts` – Basis-Module + Bau-Geist
+- `src/world/resources/ResourceNodeManager.ts` – Rohstoffknoten (Gase als Partikelfahne), `src/gen/terrain/ResourceNodes.ts` – Platzierung und Startknoten (rein), `src/world/base/BaseModules.ts` – Basis-Module + Bau-Geist
 - `src/ui/InventoryUi.ts` (Inventar/Werkbank), `src/ui/LabUi.ts` (Treibstoff-Synthese)
 - `src/game/ship/{parts,ShipDesign,travel,blueprints}.ts` – Schiffsteile, Entwurf/Werte, Reisekosten, Baupläne (rein)
 - `src/scenes/ShipEditorScene.ts` – Werft, `src/scenes/SpaceScene.ts` – Orbit/Transfer/Landung, `src/world/ship/*` – Schiffsmesh/-aktor

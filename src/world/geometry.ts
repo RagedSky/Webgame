@@ -135,3 +135,79 @@ export function mergeParts(parts: BufferGeometry[], label: string): BufferGeomet
 }
 
 export const hsl = (h: number, s: number, l: number): Color => new Color().setHSL((((h % 360) + 360) % 360) / 360, s, l);
+
+/** Grundriss eines Körpers in einem Höhenband: Ausdehnung in x/z und größter Abstand zur Hochachse. */
+export interface Footprint {
+  minX: number;
+  maxX: number;
+  minZ: number;
+  maxZ: number;
+  /** Größter Abstand eines Punktes zur Achse durch den Ursprung. */
+  radius: number;
+}
+
+/**
+ * Querschnitt einer Geometrie zwischen zwei Höhen (lokale Koordinaten). Jede Dreieckskante wird auf das Band
+ * beschnitten, dadurch zählt auch ein dünner Mast, dessen Eckpunkte nur am Boden und an der Spitze liegen.
+ * Liefert null, wenn nichts im Band liegt. Grundlage für Kollisionszylinder, die zur sichtbaren Form passen.
+ */
+export function bandFootprint(geo: BufferGeometry, y0: number, y1: number): Footprint | null {
+  const pos = geo.getAttribute('position');
+  const index = geo.getIndex();
+  const count = index ? index.count : pos.count;
+  const fp: Footprint = { minX: Infinity, maxX: -Infinity, minZ: Infinity, maxZ: -Infinity, radius: 0 };
+  let any = false;
+  const add = (x: number, z: number): void => {
+    any = true;
+    if (x < fp.minX) fp.minX = x;
+    if (x > fp.maxX) fp.maxX = x;
+    if (z < fp.minZ) fp.minZ = z;
+    if (z > fp.maxZ) fp.maxZ = z;
+    const r = Math.hypot(x, z);
+    if (r > fp.radius) fp.radius = r;
+  };
+  for (let t = 0; t + 2 < count; t += 3) {
+    for (let e = 0; e < 3; e++) {
+      const a = index ? index.getX(t + e) : t + e;
+      const b = index ? index.getX(t + ((e + 1) % 3)) : t + ((e + 1) % 3);
+      const ay = pos.getY(a);
+      const by = pos.getY(b);
+      if (Math.max(ay, by) < y0 || Math.min(ay, by) > y1) continue;
+      const ax = pos.getX(a);
+      const az = pos.getZ(a);
+      const bx = pos.getX(b);
+      const bz = pos.getZ(b);
+      const dy = by - ay;
+      // beide Enden der Kante ins Band holen
+      for (const yEnd of [ay, by]) {
+        const y = Math.min(y1, Math.max(y0, yEnd));
+        const k = Math.abs(dy) < 1e-9 ? (yEnd === ay ? 0 : 1) : (y - ay) / dy;
+        add(ax + (bx - ax) * k, az + (bz - az) * k);
+      }
+    }
+  }
+  return any ? fp : null;
+}
+
+/**
+ * Deckt einen Grundriss mit Kreisen ab: rundliche Formen mit einem Kreis, längliche (Mauern, Wracks) mit einer
+ * Reihe von Kreisen entlang der langen Seite. So wird aus einem Mast kein breites Hindernis und eine Mauer bleibt
+ * auf ganzer Länge dicht.
+ */
+export function footprintCircles(fp: Footprint, maxCircles = 6): Array<{ x: number; z: number; r: number }> {
+  const cx = (fp.minX + fp.maxX) / 2;
+  const cz = (fp.minZ + fp.maxZ) / 2;
+  const hx = (fp.maxX - fp.minX) / 2;
+  const hz = (fp.maxZ - fp.minZ) / 2;
+  const long = Math.max(hx, hz);
+  const short = Math.max(0.05, Math.min(hx, hz));
+  if (long / short < 1.35) return [{ x: cx, z: cz, r: (long + short) / 2 }];
+  const n = Math.min(maxCircles, Math.max(2, Math.ceil(long / short)));
+  const out: Array<{ x: number; z: number; r: number }> = [];
+  const reach = long - short;
+  for (let i = 0; i < n; i++) {
+    const t = n === 1 ? 0 : (i / (n - 1)) * 2 - 1;
+    out.push(hx >= hz ? { x: cx + t * reach, z: cz, r: short } : { x: cx, z: cz + t * reach, r: short });
+  }
+  return out;
+}
