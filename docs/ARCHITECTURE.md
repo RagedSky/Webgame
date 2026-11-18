@@ -644,6 +644,9 @@ Unterteilungsflächen: ein grober Käfig mit sauberen Kantenschleifen, der durch
 - **Startrohstoffe** (`gen/terrain/ResourceNodes.ts`): Ferrit und Quarz sind Grundrohstoffe: Faktor 2,2, Mindesthäufigkeit
   0,6 und nicht an ihre Stammbiome gebunden (dort voll, sonst halb so oft). `generateStarterNodes` legt zusätzlich vier
   Ferrit- und drei Quarzknoten in einen Ring von 12 bis 48 m um den Landeplatz, deterministisch aus dem Seed.
+- **Freiraum um Rohstoffknoten** (`world/Vegetation.ts` `nodesNear`, `nearNode`): Bäume, große Pilze, Signaturpflanzen und
+  große Findlinge wachsen nicht näher als ihr Stammradius plus 1,3 m an einem Rohstoffknoten. Die Vegetation fragt dafür
+  denselben reinen Generator ab wie der Knoten-Manager. Vorher konnte Erz in einem Baumstamm stecken.
 - **Maustasten in der Tastenbelegung** (`core/Input.ts`, `ui/SettingsUi.ts`): Maustasten heißen „Mouse0“ bis „Mouse4“ und
   laufen durch dieselben Abfragen wie Tasten. Beim Umbelegen wird der nächste Maustastendruck übernommen. Die Seitentasten
   blättern im Spiel nicht mehr im Browser zurück.

@@ -508,3 +508,10 @@ wird über den Schlot und den Zielkegel.
 **Entscheidung:** Bodenhaftung bis 45° Gefälle, Sprungpuffer 0,22 s, Nachlauf 0,16 s. An Steilhängen und Kanten fällt
 man weiterhin.
 
+## D-090 · Vegetation weicht Rohstoffknoten aus, nicht umgekehrt
+**Kontext:** Seit die Stammkollision der sichtbaren Dicke entspricht, lagen einzelne Knoten unerreichbar im Baum, darunter
+ein garantierter Quarzknoten am Landeplatz.
+**Entscheidung:** Die Knoten bleiben, wo der Generator sie setzt (Spielstände merken abgebaute Knoten über ihre Kennung);
+feste Gewächse und Findlinge lassen einen Freiraum. Die Vegetation liest die Knoten aus dem reinen Generator, dadurch
+spielt die Ladereihenfolge der Zellen keine Rolle.
+

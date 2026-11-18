@@ -14,6 +14,7 @@ import { buildFloraGeometry } from './flora/FloraBuilder';
 import { glowField, glowSource, type GlowSource } from '@/render/glow';
 import { floraGlowColor } from './flora/FloraAssets';
 import { bandFootprint } from './geometry';
+import { NODE_CELL, generateResourceNodes, generateStarterNodes, type ResourceNode } from '@/gen/terrain/ResourceNodes';
 
 export interface SpeciesPlacement {
   entry: ArchiveEntry;
@@ -43,6 +44,10 @@ const SHADOW_RANGE = 78;
 const GRASS_SHADOW_RANGE = 22;
 
 /** Höhenband (Meter über dem Boden), in dem der Körper einer Pflanze für die Kollision gemessen wird: Knie bis Brust. */
+/** Freiraum zwischen einem festen Gewächs und einem Rohstoffknoten (Meter, zusätzlich zum Stammradius). */
+const NODE_CLEARANCE = 1.3;
+const SOLID_FORMS: ReadonlySet<string> = new Set(['tree', 'fungus', 'succulent', 'crystal_plant']);
+
 const BODY_BAND: readonly [number, number] = [0.25, 1.3];
 const bodyRadii = new WeakMap<BufferGeometry, number>();
 
@@ -152,6 +157,10 @@ export class VegetationManager {
   private readonly collision: CollisionWorld | null;
   /** Hindernisse der Zelle, die gerade aufgebaut wird. */
   private pending: Collider[] = [];
+  /** Rohstoffknoten im Bereich der Zelle, die gerade gebaut wird: dort wächst nichts Festes. */
+  private avoid: ResourceNode[] = [];
+  private readonly nodeCells = new Map<string, ResourceNode[]>();
+  private readonly starterNodes: ResourceNode[];
   /** Lichtquellen der Zelle, die gerade gebaut wird (Signaturpflanzen legen hier ab). */
   private pendingGlow: GlowSource[] = [];
   private readonly palettes: Color[];
@@ -187,6 +196,7 @@ export class VegetationManager {
     this.grassRadius = options.grassRadius ?? 56;
     this.grassCell = options.grassCell ?? 24;
     this.collision = options.collision ?? null;
+    this.starterNodes = generateStarterNodes(model, planet, model.findSpawn());
     stylize.grassFar.value = this.grassRadius;
     // Dieselbe Stilisierung wie das Terrain, damit Gras und Boden farblich zusammenpassen
     this.palettes = planet.biomes.map((b) => vivid(new Color(b.palette.vegetation), 1.25));
@@ -246,6 +256,7 @@ export class VegetationManager {
         if (this.model.hasWater && s.height < sea + 0.6) continue;
         const slope = this.model.slopeAt(x, z, 3);
         if (slope > 0.75) continue;
+        if (this.nearNode(x, z, bodyRadius(this.landmarkGeos[li] as BufferGeometry) * scale + NODE_CLEARANCE)) continue;
         // am Hang tiefer einsinken, damit der Stammfuß nicht in der Luft hängt
         tmpPos.set(x, s.height - (0.25 + slope * 1.6) * scale, z);
         tmpQuat.setFromAxisAngle(Y_AXIS, yaw);
@@ -307,6 +318,8 @@ export class VegetationManager {
           batches.set(key, batch);
         }
         const baseScale = type === 'tree' ? profile.scale * rng.float(0.7, 1.5) : type === 'grass' ? rng.float(0.6, 1.3) : type === 'rock' ? rng.float(0.3, 1.6) : profile.scale * rng.float(0.7, 1.3);
+        // Bäume und große Findlinge lassen Rohstoffknoten frei
+        if ((type === 'tree' || (type === 'rock' && baseScale >= 0.85)) && this.nearNode(x, z, (type === 'tree' ? bodyRadius(batch.geometry, 0.25, 1.1) : bodyRadius(batch.geometry, 0.12, 0.45)) * baseScale + NODE_CLEARANCE)) continue;
         tmpPos.set(x, s.height - (type === 'rock' ? 0.15 * baseScale : 0.02), z);
         tmpQuat.setFromAxisAngle(Y_AXIS, rng.float(0, Math.PI * 2));
         tmpScale.set(baseScale * rng.float(0.85, 1.15), baseScale, baseScale * rng.float(0.85, 1.15));
@@ -400,6 +413,8 @@ export class VegetationManager {
         tmpQuat.setFromAxisAngle(Y_AXIS, rng.float(0, Math.PI * 2));
         tmpScale.set(scale * rng.float(0.9, 1.1), scale, scale * rng.float(0.9, 1.1));
         const l = rng.float(0.85, 1.1);
+        // feste Pflanzen (Stämme, große Pilze) lassen Rohstoffknoten frei: sonst steckt Erz im Baum
+        if (genome.heightM * scale >= 0.9 && SOLID_FORMS.has(genome.form) && this.nearNode(x, z, bodyRadius(this.flora.get(entry)) * scale + NODE_CLEARANCE)) continue;
         out.push({ entry, matrix: new Matrix4().compose(tmpPos, tmpQuat, tmpScale), color: new Color(l, l, l), x, y: s.height, z, height: genome.heightM * scale });
       }
     }
@@ -449,6 +464,41 @@ export class VegetationManager {
     return meshes;
   }
 
+  /** Rohstoffknoten, die in oder knapp neben einem Zellbereich liegen (aus dem reinen Generator, je Knotenzelle gemerkt). */
+  private nodesNear(x0: number, z0: number, size: number): ResourceNode[] {
+    const margin = 5;
+    const out: ResourceNode[] = [];
+    const i0 = Math.floor((x0 - margin) / NODE_CELL);
+    const i1 = Math.floor((x0 + size + margin) / NODE_CELL);
+    const j0 = Math.floor((z0 - margin) / NODE_CELL);
+    const j1 = Math.floor((z0 + size + margin) / NODE_CELL);
+    if (this.nodeCells.size > 600) this.nodeCells.clear();
+    for (let j = j0; j <= j1; j++) {
+      for (let i = i0; i <= i1; i++) {
+        const key = `${i}:${j}`;
+        let list = this.nodeCells.get(key);
+        if (!list) {
+          list = generateResourceNodes(this.model, this.planet, i, j);
+          this.nodeCells.set(key, list);
+        }
+        for (const n of list) out.push(n);
+      }
+    }
+    for (const n of this.starterNodes) if (n.x > x0 - margin && n.x < x0 + size + margin && n.z > z0 - margin && n.z < z0 + size + margin) out.push(n);
+    return out;
+  }
+
+  private nearNode(x: number, z: number, clearance: number): boolean {
+    const c2 = clearance * clearance;
+    for (let i = 0; i < this.avoid.length; i++) {
+      const n = this.avoid[i] as ResourceNode;
+      const dx = n.x - x;
+      const dz = n.z - z;
+      if (dx * dx + dz * dz < c2) return true;
+    }
+    return false;
+  }
+
   private buildCell(ix: number, iz: number, kind: CellKind): Cell {
     const far = kind === 'f';
     this.pending = [];
@@ -460,6 +510,7 @@ export class VegetationManager {
     const meshes: Array<InstancedMesh | BatchedMesh> = [];
     let total = 0;
 
+    this.avoid = kind === 'g' ? [] : this.nodesNear(x0, z0, size);
     const genericTypes: Array<'grass' | 'shrub' | 'tree' | 'rock'> = kind === 'g' ? [] : far ? (this.farSpecies.length === 0 ? ['tree'] : []) : ['rock'];
     const batches = this.placeGeneric(rng.fork('generic'), x0, z0, size, genericTypes);
     if (kind === 'g') batches.push(...this.placeGrass(rng.fork('grass'), x0, z0, size));
