@@ -438,3 +438,44 @@ bleiben rein vom Seed abhängig.
 **Entscheidung:** Die Bildlage jedes Motivs (`PhotoRegion`) wird beim Auslösen aus der Beobachtung übernommen und im
 Foto-Datensatz abgelegt. Der Rahmen ist eine CSS-Überlagerung, das Bild selbst bleibt unverändert und wird ohne Rahmen
 exportiert. Das Feld ist optional, alte Fotos bleiben gültig.
+
+## D-079 · Gauß-Filter im Schatten-Shader statt Varianz-Schattenkarte
+**Kontext:** Gewünscht war ein Gaußscher Weichzeichner für Schatten. Three.js bietet dafür VSM (weichgezeichnete
+Schattenkarte), das aber Licht durch dünne und gestapelte Schattenwerfer durchscheinen lässt, hier also bei Gras unter
+Bäumen.
+**Entscheidung:** Die Vergleichsabtastung bleibt, nur der Kern wird durch feste Gauß-Gewichte ersetzt (Eingriff in
+`ShaderChunk.shadowmap_pars_fragment`, mit Test, der nach einem Three.js-Update anschlägt). Der Preis: 17 statt 5
+Abtastungen auf mittlerer Stufe, 33 auf hoher.
+
+## D-080 · Kontaktschatten bleiben scharf
+**Kontext:** Ein Weichzeichner von 10 cm löst die Schatten der Grashalme auf, die erst im Schritt davor gewünscht waren.
+**Entscheidung:** Zwei Abfragen: hohe Schattenwerfer weich, niedrige (bis 1 m über der Fläche) scharf. Das entspricht
+dem Halbschatten in der Natur, der mit dem Abstand zum Schattenwerfer wächst. Die Kennung dafür steckt im Radius der
+Sonne (`sunShadowRadius`), weil die Schattenfunktion keine weiteren Parameter je Licht kennt.
+
+## D-081 · Wassertiefe aus einer Uferkarte statt aus dem Tiefenpuffer
+**Kontext:** Ufer, Durchsicht und Schaum brauchen die Wassertiefe. Der Tiefenpuffer stünde nur über einen zusätzlichen
+Zeichendurchgang zur Verfügung und fehlt ohne Postprocessing ganz.
+**Entscheidung:** Eine kleine Textur mit der Geländetiefe um die Kamera, aus dem Höhenmodell berechnet (1 µs je Punkt)
+und ringförmig nachgeführt. Sie funktioniert in jeder Qualitätsstufe und liefert auch dem Vertex-Shader die Tiefe.
+Grenze: 2 m Auflösung, jenseits von 256 m gilt das Wasser als tief.
+
+## D-082 · Ein Wellenmodell für Bild und Physik
+**Kontext:** Die alte Fläche war zu grob vernetzt für ihre Wellen, und der Schwimmer lag auf dem ruhigen Meeresspiegel.
+**Entscheidung:** `waves.ts` ist die einzige Quelle: daraus entstehen der Shader-Code und `waveHeight` für Spieler und
+Bojen. Die Kreisfrequenz folgt der Schwerkraft des Planeten.
+
+## D-083 · Leuchten aus der Eigenfarbe plus eigene Lichtquellen statt Punktlichter
+**Kontext:** Feste `emissive`-Farben machten Leuchtpflanzen nachts zu flachen hellen Flächen. Echte Punktlichter kosten
+in jedem Material Rechenzeit, auch am Tag, und ein Wechsel ihrer Anzahl baut alle Shader neu.
+**Entscheidung:** Eigenleuchten über eine Maske aus der Vertexfarbe; dazu sechs Lichtquellen als Uniforms, die nur
+Boden und Vegetation erreichen und am Tag übersprungen werden. Kreaturen, Charakter und Wasser empfangen dieses Licht
+nicht.
+
+## D-084 · Sichtung nur unter dem Fadenkreuz, Schleichen wirkt deutlich
+**Kontext:** Die Sichtungskarte sprang auf Tiere, die nur irgendwo im Bild waren. Geduckt kam man kaum näher heran als
+im Gehen (26 m statt 30 m bei scheuen Tieren).
+**Entscheidung:** Treffer des Sichtstrahls auf den Körper mit 1,5° Spielraum und Sichtlinie. Schleichen senkt Sicht und
+Lärm so, dass scheue Tiere erst bei etwa 5 m fliehen; wer geduckt stillhält, wird nicht bemerkt. Sprinten verrät auch
+geduckt.
+

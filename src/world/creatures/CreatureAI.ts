@@ -36,6 +36,8 @@ export interface AIInput {
   playerNoise: number;
   /** Spieler sieht die Kreatur direkt an (Sichtlinie). */
   playerFacing: boolean;
+  /** Schleichen 0..1: geduckt ist man schwerer zu sehen und zu hören (fehlt = 0). */
+  playerStealth?: number;
   timeOfDay: Exclude<TimeOfDay, 'any'>;
   /** Richtung zurück zum Ankerpunkt und Entfernung dazu (Leine). */
   angleToHome: number;
@@ -48,6 +50,9 @@ export interface AIInput {
 const FEED_BEHAVIORS = new Set(['grazing', 'feeding', 'hunting', 'stalking', 'drinking', 'burrowing']);
 const DISPLAY_BEHAVIORS = new Set(['courting', 'display', 'singing', 'playing', 'dust_bathing', 'basking', 'nesting']);
 
+/** Bedrohungsgrad, ab dem ein Tier flieht. */
+export const FLEE_THRESHOLD = 0.38;
+
 export class CreatureAI {
   state: CreatureState = 'idle';
   /** Gewünschte Blickrichtung (rad) und Geschwindigkeit 0..1. */
@@ -58,6 +63,8 @@ export class CreatureAI {
   /** Aktuell gezeigtes Verhalten (für Foto-Bonus), z. B. 'grazing'. */
   behavior = '';
   private timer = 0;
+  /** Zuletzt berechneter Bedrohungsgrad 0..1 (ab `FLEE_THRESHOLD` flieht das Tier). */
+  alertness = 0;
   private readonly feedPool: string[];
   private readonly displayPool: string[];
   private readonly rng: () => number;
@@ -146,7 +153,11 @@ export class CreatureAI {
   /** Bedrohungsgrad 0..1 aus Entfernung, Lärm, Blick und Wachsamkeit. */
   threat(input: AIInput): number {
     const near = clamp01(1 - input.distToPlayer / this.alertRadius);
-    const noise = 0.35 + input.playerNoise * 0.9 + (input.playerFacing ? 0.2 : 0);
+    // Wahrnehmung: Silhouette (geduckt deutlich kleiner), Lärm, direkter Blick. Schlafende Tiere merken weniger.
+    const stealth = clamp01(input.playerStealth ?? 0);
+    const sight = 0.35 * (1 - 0.7 * stealth);
+    const stare = input.playerFacing ? 0.2 * (1 - 0.6 * stealth) : 0;
+    const noise = (sight + input.playerNoise * 0.9 + stare) * (this.state === 'sleep' ? 0.6 : 1);
     const temperamentFactor = this.profile.temperament === 'shy' ? 1.2 : this.profile.temperament === 'curious' ? 0.5 : this.profile.temperament === 'aggressive' ? 0.3 : 0.85;
     return clamp01(near * noise * temperamentFactor * (0.5 + this.profile.shyness) + this.wary * 0.25 * near);
   }
@@ -156,9 +167,10 @@ export class CreatureAI {
     this.timer -= dt;
     this.wary = Math.max(0, this.wary - dt * 0.08);
     const threat = this.threat(input);
+    this.alertness = threat;
 
     // Flucht hat Vorrang (außer bereits auf der Flucht oder aggressiv und nah)
-    if (this.state !== 'flee' && threat > 0.38) {
+    if (this.state !== 'flee' && threat > FLEE_THRESHOLD) {
       if (this.profile.temperament === 'aggressive' && input.distToPlayer < 12) {
         if (this.state !== 'display') this.enter('display', input);
       } else {

@@ -6,6 +6,7 @@ import type { ArchiveEntry, FaunaGenome, TimeOfDay } from '@/gen/archive/types';
 import type { FaunaFamilyTraits, Family } from '@/gen/archive/types';
 import { CreatureAI } from './CreatureAI';
 import { maxSpeedFor, type BoneDef, type CreatureTemplate } from './CreatureBuilder';
+import { glowSource, type GlowSource } from '@/render/glow';
 
 export interface CreatureWorld {
   heightAt(x: number, z: number): number;
@@ -17,6 +18,8 @@ export interface CreatureWorld {
   playerYaw: number;
   /** 0 (still) … 1 (sprintend). */
   playerNoise: number;
+  /** Schleichen 0..1. */
+  playerStealth: number;
   timeOfDay: Exclude<TimeOfDay, 'any'>;
   daylight: number;
   /** Aktive Köder (Positionen). */
@@ -42,6 +45,8 @@ export class Creature {
   speed = 0;
   age = 0;
   private phase = 0;
+  /** Lichtquelle der Leuchtorgane (wandert mit; null = leuchtet nicht). */
+  readonly glowSource: GlowSource | null;
   private y = 0;
   private vy = 0;
   private readonly maxSpeed: number;
@@ -76,6 +81,7 @@ export class Creature {
     this.root.updateMatrixWorld(true);
     this.mesh.bind(new Skeleton(this.bones));
     this.root.position.copy(spawn);
+    this.glowSource = template.glowColor ? glowSource(spawn.x, spawn.y + template.bodyY, spawn.z, Math.min(9, 2.2 + template.lengthM * 2.2), template.glowColor, 1.5) : null;
     this.home.copy(spawn);
     this.yaw = yaw;
     this.y = spawn.y;
@@ -141,6 +147,7 @@ export class Creature {
       distToPlayer: dist,
       angleToPlayer,
       playerNoise: world.playerNoise,
+      playerStealth: world.playerStealth,
       playerFacing: facing,
       timeOfDay: world.timeOfDay,
       angleToHome: Math.atan2(-tmp.x, -tmp.z),
@@ -202,6 +209,11 @@ export class Creature {
       this.vy = (this.y - prev) / Math.max(dt, 1e-3);
     }
     pos.y = this.y;
+    if (this.glowSource) {
+      this.glowSource.x = pos.x;
+      this.glowSource.y = pos.y + this.template.bodyY;
+      this.glowSource.z = pos.z;
+    }
     // Das Modell schaut nach +z, die Bewegung geht nach (−sin yaw, −cos yaw): um 180° drehen, sonst läuft es rückwärts
     this.root.rotation.y = this.yaw + Math.PI;
 

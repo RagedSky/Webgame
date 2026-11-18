@@ -596,6 +596,42 @@ Unterteilungsflächen: ein grober Käfig mit sauberen Kantenschleifen, der durch
   Foto-Auswertung springt direkt zum Hauptmotiv. Himmelsphänomene bekommen keinen Rahmen, ältere Fotos ohne gespeicherte
   Lage auch nicht.
 
+### 4.21 Weiche Schatten, Wasser, Leuchten bei Nacht, Sichtung am Fadenkreuz, Schleichen
+
+- **Weiche Schatten** (`render/softShadows.ts`): Die Schattenfilterung von Three.js (fünf zufällig gedrehte
+  Abtastpunkte, körnige Kante) wird durch einen festen Gauß-Kern ersetzt. `shadow.radius` ist die Standardabweichung in
+  Texeln: bis 1,5 genügen 3×3 Abtastungen mit Binomialgewichten, darüber 5×5. Die Weichheit ist in Metern vorgegeben
+  (0,1 m) und wird je Qualitätsstufe in Texel umgerechnet. Für die Sonne kommt ein Kontaktschatten dazu: weichgezeichnet
+  wird nur der Schatten von allem, was mehr als 1 m über der Fläche steht (zweite Abfrage mit verschobener Bezugstiefe).
+  Gras, Blumen und Füße behalten eine scharfe Kante, sonst würde der Weichzeichner ihre dünnen Schatten auflösen. Die
+  verschobene Abfrage vermeidet zugleich Selbstverschattung auf geneigtem Boden. Die Taschenlampe nutzt den einfachen
+  Gauß-Kern.
+- **Wasser** (`world/Water.ts`, `world/water/waves.ts`, `world/water/ShoreMap.ts`): Fünf gerichtete Wellen mit
+  Tiefwasser-Dispersion (ω = √(g·k), also langsamere See bei geringer Schwerkraft) und spitzen Kämmen. Dieselben Zahlen
+  erzeugen den Shader-Code und die Höhe für die Physik. Das Netz ist in der Mitte dicht (etwa 1 m) und außen grob, es
+  folgt der Kamera. Die Uferkarte speichert die Wassertiefe in einem 512-m-Fenster um die Kamera (256² Texel, ringförmig
+  adressiert, bei Bewegung werden nur neue Spalten und Zeilen berechnet). Daraus entstehen Farbe (flach türkis und klar,
+  tief dunkel), Durchsicht zum Grund, Schaumsaum mit einlaufenden Bändern, auslaufende Wellen am Strand und eine weiche
+  Wasserlinie. Spiegelung: Himmel von Horizont bis Zenit mit Fresnel, Sonnenpfad, Kräuselwellen als Neigung. Wellen
+  kleiner als ein Bildpunkt werden ausgeblendet. Der Seegang folgt träge dem Wind des Wetters, bei Sturm gibt es
+  Schaumkronen. Jenseits des Fensters gilt das Wasser als tief.
+- **Wasserphysik** (`world/Player.ts`): Der Spieler treibt als gedämpfte Feder 1,25 m unter der Wellenfläche und hebt
+  und senkt sich mit der Dünung. Wasserwiderstand bremst jede Bewegung, auch den Sturz ins Wasser. Waten bremst ab
+  Kniehöhe bis auf die Hälfte, ab Hüfthöhe ist Sprinten und Schleichen nicht möglich. Sprinten schwimmt schneller.
+  Ducken taucht ab, unter Wasser schwimmt man in Blickrichtung. Bojen reiten auf denselben Wellen.
+- **Leuchten** (`render/glow.ts`): Leuchtende Materialien hatten eine feste Einheitsfarbe auf dem ganzen Körper, nachts
+  wurde daraus eine flache helle Fläche ohne Schein. `addGlow` lässt stattdessen die hellen Teile in ihrer eigenen Farbe
+  leuchten (Maske aus der Vertexfarbe, bei Kreaturen und Ruinen aus der Nähe zur Leuchtfarbe), nachts kräftig, am Tag
+  schwach, mit leichtem Pulsieren je Objekt. `glowField` sammelt Lichtquellen gruppenweise (Pflanzen je Zelle, Kreaturen,
+  Rohstoffknoten, Fundstücke); die sechs nächsten beleuchten über `addGlowLight` Boden, Gras, Pflanzen und Felsen.
+  Quellen blenden zur Auswahlgrenze aus, damit beim Wechsel nichts springt. Am Tag ist die Zahl null und der Shader
+  überspringt den Block. Der Bloom greift nachts früher und stärker, damit auch farbiges Leuchten einen Schein bekommt.
+- **Sichtung am Fadenkreuz** (`CreatureManager.underCrosshair`): Die Sichtungskarte erscheint nur, wenn der Sichtstrahl
+  den Körper trifft oder um höchstens 1,5° verfehlt, bis 40 m und nur mit freier Sichtlinie über das Gelände. Vorher
+  genügte ein Kegel von 21° bis 60 m, gewählt wurde das nächste Tier.
+- **Schleichen** (`CreatureAI.threat`): Geduckt ist der Spieler schwerer zu sehen und zu hören (Silhouette −70 %,
+  Blick −60 %, Schrittlärm 0,1 statt 0,5). Die Karte zeigt „Wachsam“, bevor ein Tier flieht, das HUD zeigt „Schleichen“.
+
 ## 5. Laufzeit-Architektur
 
 - **GameLoop**: `requestAnimationFrame`, Akkumulator mit festem Update-Schritt (1/60 s, max. 5 Schritte/Frame), Render pro Frame,

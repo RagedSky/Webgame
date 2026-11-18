@@ -7,6 +7,7 @@ import type { Planet } from '@/gen/universe/types';
 import type { ArchiveEntry } from '@/gen/archive/types';
 import { RARITY_SPAWN_WEIGHT, matchesPlacement } from '@/gen/archive/conditions';
 import { buildPropTemplate, type PropTemplate } from './PropBuilder';
+import { glowField, glowSource, type GlowSource } from '@/render/glow';
 
 const UP = new Vector3(0, 1, 0);
 const tmpNormal = new Vector3();
@@ -130,6 +131,12 @@ export class PropManager {
           const cell = this.buildCell(ix, iz);
           this.cells.set(id, cell);
           this.collision?.set(`props:${id}`, cell.props.filter((p) => p.radius >= 0.45).map((p) => ({ x: p.center.x, z: p.center.z, r: p.radius * 0.7, top: p.center.y + p.radius })));
+          const lights: GlowSource[] = [];
+          for (const p of cell.props) {
+            const color = this.templates.get(p.entry.id)?.glowColor;
+            if (color) lights.push(glowSource(p.center.x, p.center.y + p.radius * 0.4, p.center.z, Math.min(10, 3 + p.radius * 2.2), color, 1.3));
+          }
+          glowField.set(`props:${id}`, lights);
         }
       }
     }
@@ -137,6 +144,7 @@ export class PropManager {
       if (wanted.has(id)) continue;
       for (const p of cell.props) this.group.remove(p.mesh);
       this.collision?.remove(`props:${id}`);
+      glowField.remove(`props:${id}`);
       this.cells.delete(id);
     }
     this.stats.cells = this.cells.size;

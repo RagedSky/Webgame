@@ -7,6 +7,7 @@ import { clamp } from '@/math/utils';
 import type { ArchiveEntry, FossilGenome, MineralGenome } from '@/gen/archive/types';
 import { colorize, gradientColor, hsl, jitter, mergeParts } from '../geometry';
 import { arc, blob, lathe, prism, tube } from '../organic';
+import { addGlow } from '@/render/glow';
 
 export interface PropTemplate {
   geometry: BufferGeometry;
@@ -15,6 +16,8 @@ export interface PropTemplate {
   radius: number;
   /** Höhe des Mittelpunkts über dem Boden. */
   centerY: number;
+  /** Farbe des Eigenleuchtens (null = leuchtet nicht). */
+  glowColor: Color | null;
 }
 
 const STONE = new Color(0.45, 0.43, 0.4);
@@ -456,11 +459,10 @@ export function buildPropTemplate(entry: ArchiveEntry): PropTemplate {
       clearcoat: glassy ? 0.8 : g.luster === 'pearly' ? 0.5 : 0,
       clearcoatRoughness: glassy ? 0.08 : 0.3,
       iridescence: g.luster === 'pearly' ? 0.6 : g.luster === 'adamantine' ? 0.4 : 0,
-      emissive: glow ? hsl(g.hue, 0.8, 0.5) : new Color(0, 0, 0),
-      emissiveIntensity: glow ? 0.5 : 0,
     });
     addRim(material, 0.8);
-    return { geometry: geo, material, radius, centerY };
+    if (glow) addGlow(material, { amount: 0.9, day: 0.3, lo: 0.4, hi: 0.85 });
+    return { geometry: geo, material, radius, centerY, glowColor: glow ? hsl(g.hue, 0.8, 0.55) : null };
   }
   const g = entry.genome as FossilGenome;
   const { geo, radius, centerY } = fossilGeometry(g, rng, seed);
@@ -476,11 +478,12 @@ export function buildPropTemplate(entry: ArchiveEntry): PropTemplate {
     roughness: g.fossilKind === 'amber' ? 0.25 : 0.85,
     clearcoat: g.fossilKind === 'amber' ? 0.9 : 0,
     metalness: metalRuin ? 0.4 : 0,
-    emissive: emissive ? hsl(g.hue + 180, 0.8, 0.5) : new Color(0, 0, 0),
-    emissiveIntensity: emissive ? 0.35 : 0,
     transparent: g.fossilKind === 'amber',
     opacity: g.fossilKind === 'amber' ? 0.85 : 1,
   });
   addRim(material, 0.6);
-  return { geometry: geo, material, radius, centerY };
+  // nur die Leuchtteile der Ruine strahlen (Augen, Glyphen, Signallicht), der Stein bleibt dunkel
+  const ruinGlow = emissive ? hsl(g.hue + 180, 0.8, 0.6) : null;
+  if (ruinGlow) addGlow(material, { tint: ruinGlow, amount: 1.15, day: 0.35, floor: 0 });
+  return { geometry: geo, material, radius, centerY, glowColor: ruinGlow };
 }

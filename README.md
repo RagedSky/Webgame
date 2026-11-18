@@ -59,7 +59,7 @@ gibt es den Datei-Export (siehe unten).
 
 | Bereich | Tasten |
 | --- | --- |
-| Bewegung | Klick ins Bild übernimmt die Maus · WASD · Leertaste springen · Shift sprinten · Strg ducken · V Ego/Schulter · Esc Pause |
+| Bewegung | Klick ins Bild übernimmt die Maus · WASD · Leertaste springen · Shift sprinten · Strg ducken und schleichen (Tiere lassen einen näher heran) · V Ego/Schulter · Esc Pause |
 | Kamera | Q Foto-Modus · Mausrad Zoom · `,`/`.` Fokus · Rechtsklick Autofokus · R Blende · 1/2 Belichtung · F Filter · H Raster · C Selfie · Leertaste/Klick auslösen |
 | Archiv und Proben | Tab Archiv (Einträge, Logbuch, Proben, Mikroskop) · F Probe nehmen / scannen |
 | Rohstoffe und Basis | E halten sammeln · I Inventar/Fertigung · B halten: Bau-Rad (Maus zum Modul ziehen, loslassen wählt; dann R drehen, Klick platzieren, X entfernen) · L Taschenlampe · E an Modulen öffnen |

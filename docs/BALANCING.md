@@ -41,6 +41,9 @@ Ergebnis für acht Beispiel-Seeds (Stand Phase 10): **55–77 h bis 80 %**, 130�
 | Hinweise | alle 25–45 s ein Hinweis (Biologe ×1,7), max. 3 Objekte gleichzeitig | `world/HintSystem.ts` |
 | Foto-Bewertung | Schärfe, Bildfüllung, Komposition, Belichtung, Verhalten; 3 Sterne ab 85 | `game/photo/PhotoScoring.ts` |
 | Hintergrund-Boni | max. ±35 % | `game/character/backgrounds.ts` |
+| Schleichen | Flucht ab Bedrohung 0,38; scheues Tier flieht im Gehen ab etwa 30 m, geduckt ab etwa 5 m, geduckt und still gar nicht | `world/creatures/CreatureAI.ts` |
+| Sichtung | bis 40 m (mal Hintergrund-Bonus), 1,5° Spielraum um den Körper | `scenes/PlanetScene.ts` |
+| Schwimmen | 3,0 m/s, mit Sprint 4,4 m/s; Waten bremst bis auf die Hälfte | `world/Player.ts` |
 
 ## 4. Verfahren bei Änderungen
 

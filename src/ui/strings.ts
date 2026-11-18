@@ -503,6 +503,8 @@ export const STR = {
     edge: 'Kartenrand',
     timeScale: 'Zeit',
     lamp: 'Lampe',
+    sneak: 'Schleichen',
+    wary: 'Wachsam',
     lampOn: 'Taschenlampe an',
     lampOff: 'Taschenlampe aus',
     lampHint: 'Es wird dunkel. L schaltet die Taschenlampe ein.',

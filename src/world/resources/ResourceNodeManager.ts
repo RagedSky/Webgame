@@ -7,6 +7,7 @@ import type { Planet, ResourceId } from '@/gen/universe/types';
 import { blade, colorize, gradientColor, mergeParts } from '../geometry';
 import { arc, blob, crystal, lathe, tube } from '../organic';
 import { addRim, vivid } from '@/render/stylize';
+import { addGlow, glowField, glowSource, type GlowSource } from '@/render/glow';
 
 export const RESOURCE_COLORS: Record<ResourceId, string> = {
   ferrite: '#8a4a2a', cuprite: '#2a8a7a', titanite: '#b8c0c8', cobaltite: '#3a5ab8', aurum: '#e0b020',
@@ -21,6 +22,7 @@ interface NodeTemplate {
   material: MeshStandardMaterial;
   radius: number;
   centerY: number;
+  glowColor: Color | null;
   /** Ein InstancedMesh je Rohstoffart (ein Draw-Call), Instanz-Index → Knoten. */
   mesh: InstancedMesh;
   slots: LiveNode[];
@@ -43,7 +45,7 @@ const CAPACITY = 768;
 const UP = new Vector3(0, 1, 0);
 const ONE = new Vector3(1, 1, 1);
 
-function buildTemplateGeometry(id: ResourceId): { geometry: BufferGeometry; material: MeshStandardMaterial; radius: number; centerY: number } {
+function buildTemplateGeometry(id: ResourceId): { geometry: BufferGeometry; material: MeshStandardMaterial; radius: number; centerY: number; glowColor: Color | null } {
   const def = RESOURCES[id];
   const col = new Color(RESOURCE_COLORS[id]);
   const parts: BufferGeometry[] = [];
@@ -175,13 +177,13 @@ function buildTemplateGeometry(id: ResourceId): { geometry: BufferGeometry; mate
     vertexColors: true,
     roughness: def.kind === 'crystal' ? 0.25 : def.kind === 'metal' ? 0.6 : 0.9,
     metalness: def.kind === 'metal' ? 0.35 : 0,
-    emissive: glow ? col : new Color(0, 0, 0),
-    emissiveIntensity: glow ? 0.45 : 0,
     transparent: def.kind === 'gas',
     opacity: def.kind === 'gas' ? 0.55 : 1,
   });
   addRim(material, def.kind === 'crystal' ? 1.2 : 0.7);
-  return { geometry, material, radius, centerY };
+  // leuchtende Rohstoffe strahlen aus ihren hellen Kristallen, nicht aus dem Fels
+  if (glow) addGlow(material, { amount: 0.95, day: 0.3, lo: 0.42, hi: 0.85 });
+  return { geometry, material, radius, centerY, glowColor: glow ? vividCol : null };
 }
 
 /**
@@ -248,6 +250,7 @@ export class ResourceNodeManager {
     if (!t) return;
     t.slots.length = 0;
     const colliders: Collider[] = [];
+    const lights: GlowSource[] = [];
     let i = 0;
     for (const cell of this.cells.values()) {
       for (const n of cell.nodes) {
@@ -259,6 +262,7 @@ export class ResourceNodeManager {
         t.mesh.setMatrixAt(i, this.tmpMatrix);
         t.slots[i] = n;
         colliders.push({ x: n.node.x, z: n.node.z, r: t.radius * 0.72, top: n.node.y + t.radius * 1.3 });
+        if (t.glowColor) lights.push(glowSource(n.node.x, n.node.y + t.centerY + 0.3, n.node.z, 4.5, t.glowColor, 1.3));
         i++;
       }
     }
@@ -266,6 +270,7 @@ export class ResourceNodeManager {
     t.mesh.instanceMatrix.needsUpdate = true;
     // Hindernisse der sichtbaren Knoten dieser Art (abgebaute Knoten geben den Weg frei)
     this.collision?.set(`nodes:${id}`, colliders);
+    glowField.set(`nodes:${id}`, lights);
   }
 
   private refresh(cx: number, cz: number): void {

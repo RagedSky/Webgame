@@ -8,6 +8,7 @@ import { SimplexNoise } from '@/math/Noise';
 import type { ArchiveEntry, FaunaGenome } from '@/gen/archive/types';
 import { blade, hsl, mergeParts } from '../geometry';
 import { arc, blob, lathe, tube, weldNormals, type TubePoint } from '../organic';
+import { addGlow } from '@/render/glow';
 
 export type BoneKind = 'root' | 'body' | 'segment' | 'neck' | 'head' | 'hip' | 'knee' | 'tail' | 'wing' | 'fin';
 
@@ -35,6 +36,8 @@ export interface CreatureTemplate {
   /** Zahl der Beinpaare (für Gangart). */
   legPairs: number;
   glow: boolean;
+  /** Farbe der Leuchtorgane (null = leuchtet nicht). */
+  glowColor: Color | null;
 }
 
 /** Mittlere Fortbewegungsgeschwindigkeit in m/s (Maximum bei Flucht). */
@@ -564,12 +567,13 @@ export function buildCreatureTemplate(entry: ArchiveEntry): CreatureTemplate {
     iridescenceIOR: 1.3,
     sheen: covering === 'fur' || covering === 'feathers' ? 0.6 : 0,
     sheenRoughness: 0.7,
-    emissive: glow ? hsl(g.hue2, 0.9, 0.5) : new Color(0, 0, 0),
-    emissiveIntensity: glow ? 0.6 : 0,
     transparent: covering === 'membrane',
     opacity: covering === 'membrane' ? 0.9 : 1,
   });
 
   addRim(material, 1);
-  return { geometry, material, bones, lengthM: L, bodyY, legLength, legPairs, glow };
+  // Leuchtorgane: die Zeichnung in der Zweitfarbe leuchtet, der übrige Körper nur schwach
+  const glowColor = glow ? hsl(g.hue2, 0.9, 0.55) : null;
+  if (glowColor) addGlow(material, { tint: second, amount: 1.1, day: 0.3, floor: g.pattern === 'none' ? 0.45 : 0.14 });
+  return { geometry, material, bones, lengthM: L, bodyY, legLength, legPairs, glow, glowColor };
 }

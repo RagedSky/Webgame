@@ -12,7 +12,18 @@ const WALK_SPEED = 5.2;
 const PLAYER_RADIUS = 0.34;
 const SPRINT_SPEED = 9.5;
 const CROUCH_SPEED = 2.6;
-const SWIM_SPEED = 3.2;
+const SWIM_SPEED = 3.0;
+const SWIM_FAST = 4.4;
+/** Ab dieser Wassertiefe an den Füßen schwimmt man (mit etwas Spiel, damit der Zustand am Ufer nicht flattert). */
+const SWIM_START = 1.12;
+const SWIM_STOP = 0.92;
+/** So tief liegen die Füße beim Treiben unter der Oberfläche (Kopf bleibt über Wasser). */
+const FLOAT_LINE = 1.25;
+
+/** Wasseroberfläche mit Wellen: Höhe an einem Ort, `ground` ist die Geländehöhe dort. */
+export interface WaterSurface {
+  surfaceAt(x: number, z: number, ground: number): number;
+}
 const JUMP_SPEED = 5.4;
 const FLY_SPEED = 32;
 
@@ -29,6 +40,10 @@ export class Player {
   grounded = false;
   swimming = false;
   crouching = false;
+  /** Waten 0..1: knietief bis brusttief (bremst, Sprinten nicht mehr möglich). */
+  wading = 0;
+  /** Kopf unter Wasser. */
+  submerged = false;
   fly = false;
   thirdPerson = false;
   /** Selfie-Kamera (vor dem Charakter, Blick zurück). */
@@ -50,6 +65,8 @@ export class Player {
   private built: BuiltCharacter | null = null;
   /** Feste Hindernisse der Welt (von der Szene gesetzt). */
   collision: CollisionWorld | null = null;
+  /** Wasserfläche mit Wellen (von der Szene gesetzt; ohne sie gilt der ruhige Meeresspiegel). */
+  water: WaterSurface | null = null;
 
   constructor(
     private readonly model: TerrainModel,
@@ -113,8 +130,9 @@ export class Player {
     this.wish.set(0, 0, 0).addScaledVector(this.forward, mz).addScaledVector(this.right, mx);
     if (this.wish.lengthSq() > 1) this.wish.normalize();
 
-    const sea = this.model.seaLevel;
-    const waterDepthAtBody = this.model.hasWater ? sea - this.position.y : -Infinity;
+    // Wasseroberfläche am Ort des Spielers (mit Wellen) und Tiefe an den Füßen
+    const surface = !this.model.hasWater ? -Infinity : this.water ? this.water.surfaceAt(this.position.x, this.position.z, this.model.heightAt(this.position.x, this.position.z)) : this.model.seaLevel;
+    const waterDepthAtBody = surface - this.position.y;
 
     if (this.fly) {
       const speed = input.isDown('sprint') ? FLY_SPEED * 4 : FLY_SPEED;
@@ -126,27 +144,42 @@ export class Player {
       this.position.addScaledVector(this.velocity, dt);
       this.grounded = false;
       this.swimming = false;
+      this.wading = 0;
+      this.submerged = false;
     } else {
-      this.swimming = waterDepthAtBody > 1.0;
-      this.crouching = !this.swimming && input.isDown('crouch');
-      const targetSpeed = this.swimming ? SWIM_SPEED : this.crouching ? CROUCH_SPEED : input.isDown('sprint') ? SPRINT_SPEED : WALK_SPEED;
-      const accel = this.swimming ? 4 : this.grounded ? 14 : 2.5;
+      this.swimming = waterDepthAtBody > (this.swimming ? SWIM_STOP : SWIM_START);
+      // Waten: ab den Knien bremst das Wasser, ab der Hüfte kann man weder sprinten noch schleichen
+      this.wading = this.swimming ? 0 : clamp((waterDepthAtBody - 0.25) / 0.75, 0, 1);
+      this.crouching = !this.swimming && this.wading < 0.5 && input.isDown('crouch');
+      this.submerged = this.swimming && this.position.y + this.eyeHeight < surface - 0.05;
+      const sprint = input.isDown('sprint');
+      const landSpeed = this.crouching ? CROUCH_SPEED : sprint && this.wading < 0.55 ? SPRINT_SPEED : WALK_SPEED;
+      const targetSpeed = this.swimming ? (sprint ? SWIM_FAST : SWIM_SPEED) : landSpeed * (1 - 0.5 * this.wading);
+      const accel = this.swimming ? 3.2 : this.grounded ? 14 * (1 - 0.5 * this.wading) : 2.5;
       const k = 1 - Math.exp(-accel * dt);
-      this.velocity.x = lerp(this.velocity.x, this.wish.x * targetSpeed, k);
-      this.velocity.z = lerp(this.velocity.z, this.wish.z * targetSpeed, k);
+      // unter Wasser schwimmt man in Blickrichtung: der waagrechte Anteil schrumpft mit der Neigung
+      const level = this.submerged ? Math.max(0.35, Math.cos(this.pitch)) : 1;
+      this.velocity.x = lerp(this.velocity.x, this.wish.x * targetSpeed * level, k);
+      this.velocity.z = lerp(this.velocity.z, this.wish.z * targetSpeed * level, k);
 
       if (this.swimming) {
-        // Auftrieb: Kopf bleibt knapp über der Oberfläche; Leertaste/Ducken: auf-/abtauchen
-        const target = sea - 1.25;
+        // Auftrieb als gedämpfte Feder zur Schwimmlinie: der Körper hebt und senkt sich mit den Wellen. In der Tiefe
+        // ist der Auftrieb begrenzt, sonst käme man nicht nach unten; Wasserwiderstand bremst jede Bewegung (auch
+        // den Sturz ins Wasser).
         let vy = this.velocity.y;
-        vy += (target - this.position.y) * 5 * dt - vy * 3 * dt;
-        if (input.isDown('jump')) vy += 6 * dt;
-        if (input.isDown('crouch')) vy -= 6 * dt;
-        this.velocity.y = clamp(vy, -4, 4);
+        vy += clamp((surface - FLOAT_LINE - this.position.y) * 9, -30, 4.5) * dt;
+        vy -= vy * 4.2 * dt;
+        if (!this.frozen) {
+          if (input.isDown('jump')) vy += 8 * dt;
+          if (input.isDown('crouch')) vy -= 12 * dt;
+          // vorwärts schwimmen mit gesenktem Blick taucht ab, unter Wasser folgt man dem Blick auch nach oben
+          if (mz !== 0 && (this.submerged || this.pitch < -0.45)) vy += mz * Math.sin(this.pitch) * 14 * dt;
+        }
+        this.velocity.y = clamp(vy, -9, 4.5);
       } else {
         this.velocity.y -= this.gravity * dt;
-        if (this.grounded && !this.frozen && input.wasPressed('jump')) {
-          this.velocity.y = JUMP_SPEED;
+        if (this.grounded && !this.frozen && this.wading < 0.7 && input.wasPressed('jump')) {
+          this.velocity.y = JUMP_SPEED * (1 - 0.4 * this.wading);
           this.grounded = false;
         }
       }

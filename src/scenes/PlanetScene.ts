@@ -11,7 +11,8 @@ import { RESOURCES, WEATHER } from '@/gen/universe/catalog';
 import { RARITY_LABELS, TIME_LABELS, type ArchiveEntry } from '@/gen/archive/types';
 import { BEHAVIOR_LABELS } from '@/gen/archive/descriptions';
 import { matchesSpawn, pointTemperature, type SpawnContext } from '@/gen/archive/conditions';
-import { kelvinToCelsius } from '@/math/utils';
+import { kelvinToCelsius, lerp, smoothstep } from '@/math/utils';
+import { glow, glowField } from '@/render/glow';
 import { DayCycle } from '@/world/DayCycle';
 import { Sky } from '@/world/Sky';
 import { WeatherSystem } from '@/world/Weather';
@@ -22,7 +23,7 @@ import { VegetationAssets } from '@/world/VegetationAssets';
 import { VegetationManager, type SpeciesPlacement } from '@/world/Vegetation';
 import { FloraAssets } from '@/world/flora/FloraAssets';
 import { CreatureManager, type CreatureEnv } from '@/world/creatures/CreatureManager';
-import { STATE_LABELS } from '@/world/creatures/CreatureAI';
+import { FLEE_THRESHOLD, STATE_LABELS } from '@/world/creatures/CreatureAI';
 import { Player } from '@/world/Player';
 import { PropManager, type WorldProp } from '@/world/props/PropManager';
 import { HintSystem } from '@/world/HintSystem';
@@ -85,6 +86,13 @@ const BUILD_RANGE = 12;
 /** Bau-Rad: Radius des Zeigerbereichs und der toten Zone in der Mitte (Pixel). */
 const WHEEL_RADIUS = 120;
 const WHEEL_DEADZONE = 38;
+/** Bloom am Tag und bei Nacht: nachts greift er schon bei farbigem Leuchten und strahlt weiter. */
+const BLOOM_DAY = { threshold: 0.82, intensity: 0.7 };
+const BLOOM_NIGHT = { threshold: 0.46, intensity: 1.25 };
+/** Reichweite der Sichtungskarte in Metern (mal Hintergrund-Bonus). */
+const SIGHTING_RANGE = 40;
+/** So weit darf das Fadenkreuz am Körper vorbeizielen (Tangens von 1,5°). */
+const SIGHTING_MARGIN = 0.026;
 const LURE_SECONDS = 60;
 const PLANT_REGROW_SECONDS = 300;
 const BUILD_TYPES: ModuleType[] = ['workbench', 'shelter', 'charger', 'lab'];
@@ -153,6 +161,18 @@ export class PlanetScene implements GameScene {
   private baseFog = 0.0005;
   private lockChangedAt = 0;
   private readonly camDir = new Vector3();
+  /** Sichtlinie von der Kamera zum Ziel: liegt Gelände dazwischen? (für die Sichtungskarte) */
+  private readonly sightBlocked = (target: Vector3, distance: number): boolean => {
+    const from = this.camera.position;
+    const steps = Math.min(12, Math.max(2, Math.ceil(distance / 4)));
+    for (let i = 1; i < steps; i++) {
+      const t = i / steps;
+      const x = from.x + (target.x - from.x) * t;
+      const z = from.z + (target.z - from.z) * t;
+      if (this.model.heightAt(x, z) > from.y + (target.y - from.y) * t + 0.15) return true;
+    }
+    return false;
+  };
   private readonly tmpV = new Vector3();
 
   // Phase 4: Archiv, Foto, Proben
@@ -248,6 +268,7 @@ export class PlanetScene implements GameScene {
   private settingsUi!: SettingsUi;
   private unsubSettings: (() => void) | null = null;
   private bloomPass: EffectPass | null = null;
+  private bloom: BloomEffect | null = null;
   private viewDistance = DEFAULT_VIEW_DISTANCE;
   private tutorial!: Tutorial;
   private saveUi!: SaveUi;
@@ -311,11 +332,12 @@ export class PlanetScene implements GameScene {
     this.creatures.setCollision(this.collision);
     this.props = new PropManager(this.scene, this.model, planet, this.system.entries);
     this.props.collision = this.collision;
-    if (this.model.hasWater) this.water = new Water(this.scene, planet, this.model.seaLevel);
+    if (this.model.hasWater) this.water = new Water(this.scene, planet, this.model.seaLevel, (x, z) => this.model.heightAt(x, z));
     this.precipitation = new Precipitation(2400, `precip:${planet.id}`);
     this.scene.add(this.precipitation.points);
     this.player = new Player(this.model, planet, ctx.input, this.camera);
     this.player.collision = this.collision;
+    this.player.water = this.water;
     this.lamp.visible = false;
     this.lamp.castShadow = SHADOW_MAP_SIZES[quality.shadows] > 0;
     this.lamp.shadow.mapSize.set(1024, 1024);
@@ -323,6 +345,7 @@ export class PlanetScene implements GameScene {
     this.lamp.shadow.camera.far = 85;
     this.lamp.shadow.bias = -0.002;
     this.lamp.shadow.normalBias = 0.08;
+    this.lamp.shadow.radius = 1.4;
     this.scene.add(this.lamp, this.lamp.target);
     this.disposer.addFn(() => {
       this.lamp.dispose();
@@ -354,7 +377,7 @@ export class PlanetScene implements GameScene {
     const roverState = this.state.rovers[planet.id];
     if (roverState) this.rover = new Rover(this.scene, this.model, roverState.x, roverState.z, roverState.yaw);
     if (this.model.hasWater) {
-      this.buoys = new Buoys(this.scene, this.model.seaLevel);
+      this.buoys = new Buoys(this.scene, this.model.seaLevel, this.water);
       for (const pr of this.state.deepProbes[planet.id] ?? []) this.buoys.add(pr.x, pr.z);
     }
 
@@ -391,16 +414,19 @@ export class PlanetScene implements GameScene {
     }
     this.player.applyCamera(1);
     this.baseFog = (1.45 / this.viewDistance) * Math.max(0.12, Math.min(1, this.sky.look.density));
-    this.waterFog.set(this.planet.biomes.find((b) => b.hasWater)?.palette.ground ?? '#2f6f9a').multiplyScalar(0.5);
+    // Dunst unter Wasser in der Farbe des Wasserkörpers
+    if (this.water) this.waterFog.copy(this.water.bodyColor);
+    else this.waterFog.set(this.planet.biomes.find((b) => b.hasWater)?.palette.ground ?? '#2f6f9a').multiplyScalar(0.5);
 
     this.env = new EnvironmentMap(gl);
     this.envGround.set(planet.biomes[0]?.palette.ground ?? '#555').multiplyScalar(0.35);
     this.scene.environmentIntensity = 0.5;
     this.composer = ctx.renderer.createComposer(this.scene, this.camera);
     // Bloom plus Farbgrading (kräftige Sättigung, etwas Kontrast, leichte Vignette)
+    this.bloom = new BloomEffect({ luminanceThreshold: BLOOM_DAY.threshold, luminanceSmoothing: 0.35, intensity: BLOOM_DAY.intensity, mipmapBlur: true });
     this.bloomPass = new EffectPass(
       this.camera,
-      new BloomEffect({ luminanceThreshold: 0.82, luminanceSmoothing: 0.35, intensity: 0.7, mipmapBlur: true }),
+      this.bloom,
       new HueSaturationEffect({ saturation: 0.2 }),
       new BrightnessContrastEffect({ contrast: 0.08 }),
       new VignetteEffect({ darkness: 0.32, offset: 0.35 }),
@@ -2433,9 +2459,9 @@ export class PlanetScene implements GameScene {
     this.vegetation.update(this.camera.position, dt, this.elapsed, this.weather.params.wind);
     this.props.update(this.camera.position, dt);
     const pl = this.player;
-    const noise = pl.fly ? 0.25 : pl.swimming ? 0.4 : pl.speed > 7 ? 1 : pl.speed > 0.8 ? (pl.crouching ? 0.15 : 0.5) : pl.crouching ? 0.04 : 0.08;
+    const noise = pl.fly ? 0.25 : pl.swimming ? 0.4 : pl.speed > 7 ? 1 : pl.speed > 0.8 ? (pl.crouching ? 0.1 : 0.5) : pl.crouching ? 0.02 : 0.08;
     this.updateLures(dt * slow);
-    this.creatures.update(dt * slow, { pos: pl.position, yaw: pl.yaw, noise }, this.creatureEnv());
+    this.creatures.update(dt * slow, { pos: pl.position, yaw: pl.yaw, noise, stealth: pl.crouching && !pl.fly ? 1 : 0 }, this.creatureEnv());
     this.nodes.update(this.camera.position, dt);
     this.revealTick(dt);
     if (!this.collapsing && !this.cinematic) this.survivalTick(dt * slow);
@@ -2494,16 +2520,19 @@ export class PlanetScene implements GameScene {
       swimming: this.player.swimming,
       nearEdge: this.player.nearWorldEdge,
       lamp: this.lampOn,
+      sneak: this.player.crouching && !this.player.fly,
       fly: this.player.fly,
       timeScale: this.cycle.timeScale,
       ...(this.skyActive.length ? { phenomena: `${STR.interact.phenomenon}: ${this.skyActive.map((e) => (this.progress.isDiscovered(e.id) ? this.progress.displayName(e) : e.name)).join(', ')}` } : {}),
     });
     this.camera.getWorldDirection(this.camDir);
-    const seen = this.creatures.nearestInView(this.camera.position, this.camDir, 60 * this.bonus.sightingRange, 0.93);
+    const seen = this.creatures.underCrosshair(this.camera.position, this.camDir, SIGHTING_RANGE * this.bonus.sightingRange, SIGHTING_MARGIN, this.sightBlocked);
     if (seen) {
       const c = seen.creature;
       const known = this.progress.isDiscovered(c.entry.id);
-      const beh = c.ai.behavior && c.ai.state !== 'flee' ? (BEHAVIOR_LABELS[c.ai.behavior] ?? c.ai.behavior) : STATE_LABELS[c.ai.state];
+      // kurz vor der Flucht: „wachsam“ zeigt, dass man langsamer oder geduckt weiter muss
+      const wary = c.ai.state !== 'flee' && c.ai.alertness > FLEE_THRESHOLD * 0.6;
+      const beh = wary ? STR.hud.wary : c.ai.behavior && c.ai.state !== 'flee' ? (BEHAVIOR_LABELS[c.ai.behavior] ?? c.ai.behavior) : STATE_LABELS[c.ai.state];
       const showRarity = known || this.progress.isHinted(c.entry.id);
       this.hud.setSighting({ name: known ? this.progress.displayName(c.entry) : STR.archive.unknown, rarity: showRarity ? c.entry.rarity : '', rarityLabel: showRarity ? RARITY_LABELS[c.entry.rarity] : '', behavior: beh, distance: seen.distance, known });
     } else this.hud.setSighting(null);
@@ -2552,7 +2581,9 @@ export class PlanetScene implements GameScene {
     this.sky.update(this.cycle, params, this.weather.lightningFlash, this.camera, this.paused ? 0 : frameDt * slow, this.player.position);
     stylize.camPos.value.copy(this.camera.position);
     stylize.rimColor.value.copy(this.sky.fogColor).lerp(this.sky.zenithColor, 0.35);
-    const underwater = this.model.hasWater && this.camera.position.y < this.model.seaLevel;
+    // unter Wasser? gemessen an der Wellenfläche über der Kamera, nicht am ruhigen Meeresspiegel
+    const cp = this.camera.position;
+    const underwater = this.water !== null && cp.y < this.water.surfaceAt(cp.x, cp.z, this.model.heightAt(cp.x, cp.z));
     if (underwater) {
       this.fog.color.copy(this.waterFog).multiplyScalar(0.25 + 0.75 * this.cycle.daylight);
       this.fog.density = 0.035;
@@ -2561,7 +2592,16 @@ export class PlanetScene implements GameScene {
       this.fog.density = this.baseFog * params.fog;
     }
     this.ctx.renderer.gl.setClearColor(this.fog.color, 1);
-    this.water?.update(this.elapsed, this.camera.position, this.cycle.sunDir, this.sky.sun.color, this.sky.zenithColor, this.cycle.daylight);
+    this.water?.update(this.elapsed, this.camera.position, this.cycle.sunDir, this.sky.sun.color, this.sky.zenithColor, this.sky.fogColor, this.cycle.daylight, params.wind);
+    // Leuchten: nachts stark, am Tag fast aus; die nächsten Leuchtquellen beleuchten Boden und Pflanzen
+    const night = 1 - smoothstep(0.08, 0.5, this.cycle.daylight);
+    glow.night.value = night;
+    glow.time.value = this.elapsed;
+    glowField.update(this.camera, night);
+    if (this.bloom) {
+      this.bloom.luminanceMaterial.threshold = lerp(BLOOM_DAY.threshold, BLOOM_NIGHT.threshold, night);
+      this.bloom.intensity = lerp(BLOOM_DAY.intensity, BLOOM_NIGHT.intensity, night);
+    }
     this.precipitation.setKind(params.precipitation, params.precipIntensity, params.wind);
     if (!this.paused) this.precipitation.update(frameDt * slow, this.camera.position);
     if (this.ctx.renderer.postprocessing || this.photo.active) this.composer.render(frameDt);
@@ -2603,6 +2643,7 @@ export class PlanetScene implements GameScene {
     this.unsubState?.();
     this.terrain?.dispose();
     this.collision.clear();
+    glowField.clear();
     this.unsubProgress?.();
     this.unsubProgress = null;
     if (this.rover) this.persistRover();

@@ -1,3 +1,4 @@
+import { SUN_SHADOW_DEPTH, sunShadowRadius } from '@/render/softShadows';
 import {
   AdditiveBlending,
   BackSide,
@@ -33,6 +34,8 @@ import type { WeatherParams } from './Weather';
 
 /** Halbe Kantenlänge des Schattenbereichs um den Spieler in Metern. */
 export const SHADOW_EXTENT = 70;
+/** Standardabweichung der weichen Schattenkante in Metern. */
+const SHADOW_SOFTNESS = 0.1;
 
 const SKY_VERT = /* glsl */ `
 varying vec3 vDir;
@@ -531,9 +534,10 @@ export class Sky {
     cam.top = SHADOW_EXTENT;
     cam.bottom = -SHADOW_EXTENT;
     cam.near = 110;
-    cam.far = 490;
+    cam.far = cam.near + SUN_SHADOW_DEPTH;
     this.sun.shadow.bias = -0.00022;
     this.sun.shadow.normalBias = 0.09;
+    this.sun.shadow.radius = sunShadowRadius(SHADOW_SOFTNESS, SHADOW_EXTENT, 2048);
     this.shadowSize = 2048;
     scene.add(this.sun);
     scene.add(this.sun.target);
@@ -681,6 +685,8 @@ export class Sky {
     this.shadowSize = size;
     this.sun.castShadow = size > 0;
     if (size > 0) this.sun.shadow.mapSize.set(size, size);
+    // Weichheit in Metern bleibt über die Qualitätsstufen etwa gleich (siehe softShadows.ts)
+    this.sun.shadow.radius = sunShadowRadius(SHADOW_SOFTNESS, SHADOW_EXTENT, size);
     this.sun.shadow.map?.dispose();
     this.sun.shadow.map = null;
   }

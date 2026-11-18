@@ -85,3 +85,40 @@ describe('CreatureAI', () => {
     expect(Math.abs(ai.heading - 2)).toBeLessThan(0.01);
   });
 });
+
+describe('Schleichen', () => {
+  /** Kleinste Entfernung, auf die man sich nähern kann, bevor das Tier flieht (in 0,5-m-Schritten). */
+  const closest = (over: Partial<AIInput>, p: Partial<AIProfile> = {}): number => {
+    for (let d = 45; d > 0; d -= 0.5) {
+      const rng = new Random('sneak');
+      const ai = new CreatureAI(profile(p), () => rng.next());
+      ai.update(input({ distToPlayer: d, playerFacing: true, ...over }));
+      if (ai.state === 'flee') return d;
+    }
+    return 0;
+  };
+
+  it('geduckt kommt man deutlich näher an scheue Tiere als im Gehen', () => {
+    const walking = closest({ playerNoise: 0.5 });
+    const sneaking = closest({ playerNoise: 0.1, playerStealth: 1 });
+    expect(walking).toBeGreaterThan(20);
+    expect(sneaking).toBeLessThan(8);
+    expect(sneaking).toBeLessThan(walking / 3);
+  });
+
+  it('geduckt und still bleibt selbst ein scheues Tier stehen', () => {
+    expect(closest({ playerNoise: 0.02, playerStealth: 1 })).toBe(0);
+  });
+
+  it('Sprinten verrät den Spieler auch geduckt', () => {
+    expect(closest({ playerNoise: 1, playerStealth: 1 })).toBeGreaterThan(15);
+  });
+
+  it('meldet den Bedrohungsgrad für die Anzeige', () => {
+    const rng = new Random('alert');
+    const ai = new CreatureAI(profile(), () => rng.next());
+    ai.update(input({ distToPlayer: 12, playerNoise: 0.1, playerStealth: 1, playerFacing: true }));
+    expect(ai.state).not.toBe('flee');
+    expect(ai.alertness).toBeGreaterThan(0.2);
+  });
+});

@@ -1,6 +1,7 @@
 import { ACESFilmicToneMapping, SRGBColorSpace, WebGLRenderer, type Camera, type Scene } from 'three';
 import { EffectComposer, RenderPass } from 'postprocessing';
 import { clamp } from '@/math/utils';
+import { installGaussianShadows } from './softShadows';
 
 export interface RenderQuality {
   renderScale: number;
@@ -34,6 +35,8 @@ export class Renderer {
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
+    // Schattenkanten als Gauß-Weichzeichner (muss vor dem ersten Shader-Aufbau stehen)
+    installGaussianShadows();
     this.gl = new WebGLRenderer({
       canvas,
       antialias: false, // AA kommt aus dem Composer (MSAA/SMAA), spart bei Postprocessing einen Pass

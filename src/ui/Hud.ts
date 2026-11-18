@@ -51,6 +51,7 @@ export interface HudInfo {
   timeScale: number;
   /** Taschenlampe an. */
   lamp?: boolean;
+  sneak?: boolean;
   /** Aktive Himmelsphänomene (fotografierbar). */
   phenomena?: string;
 }
@@ -499,7 +500,7 @@ export class Hud {
     this.phenomena.style.display = i.phenomena ? 'block' : 'none';
     setText(this.altitude, `${i.altitude.toFixed(0)} m`);
     setText(this.coords, `${i.x.toFixed(0)} / ${i.z.toFixed(0)}`);
-    const flags = [i.swimming ? STR.hud.swimming : '', i.fly ? STR.hud.fly : '', i.nearEdge ? STR.hud.edge : '', i.timeScale > 1 ? `${STR.hud.timeScale} ×${i.timeScale}` : '', i.lamp ? STR.hud.lamp : ''].filter(Boolean).join('|');
+    const flags = [i.swimming ? STR.hud.swimming : '', i.fly ? STR.hud.fly : '', i.nearEdge ? STR.hud.edge : '', i.timeScale > 1 ? `${STR.hud.timeScale} ×${i.timeScale}` : '', i.lamp ? STR.hud.lamp : '', i.sneak ? STR.hud.sneak : ''].filter(Boolean).join('|');
     if (this.flags.dataset.v !== flags) {
       this.flags.dataset.v = flags;
       this.flags.textContent = '';

@@ -5,6 +5,7 @@ import { VEGETATION_PROFILES } from '@/gen/terrain/VegetationProfiles';
 import { clamp01 } from '@/math/utils';
 import type { TerrainModel } from '@/gen/terrain/TerrainModel';
 import { ChunkGeometryPool, TerrainChunk, buildChunkGeometry, chunkId, type BiomePalette, type ChunkBuildContext, type ChunkKey } from './TerrainChunk';
+import { addGlowLight } from '@/render/glow';
 
 export interface TerrainOptions {
   viewDistance?: number;
@@ -55,6 +56,7 @@ export class TerrainManager {
       shader.vertexShader = shader.vertexShader.replace('#include <uv_vertex>', '#include <uv_vertex>\n{ vec4 twp = modelMatrix * vec4( position, 1.0 ); vec2 flatUv = twp.xz * 0.23; vec2 steepUv = vec2( twp.x + twp.z, twp.y ) * 0.23; vNormalMapUv = mix( steepUv, flatUv, smoothstep( 0.55, 0.8, normal.y ) ); }');
     });
     addRim(this.material, 0.35);
+    addGlowLight(this.material);
     // Gesteinsschichten an Steilwänden: waagrechte Bänder je Pixel aus der Welthöhe (unabhängig vom Raster der Chunks)
     const main = model.planet.biomes.reduce((best, b, i) => (b.coverage > model.planet.biomes[best]!.coverage ? i : best), 0);
     const strata = { value: vivid(new Color(model.style.biomes[main]!.strata), 0.85).multiplyScalar(0.8) };

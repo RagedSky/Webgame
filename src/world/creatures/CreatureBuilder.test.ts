@@ -48,6 +48,7 @@ describe('CreatureBuilder', () => {
         playerPos: new Vector3(50, 0, 50),
         playerYaw: 0,
         playerNoise: 0.2,
+        playerStealth: 0,
         timeOfDay: 'day' as const,
         daylight: 1,
         lures: [],

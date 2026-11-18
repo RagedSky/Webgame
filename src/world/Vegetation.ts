@@ -11,6 +11,8 @@ import type { PlantType, TreeStyle, VegetationAssets } from './VegetationAssets'
 import type { Collider, CollisionWorld } from './Collision';
 import type { FloraAssets } from './flora/FloraAssets';
 import { buildFloraGeometry } from './flora/FloraBuilder';
+import { glowField, glowSource, type GlowSource } from '@/render/glow';
+import { floraGlowColor } from './flora/FloraAssets';
 
 export interface SpeciesPlacement {
   entry: ArchiveEntry;
@@ -147,6 +149,8 @@ export class VegetationManager {
   private readonly collision: CollisionWorld | null;
   /** Hindernisse der Zelle, die gerade aufgebaut wird. */
   private pending: Collider[] = [];
+  /** Lichtquellen der Zelle, die gerade gebaut wird (Signaturpflanzen legen hier ab). */
+  private pendingGlow: GlowSource[] = [];
   private readonly palettes: Color[];
   /** Zweite Bewuchsfarbe je Biom (Zonen des Planetenstils). */
   private readonly palettes2: Color[];
@@ -246,6 +250,8 @@ export class VegetationManager {
         matrices.push(new Matrix4().compose(tmpPos, tmpQuat, tmpScale));
         const lc = floraCollider(landmark.genome, landmark.genome.heightM * scale, x, s.height, z);
         if (lc) this.pending.push(lc);
+        const lg = floraGlowColor(landmark.genome);
+        if (lg) this.pendingGlow.push(glowSource(x, s.height + landmark.genome.heightM * scale * 0.6, z, clamp(2.2 + landmark.genome.heightM * scale * 1.6, 2.6, 11), lg, 1.05));
       }
       if (matrices.length === 0) return;
       const g = landmark.genome;
@@ -494,6 +500,13 @@ export class VegetationManager {
       this.collision.set(`veg:${id}`, this.pending);
     }
     this.pending = [];
+    // Leuchtpflanzen als Lichtquellen (Lichtfleck am Boden bei Nacht)
+    for (const sp of species) {
+      const color = this.flora.glowColor(sp.entry);
+      if (color) this.pendingGlow.push(glowSource(sp.x, sp.y + sp.height * 0.6, sp.z, clamp(2.2 + sp.height * 1.6, 2.6, 11), color, 1.05));
+    }
+    glowField.set(`veg:${id}`, this.pendingGlow);
+    this.pendingGlow = [];
     return { id, meshes, instances: total, species: species.map((i) => ({ entry: i.entry, x: i.x, y: i.y, z: i.z, height: i.height })), far, grass: kind === 'g', cx: x0 + size / 2, cz: z0 + size / 2, half: size / 2 };
   }
 
@@ -503,6 +516,7 @@ export class VegetationManager {
       m.dispose();
     }
     this.collision?.remove(`veg:${cell.id}`);
+    glowField.remove(`veg:${cell.id}`);
     this.cells.delete(cell.id);
   }
 

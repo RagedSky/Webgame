@@ -15,7 +15,7 @@ prozedural erzeugten Archiv-Einträgen pro seed-basiertem Sternsystem. Vollstän
 | `npm run lint`    | ESLint (inkl. Verbot von `Math.random`)                 |
 | `npm run check`   | typecheck + lint + test                                 |
 
-Im Spiel: **F3** Debug-Overlay, **Esc** Pause/zurück. Oberfläche: WASD, Maus, Leertaste, Shift, Strg, **V** Ansicht,
+Im Spiel: **F3** Debug-Overlay, **Esc** Pause/zurück. Oberfläche: WASD, Maus, Leertaste, Shift, Strg (ducken/schleichen, im Wasser tauchen), **V** Ansicht,
 **Q** Foto-Modus (Rad Zoom, `,`/`.` Fokus, RMT Autofokus, R Blende, 1/2 Belichtung, F Filter, H Raster, C Selfie, Leertaste/Klick auslösen),
 **Tab** Archiv (Logbuch, Proben, Mikroskop), **F** Probe/Scan, **E** halten sammeln / Modul öffnen, **I** Inventar/Fertigung,
 **B** halten: Bau-Rad (Maus zum Modul ziehen, loslassen wählt; dann R drehen, Klick platzieren, X entfernen), **L** Taschenlampe, **E** am Schiff: Werft / Betanken / Start; im Orbit Planet wählen,
@@ -41,6 +41,9 @@ Konsole: `__stellar.scenes.active.setTimeOfDay(0.5)` / `.forceWeather('rain', tr
 - Gelände: neue Reliefformen als Schicht in `gen/terrain/Landforms.ts` mit Amplitude in Metern und plausiblem Verhältnis von Höhe zu Breite ergänzen und im Rezept des Bioms eintragen, kein Rauschen direkt in `TerrainModel`. Die Tests zu Hangneigung und Höhenband müssen grün bleiben.
 - Charakter: Änderungen am Körper im Käfig (`BodyCage.ts`) über Ringe und Kantenschleifen vornehmen, keine Einzelteile aufsetzen. Das Netz muss geschlossen, einteilig und ein reines Quad-Netz bleiben (Tests in `BodyCage.test.ts`).
 - Neue Formen aus `world/organic.ts` und `geometry.ts` (`blade`, `gradientColor`) bauen, nicht aus rohen Kugeln/Zylindern; Shader-Erweiterungen nur über `addShaderPatch`.
+- Leuchtende Objekte: kein festes `emissive`, sondern `addGlow` aus `render/glow.ts`; wer Licht abgeben soll, meldet eine Quelle an `glowField` (Gruppe je Zelle bzw. System) und wieder ab. Neue Boden- und Pflanzenmaterialien bekommen `addGlowLight`.
+- Wasser: Wellen nur in `world/water/waves.ts` ändern (Shader und Physik lesen dieselben Zahlen); Tiefe am Ufer kommt aus `ShoreMap`.
+- Schatten: `shadow.radius` ist die Gauß-Standardabweichung in Texeln (`render/softShadows.ts`), für die Sonne über `sunShadowRadius`.
 - Feste Objekte, die neu in die Welt kommen, melden einen Zylinder an `CollisionWorld` (Gruppe je Zelle bzw. System) und wieder ab; alles Sichtbare wirft Schatten (Halme über `grassDepthMaterial`, nur nahe der Kamera).
 - Oberflächen: gemeinsame Bausteine aus `styles.css` (`.panel`, `button`, `h2`/`h3`, `.badge`, `.progress`) und Farben nur über `--accent`/`--hud-*`, keine festen Akzentfarben oder runden Ecken.
 - HUD: Texte nur bei Änderung schreiben (`setText`), keine DOM-Neuaufbauten pro Frame; Farben über `--hud-accent`. Dialoge, die Klicks brauchen, müssen den Mauszeiger freigeben und in `uiOpen` zählen (siehe Foto-Auswertung).
@@ -96,5 +99,7 @@ Konsole: `__stellar.scenes.active.setTimeOfDay(0.5)` / `.forceWeather('rain', tr
 - `src/render/{ProceduralTextures,Environment,stylize}.ts` – Detailtexturen-Bank, PMREM-Umgebungslicht, Stil (Kantenlicht, Paletten, Shader-Patches)
 - `src/world/organic.ts` – organische Grundformen (Röhre, Klumpen, Rotationskörper, Prisma, Kristall) für Flora, Kreaturen, Knoten, Technik (ARCHITECTURE 4.13–4.15)
 - `src/gen/terrain/PlanetStyle.ts` – Farbstil je Planet (Zweitfarben, Zonen, Grasspitzen, Signaturpflanzen; rein), über `model.style` erreichbar
+- `src/render/softShadows.ts` – Gauß-Schattenfilter mit Kontaktschatten; `src/render/glow.ts` – Eigenleuchten und Lichtquellen bei Nacht (ARCHITECTURE 4.21)
+- `src/world/Water.ts` + `src/world/water/{waves,ShoreMap}.ts` – Wasserfläche, Wellenmodell (rein), Uferkarte
 - `src/world/Sky.ts` – Himmelskuppel (Wolken, Sonne, Sternenband), Himmelskörper mit eigenem Shader; `src/render/MoonTexture.ts` – Mondoberfläche (rein)
 - `src/core/GameLoop.ts`, `src/core/SceneManager.ts`, `src/core/Input.ts`

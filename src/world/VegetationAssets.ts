@@ -5,6 +5,7 @@ import type { VegetationProfile } from '@/gen/terrain/VegetationProfiles';
 import { blade, colorize, gradientColor, jitter, mergeParts, taperedQuad } from './geometry';
 import { addRim, addShaderPatch, stylize } from '@/render/stylize';
 import { blob } from './organic';
+import { addGlow, addGlowLight } from '@/render/glow';
 
 export type PlantType = 'grass' | 'shrub' | 'tree' | 'rock' | 'flower';
 export type TreeStyle = VegetationProfile['treeStyle'];
@@ -174,7 +175,7 @@ export class VegetationAssets {
     const crystal = textures.get('crystal');
     this.grassMaterial = new MeshStandardMaterial({ vertexColors: true, side: DoubleSide, roughness: 0.9, metalness: 0, map: leaf.map, normalMap: leaf.normalMap, normalScale: new Vector2(0.4, 0.4) });
     this.plantMaterial = new MeshStandardMaterial({ vertexColors: true, side: DoubleSide, roughness: 0.85, metalness: 0, map: bark.map, normalMap: bark.normalMap, normalScale: new Vector2(0.6, 0.6), roughnessMap: bark.roughnessMap });
-    this.crystalMaterial = new MeshStandardMaterial({ vertexColors: true, side: DoubleSide, roughness: 0.2, metalness: 0.1, emissive: new Color(0.25, 0.2, 0.5), emissiveIntensity: 0.6, transparent: true, opacity: 0.9, normalMap: crystal.normalMap, normalScale: new Vector2(0.5, 0.5) });
+    this.crystalMaterial = new MeshStandardMaterial({ vertexColors: true, side: DoubleSide, roughness: 0.2, metalness: 0.1, normalMap: crystal.normalMap, normalScale: new Vector2(0.5, 0.5) });
     this.rockMaterial = new MeshStandardMaterial({ vertexColors: true, roughness: 1, metalness: 0, map: rock.map, normalMap: rock.normalMap, normalScale: new Vector2(0.9, 0.9), roughnessMap: rock.roughnessMap });
     this.patchWind(this.grassMaterial, 1.0, true);
     this.grassDepthMaterial = new MeshDepthMaterial({ depthPacking: RGBADepthPacking, side: DoubleSide });
@@ -197,6 +198,10 @@ export class VegetationAssets {
     addRim(this.plantMaterial, 0.8);
     addRim(this.rockMaterial, 0.6);
     addRim(this.crystalMaterial, 1.2);
+    addGlow(this.crystalMaterial, { amount: 0.95, day: 0.3, lo: 0.25, hi: 0.75 });
+    addGlowLight(this.grassMaterial);
+    addGlowLight(this.plantMaterial);
+    addGlowLight(this.rockMaterial);
   }
 
   /** Wind-Schwingen im Vertex-Shader für Instanzen (InstancedMesh) und Batches (BatchedMesh); Stärke wächst mit der Höhe. */

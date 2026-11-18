@@ -1,3 +1,4 @@
+import type { WaterSurface } from '../Player';
 import { CylinderGeometry, Group, Mesh, MeshStandardMaterial, SphereGeometry, type Scene } from 'three';
 
 /** Bojen der Tiefseesonden: Zylinder mit Leuchtkugel, wippen auf dem Wasser. */
@@ -12,6 +13,8 @@ export class Buoys {
   constructor(
     private readonly scene: Scene,
     private readonly seaLevel: number,
+    /** Wasserfläche mit Wellen; ohne sie wippen die Bojen nur leicht. */
+    private readonly water: WaterSurface | null = null,
   ) {
     scene.add(this.group);
   }
@@ -30,7 +33,9 @@ export class Buoys {
 
   update(time: number): void {
     for (const it of this.items) {
-      it.mesh.position.y = this.seaLevel + Math.sin(time * 1.3 + it.phase) * 0.12;
+      const p = it.mesh.position;
+      // Bojen stehen im tiefen Wasser: sie reiten auf der Dünung (Grund weit unten, keine Uferdämpfung)
+      p.y = this.water ? this.water.surfaceAt(p.x, p.z, this.seaLevel - 20) : this.seaLevel + Math.sin(time * 1.3 + it.phase) * 0.12;
       it.mesh.rotation.z = Math.sin(time * 0.9 + it.phase) * 0.08;
     }
   }

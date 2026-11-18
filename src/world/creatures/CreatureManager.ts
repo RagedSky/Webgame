@@ -7,6 +7,7 @@ import type { ArchiveEntry, FaunaGenome, Family, TimeOfDay } from '@/gen/archive
 import { matchesSpawn, pointTemperature, spawnWeight, type SpawnContext } from '@/gen/archive/conditions';
 import { buildCreatureTemplate, type CreatureTemplate } from './CreatureBuilder';
 import { Creature, type CreatureWorld } from './Creature';
+import { glowField, type GlowSource } from '@/render/glow';
 
 export interface CreatureEnv {
   timeOfDay: Exclude<TimeOfDay, 'any'>;
@@ -21,6 +22,8 @@ export interface PlayerInfo {
   pos: Vector3;
   yaw: number;
   noise: number;
+  /** Schleichen 0..1 (geduckt). */
+  stealth?: number;
 }
 
 export interface CreatureManagerOptions {
@@ -45,6 +48,7 @@ export class CreatureManager {
   readonly group = new Group();
   readonly creatures: Creature[] = [];
   readonly stats = { count: 0, templates: 0, spawned: 0, attempts: 0 };
+  private glowDirty = false;
   private readonly templates = new Map<string, CreatureTemplate>();
   private readonly families = new Map<string, Family>();
   private readonly byBiome = new Map<string, ArchiveEntry[]>();
@@ -94,6 +98,7 @@ export class CreatureManager {
       playerPos: new Vector3(),
       playerYaw: 0,
       playerNoise: 0,
+      playerStealth: 0,
       timeOfDay: 'day',
       daylight: 1,
       lures: [],
@@ -173,6 +178,7 @@ export class CreatureManager {
       const c = new Creature(entry, template, family, `${entry.id}:${this.tick}:${i}`, new Vector3(px, py, pz), rng.float(0, Math.PI * 2));
       this.group.add(c.root);
       this.creatures.push(c);
+      if (c.glowSource) this.glowDirty = true;
       this.stats.spawned++;
     }
     this.stats.templates = this.templates.size;
@@ -196,6 +202,7 @@ export class CreatureManager {
     w.playerPos.copy(player.pos);
     w.playerYaw = player.yaw;
     w.playerNoise = player.noise;
+    w.playerStealth = player.stealth ?? 0;
     w.timeOfDay = env.timeOfDay;
     w.daylight = env.daylight;
 
@@ -204,10 +211,12 @@ export class CreatureManager {
       c.update(dt, w);
       const d = Math.hypot(c.position.x - player.pos.x, c.position.z - player.pos.z);
       if (d > this.despawnRadius) {
+        if (c.glowSource) this.glowDirty = true;
         c.dispose();
         this.creatures.splice(i, 1);
       }
     }
+    if (this.glowDirty) this.syncGlow();
 
     this.accum += dt;
     if (this.accum >= this.spawnInterval) {
@@ -218,20 +227,30 @@ export class CreatureManager {
   }
 
   /** Nächste Kreatur im Sichtkegel der Kamera. */
-  nearestInView(cameraPos: Vector3, cameraDir: Vector3, maxDist: number, cosHalfAngle: number): { creature: Creature; distance: number } | null {
+  /**
+   * Kreatur unter dem Fadenkreuz: der Sichtstrahl muss den Körper treffen (Kugel um die Körpermitte) oder ihn um
+   * höchstens `marginTan` (Tangens des Winkels) verfehlen. Bei mehreren Treffern gewinnt die, auf die am genauesten
+   * gezielt wird. `blocked` prüft die Sichtlinie (z. B. Gelände dazwischen).
+   */
+  underCrosshair(cameraPos: Vector3, cameraDir: Vector3, maxDist: number, marginTan: number, blocked?: (target: Vector3, distance: number) => boolean): { creature: Creature; distance: number } | null {
     let best: Creature | null = null;
-    let bestDist = Infinity;
+    let bestMiss = Infinity;
+    let bestDist = 0;
     for (const c of this.creatures) {
       c.bodyCenter(tmpA);
       tmpB.subVectors(tmpA, cameraPos);
-      const d = tmpB.length();
-      if (d > maxDist || d < 0.01) continue;
-      tmpB.divideScalar(d);
-      if (tmpB.dot(cameraDir) < cosHalfAngle) continue;
-      if (d < bestDist) {
-        bestDist = d;
-        best = c;
-      }
+      const along = tmpB.dot(cameraDir);
+      if (along <= 0.05 || along > maxDist) continue;
+      const d2 = tmpB.lengthSq();
+      const perp = Math.sqrt(Math.max(0, d2 - along * along));
+      const radius = Math.max(0.2, c.template.lengthM * 0.5);
+      // Abstand des Strahls vom Körper, als Winkel gemessen (≤ 0: Strahl trifft den Körper)
+      const miss = (perp - radius) / along;
+      if (miss > marginTan || miss >= bestMiss) continue;
+      if (blocked?.(tmpA, Math.sqrt(d2))) continue;
+      bestMiss = miss;
+      best = c;
+      bestDist = Math.sqrt(d2);
     }
     return best ? { creature: best, distance: bestDist } : null;
   }
@@ -243,6 +262,7 @@ export class CreatureManager {
   dispose(): void {
     for (const c of this.creatures) c.dispose();
     this.creatures.length = 0;
+    glowField.remove('creatures');
     for (const t of this.templates.values()) {
       t.geometry.dispose();
       t.material.dispose();
@@ -252,6 +272,14 @@ export class CreatureManager {
   }
 
   /** Kollisionswelt setzen: Landtiere weichen festen Objekten aus. */
+  /** Leuchtende Kreaturen als Lichtquellen melden (nur wenn sich die Menge geändert hat). */
+  private syncGlow(): void {
+    this.glowDirty = false;
+    const list: GlowSource[] = [];
+    for (const c of this.creatures) if (c.glowSource) list.push(c.glowSource);
+    glowField.set('creatures', list);
+  }
+
   setCollision(collision: CollisionWorld | null): void {
     this.world.collision = collision;
   }
